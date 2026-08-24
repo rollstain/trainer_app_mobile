@@ -1,0 +1,37 @@
+# Gradle
+.gradle/
+build/
+.kotlin/
+
+# Локальное окружение
+local.properties
+*.log
+*.hprof
+
+# IDE
+.idea/
+*.iml
+out/
+
+# Android
+captures/
+*.apk
+*.aab
+
+# Ключи подписи и секреты
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+.env
+.env.*
+!.env.example
+secrets/
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+
+# macOS
+.DS_Store

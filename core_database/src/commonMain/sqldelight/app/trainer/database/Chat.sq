@@ -1,0 +1,102 @@
+CREATE TABLE dialogEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    coachId TEXT NOT NULL,
+    clientUserId TEXT NOT NULL,
+    peerUserId TEXT NOT NULL,
+    peerDisplayName TEXT NOT NULL,
+    lastMessageSeq INTEGER NOT NULL,
+    readSeq INTEGER NOT NULL,
+    peerReadSeq INTEGER NOT NULL,
+    unreadCount INTEGER NOT NULL,
+    lastMessagePreview TEXT,
+    lastMessageAtEpochMs INTEGER
+);
+
+CREATE TABLE messageEntity (
+    clientMessageId TEXT NOT NULL PRIMARY KEY,
+    serverId TEXT,
+    dialogId TEXT NOT NULL,
+    seq INTEGER,
+    senderUserId TEXT NOT NULL,
+    body TEXT NOT NULL,
+    createdAtEpochMs INTEGER NOT NULL,
+    deliveryStatus TEXT NOT NULL
+);
+
+CREATE TABLE attachmentEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    clientMessageId TEXT NOT NULL,
+    contentType TEXT NOT NULL,
+    sizeBytes INTEGER NOT NULL,
+    originalName TEXT NOT NULL
+);
+
+CREATE INDEX attachmentEntity_message ON attachmentEntity(clientMessageId);
+CREATE INDEX messageEntity_dialog_seq ON messageEntity(dialogId, seq);
+CREATE INDEX messageEntity_delivery ON messageEntity(deliveryStatus);
+
+selectDialogs:
+SELECT * FROM dialogEntity
+ORDER BY lastMessageAtEpochMs IS NULL, lastMessageAtEpochMs DESC;
+
+selectDialogById:
+SELECT * FROM dialogEntity WHERE id = ?;
+
+upsertDialog:
+INSERT OR REPLACE INTO dialogEntity(
+    id, coachId, clientUserId, peerUserId, peerDisplayName,
+    lastMessageSeq, readSeq, peerReadSeq, unreadCount, lastMessagePreview, lastMessageAtEpochMs
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+markDialogRead:
+UPDATE dialogEntity SET readSeq = ?, unreadCount = 0 WHERE id = ?;
+
+selectMessages:
+SELECT * FROM messageEntity
+WHERE dialogId = ?
+ORDER BY seq IS NULL, seq DESC, createdAtEpochMs DESC;
+
+minSeqInDialog:
+SELECT MIN(seq) FROM messageEntity WHERE dialogId = ?;
+
+selectPendingMessages:
+SELECT * FROM messageEntity
+WHERE deliveryStatus = ?
+ORDER BY createdAtEpochMs ASC;
+
+maxSeqInDialog:
+SELECT MAX(seq) FROM messageEntity WHERE dialogId = ?;
+
+upsertMessage:
+INSERT OR REPLACE INTO messageEntity(
+    clientMessageId, serverId, dialogId, seq, senderUserId, body, createdAtEpochMs, deliveryStatus
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+updateDeliveryStatus:
+UPDATE messageEntity SET deliveryStatus = ? WHERE clientMessageId = ?;
+
+selectAttachmentsOfDialog:
+SELECT attachmentEntity.* FROM attachmentEntity
+JOIN messageEntity ON messageEntity.clientMessageId = attachmentEntity.clientMessageId
+WHERE messageEntity.dialogId = ?;
+
+selectAttachmentsOfMessage:
+SELECT * FROM attachmentEntity WHERE clientMessageId = ?;
+
+upsertAttachment:
+INSERT OR REPLACE INTO attachmentEntity(id, clientMessageId, contentType, sizeBytes, originalName)
+VALUES (?, ?, ?, ?, ?);
+
+deleteMessagesOfDialog:
+DELETE FROM messageEntity WHERE dialogId = ?;
+
+deleteAllAttachments:
+DELETE FROM attachmentEntity;
+
+deleteAllMessages:
+DELETE FROM messageEntity;
+
+deleteAllDialogs:
+DELETE FROM dialogEntity;

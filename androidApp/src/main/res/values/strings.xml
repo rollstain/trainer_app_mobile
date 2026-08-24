@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Trainer</string>
+    <string name="chat_notification_channel_name">Сообщения</string>
+    <string name="rest_timer_notification_channel_name">Таймер отдыха</string>
+    <string name="schedule_notification_channel_name">Расписание</string>
+</resources>

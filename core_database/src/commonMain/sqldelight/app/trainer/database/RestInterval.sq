@@ -1,0 +1,13 @@
+CREATE TABLE restIntervalEntity (
+    exerciseId TEXT NOT NULL PRIMARY KEY,
+    seconds INTEGER NOT NULL
+);
+
+selectRestInterval:
+SELECT seconds FROM restIntervalEntity WHERE exerciseId = ?;
+
+upsertRestInterval:
+INSERT OR REPLACE INTO restIntervalEntity(exerciseId, seconds) VALUES (?, ?);
+
+deleteAllRestIntervals:
+DELETE FROM restIntervalEntity;

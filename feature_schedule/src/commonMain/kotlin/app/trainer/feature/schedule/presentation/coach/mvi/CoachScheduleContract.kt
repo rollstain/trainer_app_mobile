@@ -1,0 +1,91 @@
+package app.trainer.feature.schedule.presentation.coach.mvi
+
+import app.trainer.data.schedule.SlotChangeKind
+import app.trainer.data.schedule.SlotStatus
+import app.trainer.entities.RequestResult
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.datetime.LocalDate
+
+data class CoachSlotRow(
+    val slotId: String,
+    val startMinutesOfDay: Int,
+    val durationMinutes: Int,
+    val timeLabel: String,
+    val durationLabel: String,
+    val status: SlotStatus,
+    val clientDisplayName: String?,
+    val hasPendingChangeRequest: Boolean,
+)
+
+data class ScheduleDay(
+    val date: LocalDate,
+    val weekdayLabel: String,
+    val dayNumberLabel: String,
+    val isSelected: Boolean,
+    val isToday: Boolean,
+    val isWeekend: Boolean,
+    val slots: ImmutableList<CoachSlotRow>,
+)
+
+data class ChangeRequestRow(
+    val requestId: String,
+    val slotTimeLabel: String,
+    val proposedTimeLabel: String?,
+    val kind: SlotChangeKind,
+    val requestedByDisplayName: String?,
+)
+
+data class CoachScheduleState(
+    val weekStart: LocalDate?,
+    val weekTitle: String,
+    val selectedDate: LocalDate?,
+    val days: ImmutableList<ScheduleDay>,
+    val pendingRequests: ImmutableList<ChangeRequestRow>,
+    val isLoading: Boolean,
+    val isFailed: Boolean,
+) {
+
+    companion object {
+
+        fun initial(): CoachScheduleState = CoachScheduleState(
+            weekStart = null,
+            weekTitle = "",
+            selectedDate = null,
+            days = persistentListOf(),
+            pendingRequests = persistentListOf(),
+            isLoading = true,
+            isFailed = false,
+        )
+    }
+}
+
+sealed interface CoachScheduleEvent {
+
+    data object OnRetryClicked : CoachScheduleEvent
+
+    data object OnPreviousWeekClicked : CoachScheduleEvent
+
+    data object OnNextWeekClicked : CoachScheduleEvent
+
+    data object OnCreateSlotClicked : CoachScheduleEvent
+
+    data class OnDateSelected(val date: LocalDate) : CoachScheduleEvent
+
+    data class OnSlotClicked(val slotId: String) : CoachScheduleEvent
+
+    data class OnCancelSlotClicked(val slotId: String) : CoachScheduleEvent
+
+    data class OnCompleteSlotClicked(val slotId: String) : CoachScheduleEvent
+
+    data class OnChangeRequestResolved(val requestId: String, val approve: Boolean) : CoachScheduleEvent
+}
+
+sealed interface CoachScheduleSideEffect {
+
+    data class ShowFailure(val failure: RequestResult.Error) : CoachScheduleSideEffect
+
+    data class OpenSlotDetails(val slotId: String) : CoachScheduleSideEffect
+
+    data object OpenSlotCreation : CoachScheduleSideEffect
+}

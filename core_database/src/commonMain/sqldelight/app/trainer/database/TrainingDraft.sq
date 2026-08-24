@@ -1,0 +1,47 @@
+CREATE TABLE trainingDraftEntity (
+    dateIso TEXT NOT NULL PRIMARY KEY,
+    notes TEXT NOT NULL
+);
+
+CREATE TABLE trainingDraftSetEntity (
+    rowId TEXT NOT NULL PRIMARY KEY,
+    dateIso TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    exerciseId TEXT NOT NULL,
+    exerciseName TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    repetitionsText TEXT NOT NULL,
+    weightText TEXT NOT NULL,
+    durationText TEXT NOT NULL,
+    distanceText TEXT NOT NULL
+);
+
+CREATE INDEX trainingDraftSetEntity_date ON trainingDraftSetEntity(dateIso, position);
+
+selectDraft:
+SELECT * FROM trainingDraftEntity WHERE dateIso = ?;
+
+selectDraftSets:
+SELECT * FROM trainingDraftSetEntity WHERE dateIso = ? ORDER BY position;
+
+upsertDraft:
+INSERT OR REPLACE INTO trainingDraftEntity(dateIso, notes) VALUES (?, ?);
+
+upsertDraftSet:
+INSERT OR REPLACE INTO trainingDraftSetEntity(
+    rowId, dateIso, position, exerciseId, exerciseName, kind,
+    repetitionsText, weightText, durationText, distanceText
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteDraftSets:
+DELETE FROM trainingDraftSetEntity WHERE dateIso = ?;
+
+deleteDraft:
+DELETE FROM trainingDraftEntity WHERE dateIso = ?;
+
+deleteAllDrafts:
+DELETE FROM trainingDraftEntity;
+
+deleteAllDraftSets:
+DELETE FROM trainingDraftSetEntity;

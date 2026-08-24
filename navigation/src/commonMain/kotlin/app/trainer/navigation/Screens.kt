@@ -1,0 +1,60 @@
+package app.trainer.navigation
+
+import androidx.navigation3.runtime.NavKey
+import kotlinx.serialization.Serializable
+
+enum class DiaryPeriod { Week, Month, Range }
+
+sealed interface Screens : NavKey {
+
+    @Serializable
+    data class Invite(val code: String?) : Screens
+
+    @Serializable
+    data object ContactLink : Screens
+
+    @Serializable
+    data object CoachChats : Screens
+
+    @Serializable
+    data class Chat(val dialogId: String) : Screens
+
+    @Serializable
+    data class CoachCalendar(val weekStartIso: String?) : Screens
+
+    @Serializable
+    data class NewSlot(val dateIso: String?) : Screens
+
+    @Serializable
+    data class SlotSeriesResult(val batchId: String) : Screens
+
+    @Serializable
+    data object CoachDiaries : Screens
+
+    @Serializable
+    data class CoachClientDiary(val clientUserId: String, val period: DiaryPeriod) : Screens
+
+    @Serializable
+    data object CoachPeople : Screens
+
+    @Serializable
+    data class ClientCard(val clientUserId: String) : Screens
+
+    @Serializable
+    data object NewExercise : Screens
+
+    @Serializable
+    data class ClientBooking(val coachId: String?, val weekStartIso: String?) : Screens
+
+    @Serializable
+    data class ClientDiaryDay(val dateIso: String) : Screens
+
+    @Serializable
+    data object Progress : Screens
+
+    @Serializable
+    data class CheckIn(val dateIso: String) : Screens
+
+    @Serializable
+    data object Profile : Screens
+}

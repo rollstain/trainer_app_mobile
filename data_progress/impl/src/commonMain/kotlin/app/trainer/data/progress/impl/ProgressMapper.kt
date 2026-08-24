@@ -1,0 +1,65 @@
+package app.trainer.data.progress.impl
+
+import app.trainer.data.progress.CheckIn
+import app.trainer.data.progress.CheckInPhoto
+import app.trainer.data.progress.Habit
+import app.trainer.logger.Logger
+import kotlinx.datetime.LocalDate
+
+private const val LOG_TAG = "progress-mapper"
+
+class ProgressMapper(private val logger: Logger) {
+
+    fun toCheckIn(response: CheckInResponse): CheckIn? {
+        val id = response.id ?: return skipped(entity = "CheckIn", field = "id")
+        val clientUserId = response.clientUserId ?: return skipped(entity = "CheckIn", field = "clientUserId")
+        val checkInDate = parseDate(response.checkInDate)
+            ?: return skipped(entity = "CheckIn", field = "checkInDate")
+        return CheckIn(
+            id = id,
+            clientUserId = clientUserId,
+            checkInDate = checkInDate,
+            weightGrams = response.weightGrams,
+            waistMillimeters = response.waistMillimeters,
+            chestMillimeters = response.chestMillimeters,
+            hipsMillimeters = response.hipsMillimeters,
+            wellbeing = response.wellbeing,
+            sleepQuality = response.sleepQuality,
+            notes = response.notes,
+            photos = response.photos.orEmpty().mapNotNull(::toPhoto),
+        )
+    }
+
+    private fun toPhoto(response: MediaFileResponse): CheckInPhoto? {
+        val id = response.id ?: return skipped(entity = "CheckInPhoto", field = "id")
+        val downloadUrl = response.downloadUrl
+            ?: return skipped(entity = "CheckInPhoto", field = "downloadUrl")
+        val originalName = response.originalName
+            ?: return skipped(entity = "CheckInPhoto", field = "originalName")
+        return CheckInPhoto(id = id, downloadUrl = downloadUrl, originalName = originalName)
+    }
+
+    fun toHabit(response: HabitResponse): Habit? {
+        val id = response.id ?: return skipped(entity = "Habit", field = "id")
+        val clientUserId = response.clientUserId ?: return skipped(entity = "Habit", field = "clientUserId")
+        val title = response.title ?: return skipped(entity = "Habit", field = "title")
+        val isSetByCoach = response.isSetByCoach ?: return skipped(entity = "Habit", field = "isSetByCoach")
+        return Habit(
+            id = id,
+            clientUserId = clientUserId,
+            title = title,
+            isSetByCoach = isSetByCoach,
+            doneDates = response.doneDates.orEmpty().mapNotNull(::parseDate),
+        )
+    }
+
+    private fun parseDate(raw: String?): LocalDate? {
+        if (raw == null) return null
+        return runCatching { LocalDate.parse(raw) }.getOrNull()
+    }
+
+    private fun <T> skipped(entity: String, field: String): T? {
+        logger.error(tag = LOG_TAG, message = "Пропущен ${'$'}entity: в ответе нет или не разобрано поле ${'$'}field")
+        return null
+    }
+}

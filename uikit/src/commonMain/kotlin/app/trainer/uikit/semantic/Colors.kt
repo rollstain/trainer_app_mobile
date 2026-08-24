@@ -1,0 +1,77 @@
+package app.trainer.uikit.semantic
+
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.Color
+
+@Immutable
+data class AppColors(
+    val bgScreen: Color,
+    val bgSurface: Color,
+    val bgSurfaceSunken: Color,
+    val bgSlotUnavailable: Color,
+    val border: Color,
+    val borderStrong: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color,
+    val accent: Color,
+    val accentSoft: Color,
+    val accentOn: Color,
+    val accentPressed: Color,
+    val danger: Color,
+    val dangerSoft: Color,
+    val success: Color,
+    val successSoft: Color,
+    val warning: Color,
+    val warningSoft: Color,
+    val bgInverse: Color,
+    val textInverse: Color,
+)
+
+fun lightAppColors(): AppColors = AppColors(
+    bgScreen = Color(0xFFF5F4F2),
+    bgSurface = Color(0xFFFFFFFF),
+    bgSurfaceSunken = Color(0xFFEFEDE9),
+    bgSlotUnavailable = Color(0xFFF5F4F2),
+    border = Color(0xFFE3DFD8),
+    borderStrong = Color(0xFFC8C2B8),
+    textPrimary = Color(0xFF1A1917),
+    textSecondary = Color(0xFF6E6A62),
+    textMuted = Color(0xFFA19C93),
+    accent = Color(0xFF2F55C8),
+    accentSoft = Color(0xFFE5EAFA),
+    accentOn = Color(0xFFFFFFFF),
+    accentPressed = Color(0xFF23429F),
+    danger = Color(0xFFB33A2E),
+    dangerSoft = Color(0xFFFAE7E3),
+    success = Color(0xFF2E7D57),
+    successSoft = Color(0xFFE2F0E8),
+    warning = Color(0xFF9A6C1B),
+    warningSoft = Color(0xFFF7EEDB),
+    bgInverse = Color(0xFF1A1917),
+    textInverse = Color(0xFFF5F4F2),
+)
+
+fun darkAppColors(): AppColors = AppColors(
+    bgScreen = Color(0xFF141413),
+    bgSurface = Color(0xFF1D1D1B),
+    bgSurfaceSunken = Color(0xFF262523),
+    bgSlotUnavailable = Color(0xFF191917),
+    border = Color(0xFF33322F),
+    borderStrong = Color(0xFF4A4844),
+    textPrimary = Color(0xFFF2F0EC),
+    textSecondary = Color(0xFFA29E96),
+    textMuted = Color(0xFF6D6A64),
+    accent = Color(0xFF8AA2F7),
+    accentSoft = Color(0xFF222842),
+    accentOn = Color(0xFF0F1326),
+    accentPressed = Color(0xFF6E88E8),
+    danger = Color(0xFFE88478),
+    dangerSoft = Color(0xFF3A2320),
+    success = Color(0xFF6DC79A),
+    successSoft = Color(0xFF1B2E25),
+    warning = Color(0xFFDDB05F),
+    warningSoft = Color(0xFF332A1A),
+    bgInverse = Color(0xFFF2F0EC),
+    textInverse = Color(0xFF1A1917),
+)

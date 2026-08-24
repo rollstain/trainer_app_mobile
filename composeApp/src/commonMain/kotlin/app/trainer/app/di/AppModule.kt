@@ -1,0 +1,31 @@
+package app.trainer.app.di
+
+import app.trainer.app.AppStartup
+import app.trainer.base.input.WeightInput
+import app.trainer.data.chat.impl.di.ChatDataModule
+import app.trainer.feature.account.di.AccountFeatureModule
+import app.trainer.network.impl.NetworkConfig
+import kotlinx.coroutines.CoroutineDispatcher
+import org.koin.core.qualifier.named
+import org.koin.dsl.module
+
+class AppModule(private val config: NetworkConfig, private val deviceInfo: String) {
+
+    val module = module {
+        single<CoroutineDispatcher> { ioDispatcher() }
+        single { WeightInput() }
+        single(named(AccountFeatureModule.DEVICE_INFO_QUALIFIER)) { deviceInfo }
+        single(named(ChatDataModule.WEB_SOCKET_URL_QUALIFIER)) { config.chatWebSocketUrl }
+        single {
+            AppStartup(
+                authRepository = get(),
+                chatRealtime = get(),
+                messagingTokenManager = get(),
+                sessionEvents = get(),
+                localDataCleaners = getAll(),
+                logger = get(),
+                ioDispatcher = get(),
+            )
+        }
+    }
+}
