@@ -1,23 +1,34 @@
 package app.trainer.feature.schedule.presentation.newslot.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import app.trainer.feature.schedule.presentation.newslot.mvi.NewSlotEvent
 import app.trainer.feature.schedule.presentation.newslot.mvi.NewSlotState
 import app.trainer.feature.schedule.presentation.newslot.mvi.SlotMode
+import app.trainer.strings.Res
+import app.trainer.strings.new_slot_days_title
+import app.trainer.strings.new_slot_duration_title
+import app.trainer.strings.new_slot_series_mode
+import app.trainer.strings.new_slot_single_mode
+import app.trainer.strings.new_slot_submit_series
+import app.trainer.strings.new_slot_submit_single
+import app.trainer.strings.new_slot_summary_title
+import app.trainer.strings.new_slot_time_label
+import app.trainer.strings.new_slot_title
+import app.trainer.strings.new_slot_weeks_label
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
+import app.trainer.uikit.widgets.AppCard
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTextField
 import app.trainer.uikit.widgets.AppTopBar
@@ -27,18 +38,9 @@ import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
 import app.trainer.uikit.widgets.TopBarLeading
+import org.jetbrains.compose.resources.stringResource
 
-private const val TITLE = "Новый слот"
-private const val SINGLE_MODE = "Один раз"
-private const val SERIES_MODE = "Серия"
-private const val TIME_LABEL = "Время начала"
 private const val TIME_PLACEHOLDER = "19:00"
-private const val WEEKS_LABEL = "Недель"
-private const val DURATION_TITLE = "Длительность"
-private const val DAYS_TITLE = "Дни недели"
-private const val SUMMARY_TITLE = "ИТОГ"
-private const val SUBMIT_SINGLE = "Создать слот"
-private const val SUBMIT_SERIES = "Создать серию"
 
 private val DURATION_OPTIONS = listOf(45, 60, 90)
 
@@ -49,8 +51,11 @@ fun NewSlotView(
     onEvent: (NewSlotEvent) -> Unit,
     onBackClick: () -> Unit,
 ) {
-    Column(modifier = modifier.fillMaxSize().screenBackground()) {
-        AppTopBar(title = TITLE, leading = TopBarLeading.Back(onClick = onBackClick))
+    Column(modifier = modifier.fillMaxSize().screenBackground().navigationBarsPadding()) {
+        AppTopBar(
+            title = stringResource(Res.string.new_slot_title),
+            leading = TopBarLeading.Back(onClick = onBackClick),
+        )
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -60,7 +65,7 @@ fun NewSlotView(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
                 AppButton(
-                    text = SINGLE_MODE,
+                    text = stringResource(Res.string.new_slot_single_mode),
                     onClick = { onEvent(NewSlotEvent.OnModeChanged(SlotMode.Single)) },
                     tone = if (state.mode == SlotMode.Single) {
                         ButtonTone.Primary
@@ -69,7 +74,7 @@ fun NewSlotView(
                     },
                 )
                 AppButton(
-                    text = SERIES_MODE,
+                    text = stringResource(Res.string.new_slot_series_mode),
                     onClick = { onEvent(NewSlotEvent.OnModeChanged(SlotMode.Series)) },
                     tone = if (state.mode == SlotMode.Series) {
                         ButtonTone.Primary
@@ -87,7 +92,7 @@ fun NewSlotView(
                 value = state.timeText,
                 onValueChange = { onEvent(NewSlotEvent.OnTimeChanged(it)) },
                 kind = TextFieldKind.Numeric,
-                label = TextFieldLabel.Text(TIME_LABEL),
+                label = TextFieldLabel.Text(stringResource(Res.string.new_slot_time_label)),
                 placeholder = TIME_PLACEHOLDER,
             )
             DurationRow(state = state, onEvent = onEvent)
@@ -98,7 +103,11 @@ fun NewSlotView(
         }
         AppButton(
             modifier = Modifier.fillMaxWidth().padding(AppTheme.spacing.dp16),
-            text = if (state.mode == SlotMode.Single) SUBMIT_SINGLE else SUBMIT_SERIES,
+            text = if (state.mode == SlotMode.Single) {
+                stringResource(Res.string.new_slot_submit_single)
+            } else {
+                stringResource(Res.string.new_slot_submit_series)
+            },
             onClick = { onEvent(NewSlotEvent.OnSubmitClicked) },
             tone = ButtonTone.Primary,
             size = ButtonSize.Large,
@@ -115,7 +124,7 @@ fun NewSlotView(
 private fun DurationRow(state: NewSlotState, onEvent: (NewSlotEvent) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
         AppText(
-            text = DURATION_TITLE,
+            text = stringResource(Res.string.new_slot_duration_title),
             style = AppTheme.typography.label,
             color = AppTheme.colors.textSecondary,
         )
@@ -140,7 +149,7 @@ private fun DurationRow(state: NewSlotState, onEvent: (NewSlotEvent) -> Unit) {
 private fun SeriesFields(state: NewSlotState, onEvent: (NewSlotEvent) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
         AppText(
-            text = DAYS_TITLE,
+            text = stringResource(Res.string.new_slot_days_title),
             style = AppTheme.typography.label,
             color = AppTheme.colors.textSecondary,
         )
@@ -160,7 +169,7 @@ private fun SeriesFields(state: NewSlotState, onEvent: (NewSlotEvent) -> Unit) {
                 text.toIntOrNull()?.let { onEvent(NewSlotEvent.OnWeeksCountChanged(it)) }
             },
             kind = TextFieldKind.Numeric,
-            label = TextFieldLabel.Text(WEEKS_LABEL),
+            label = TextFieldLabel.Text(stringResource(Res.string.new_slot_weeks_label)),
         )
     }
 }
@@ -168,25 +177,18 @@ private fun SeriesFields(state: NewSlotState, onEvent: (NewSlotEvent) -> Unit) {
 @Composable
 private fun SummaryCard(summary: String) {
     if (summary.isEmpty()) return
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                color = AppTheme.colors.bgSurface,
-                shape = RoundedCornerShape(AppTheme.radius.dp12),
+    AppCard {
+        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4)) {
+            AppText(
+                text = stringResource(Res.string.new_slot_summary_title),
+                style = AppTheme.typography.overline,
+                color = AppTheme.colors.textMuted,
             )
-            .padding(AppTheme.spacing.dp16),
-        verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4),
-    ) {
-        AppText(
-            text = SUMMARY_TITLE,
-            style = AppTheme.typography.overline,
-            color = AppTheme.colors.textMuted,
-        )
-        AppText(
-            text = summary,
-            style = AppTheme.typography.body,
-            color = AppTheme.colors.textPrimary,
-        )
+            AppText(
+                text = summary,
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.textPrimary,
+            )
+        }
     }
 }

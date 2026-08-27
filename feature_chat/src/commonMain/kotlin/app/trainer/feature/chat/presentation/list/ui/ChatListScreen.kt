@@ -2,6 +2,7 @@ package app.trainer.feature.chat.presentation.list.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import app.trainer.base.failure.toastMessage
 import app.trainer.feature.chat.presentation.list.mvi.ChatListScreenModel
 import app.trainer.feature.chat.presentation.list.mvi.ChatListSideEffect
 import app.trainer.navigation.LocalNavigator
@@ -30,7 +31,7 @@ class ChatListScreen : Screen {
     }
 }
 
-private fun handleSideEffect(
+private suspend fun handleSideEffect(
     effect: ChatListSideEffect,
     navigator: Navigator,
     toastHost: ToastHostState,
@@ -38,6 +39,6 @@ private fun handleSideEffect(
     when (effect) {
         is ChatListSideEffect.OpenDialog -> navigator.push(Screens.Chat(dialogId = effect.dialogId))
         ChatListSideEffect.OpenPeople -> navigator.replaceAll(Screens.CoachPeople)
-        is ChatListSideEffect.ShowFailure -> toastHost.show(effect.failure.userMessage)
+        is ChatListSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
     }
 }

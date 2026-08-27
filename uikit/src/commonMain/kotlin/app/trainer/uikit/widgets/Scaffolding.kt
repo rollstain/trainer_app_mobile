@@ -8,21 +8,31 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.trainer.uikit.AppTheme
+import app.trainer.uikit.resources.Res
+import app.trainer.uikit.resources.top_bar_back
+import org.jetbrains.compose.resources.stringResource
 
-private val TOP_BAR_ACTION_SIZE = 40.dp
 private val ACTIVE_TAB_INDICATOR_HEIGHT = 2.dp
+private const val TOAST_MAX_LINES = 3
 
 sealed interface TopBarLeading {
 
@@ -42,7 +52,17 @@ sealed interface TopBarAction {
 
     data object None : TopBarAction
 
-    class Content(val onClick: () -> Unit, val render: @Composable () -> Unit) : TopBarAction
+    class Icon(
+        val painter: @Composable () -> Painter,
+        val contentDescription: String,
+        val onClick: () -> Unit,
+    ) : TopBarAction
+
+    class Avatar(
+        val displayName: String,
+        val contentDescription: String,
+        val onClick: () -> Unit,
+    ) : TopBarAction
 }
 
 @Composable
@@ -54,11 +74,16 @@ fun AppTopBar(
     action: TopBarAction = TopBarAction.None,
     avatarName: String = "",
 ) {
-    Column(modifier = modifier.fillMaxWidth().background(AppTheme.colors.bgSurface)) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(AppTheme.colors.bgSurface)
+            .statusBarsPadding(),
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(AppTheme.sizing.topBarHeight)
+                .heightIn(min = AppTheme.sizing.topBarHeight)
                 .padding(horizontal = AppTheme.spacing.dp8),
             horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
             verticalAlignment = Alignment.CenterVertically,
@@ -67,7 +92,7 @@ fun AppTopBar(
                 TopBarLeading.None -> Box(modifier = Modifier.width(AppTheme.spacing.dp8))
                 is TopBarLeading.Back -> AppIconButton(
                     painter = AppIcons.back,
-                    contentDescription = "Назад",
+                    contentDescription = stringResource(Res.string.top_bar_back),
                     onClick = leading.onClick,
                 )
             }
@@ -97,12 +122,18 @@ fun AppTopBar(
             }
             when (action) {
                 TopBarAction.None -> Unit
-                is TopBarAction.Content -> Box(
+                is TopBarAction.Icon -> AppIconButton(
+                    painter = action.painter(),
+                    contentDescription = action.contentDescription,
+                    onClick = action.onClick,
+                )
+                is TopBarAction.Avatar -> AppAvatar(
                     modifier = Modifier
-                        .size(TOP_BAR_ACTION_SIZE)
-                        .clickable(onClick = action.onClick),
-                    contentAlignment = Alignment.Center,
-                    content = { action.render() },
+                        .clip(CircleShape)
+                        .clickable(onClick = action.onClick)
+                        .semantics { contentDescription = action.contentDescription },
+                    displayName = action.displayName,
+                    size = AvatarSize.Medium,
                 )
             }
         }
@@ -128,48 +159,40 @@ fun AppBottomNavigation(
     selectedId: String,
     onSelect: (String) -> Unit,
 ) {
-    Column(modifier = modifier.fillMaxWidth().background(AppTheme.colors.bgSurface)) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(AppTheme.colors.bgSurface)
+            .navigationBarsPadding(),
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(AppTheme.borders.hairline)
                 .background(AppTheme.colors.border),
         )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(AppTheme.sizing.bottomBarHeight),
-        ) {
+        Row(modifier = Modifier.fillMaxWidth()) {
             items.forEach { item ->
                 val isSelected = item.id == selectedId
-                Column(
+                val tint = if (isSelected) {
+                    AppTheme.colors.accent
+                } else {
+                    AppTheme.colors.textSecondary
+                }
+                Box(
                     modifier = Modifier
                         .weight(1f)
+                        .heightIn(min = AppTheme.sizing.bottomBarHeight)
                         .clickable { onSelect(item.id) },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(ACTIVE_TAB_INDICATOR_HEIGHT)
-                            .background(
-                                if (isSelected) AppTheme.colors.accent else AppTheme.colors.bgSurface
-                            ),
-                    )
                     Column(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.padding(vertical = AppTheme.spacing.dp8),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
                     ) {
-                        val tint = if (isSelected) {
-                            AppTheme.colors.accent
-                        } else {
-                            AppTheme.colors.textSecondary
-                        }
                         AppIcon(
                             painter = item.icon(isSelected),
-                            contentDescription = item.label,
+                            contentDescription = null,
                             tint = tint,
                         )
                         Text(
@@ -177,8 +200,18 @@ fun AppBottomNavigation(
                             style = AppTheme.typography.caption,
                             color = tint,
                             maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .fillMaxWidth()
+                            .height(ACTIVE_TAB_INDICATOR_HEIGHT)
+                            .background(
+                                if (isSelected) AppTheme.colors.accent else AppTheme.colors.bgSurface
+                            ),
+                    )
                 }
             }
         }
@@ -190,12 +223,15 @@ fun AppToast(modifier: Modifier = Modifier, text: String, actionText: String, on
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(AppTheme.sizing.toastHeight)
+            .heightIn(min = AppTheme.sizing.toastHeight)
             .background(
                 color = AppTheme.colors.bgInverse,
                 shape = RoundedCornerShape(AppTheme.radius.dp8),
             )
-            .padding(horizontal = AppTheme.spacing.dp16),
+            .padding(
+                horizontal = AppTheme.spacing.dp16,
+                vertical = AppTheme.spacing.dp12,
+            ),
         horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -204,7 +240,7 @@ fun AppToast(modifier: Modifier = Modifier, text: String, actionText: String, on
             text = text,
             style = AppTheme.typography.body,
             color = AppTheme.colors.textInverse,
-            maxLines = 1,
+            maxLines = TOAST_MAX_LINES,
             overflow = TextOverflow.Ellipsis,
         )
         Text(

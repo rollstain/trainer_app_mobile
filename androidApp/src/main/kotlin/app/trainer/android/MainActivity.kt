@@ -8,7 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import app.trainer.app.ui.AppRoot
+import app.trainer.app.ui.AppGate
 
 class MainActivity : ComponentActivity() {
 
@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestNotificationsPermissionIfNeeded()
-        setContent { AppRoot(isCoach = true) }
+        setContent { AppGate() }
     }
 
     private fun requestNotificationsPermissionIfNeeded() {

@@ -1,17 +1,19 @@
 package app.trainer.data.progress.impl
 
+import app.trainer.data.progress.AwaitingCheckIn
 import app.trainer.data.progress.CheckIn
 import app.trainer.data.progress.CheckInDraft
 import app.trainer.data.progress.CheckInRepository
 import app.trainer.data.progress.PreparedPhotoUpload
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.network.HttpClientProvider
 import app.trainer.network.PresignedUploader
 import app.trainer.network.safeRequest
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
-import io.ktor.client.request.post
 import io.ktor.client.request.parameter
+import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -61,6 +63,7 @@ class CheckInRepositoryImpl(
                         hipsMillimeters = draft.hipsMillimeters,
                         wellbeing = draft.wellbeing,
                         sleepQuality = draft.sleepQuality,
+                        adherence = draft.adherence,
                         notes = draft.notes,
                         photoIds = draft.photoIds,
                     )
@@ -73,6 +76,42 @@ class CheckInRepositoryImpl(
                 val checkIn = mapper.toCheckIn(saved.data)
                 if (checkIn == null) mappingFailed() else RequestResult.Success(checkIn)
             }
+        }
+    }
+
+    override suspend fun awaitingReview(): RequestResult<List<AwaitingCheckIn>> {
+        val loaded = safeRequest<List<AwaitingCheckInResponse>> {
+            client.get("coach/check-ins/awaiting")
+        }
+        return when (loaded) {
+            is RequestResult.Error -> loaded
+            is RequestResult.Success -> RequestResult.Success(
+                loaded.data.mapNotNull(mapper::toAwaitingCheckIn)
+            )
+        }
+    }
+
+    override suspend fun review(
+        clientUserId: String,
+        checkInId: String,
+        comment: String?,
+    ): RequestResult<CheckIn> {
+        val reviewed = safeRequest<CheckInResponse> {
+            client.post("coach/clients/$clientUserId/check-ins/$checkInId/review") {
+                contentType(ContentType.Application.Json)
+                setBody(ReviewCheckInRequest(comment = comment))
+            }
+        }
+        return when (reviewed) {
+            is RequestResult.Error -> reviewed
+            is RequestResult.Success -> mapper.toCheckIn(reviewed.data)
+                ?.let { RequestResult.Success(it) }
+                ?: RequestResult.Error(
+                    kind = RequestFailure.Parsing,
+                    statusCode = null,
+                    userMessage = "",
+                    devMessage = "CheckIn не читается из ответа ревью",
+                )
         }
     }
 
@@ -101,6 +140,7 @@ class CheckInRepositoryImpl(
                 val downloadUrl = prepared.data.downloadUrl
                 if (photoId == null || uploadUrl == null || downloadUrl == null) {
                     RequestResult.Error(
+                        kind = RequestFailure.Parsing,
                         statusCode = null,
                         userMessage = "Не удалось подготовить загрузку фото",
                         devMessage = "В ответе нет mediaFileId, uploadUrl или downloadUrl",
@@ -139,6 +179,7 @@ class CheckInRepositoryImpl(
     }
 
     private fun mappingFailed(): RequestResult.Error = RequestResult.Error(
+        kind = RequestFailure.Parsing,
         statusCode = null,
         userMessage = "Не удалось прочитать чек-ин",
         devMessage = "CheckInResponse не разобран",

@@ -16,14 +16,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import app.trainer.base.failure.AppFailureState
 import app.trainer.feature.chat.presentation.dialog.mvi.ChatItem
 import app.trainer.feature.chat.presentation.dialog.mvi.DialogEvent
 import app.trainer.feature.chat.presentation.dialog.mvi.DialogState
 import app.trainer.feature.chat.presentation.dialog.mvi.MessageRow
-import app.trainer.media.rememberImagePicker
 import app.trainer.feature.chat.presentation.dialog.mvi.MessageStatus
 import app.trainer.feature.chat.presentation.dialog.mvi.PendingAttachment
 import app.trainer.feature.chat.presentation.dialog.mvi.PendingAttachmentState
+import app.trainer.media.rememberImagePicker
+import app.trainer.strings.Res
+import app.trainer.strings.dialog_empty_description
+import app.trainer.strings.dialog_empty_title
+import app.trainer.strings.dialog_loading_older
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppMessageBubble
@@ -36,19 +41,10 @@ import app.trainer.uikit.widgets.AttachmentState
 import app.trainer.uikit.widgets.BubbleAttachment
 import app.trainer.uikit.widgets.MessageDeliveryState
 import app.trainer.uikit.widgets.MessageSide
-import app.trainer.uikit.widgets.PlaceholderAction
 import app.trainer.uikit.widgets.PlaceholderKind
 import app.trainer.uikit.widgets.TopBarLeading
 import app.trainer.uikit.widgets.TopBarSubtitle
-
-private const val PEER_ROLE = "подопечный"
-private const val LOADING_OLDER = "Загружаем более ранние…"
-private const val EMPTY_TITLE = "Сообщений пока нет"
-private const val EMPTY_DESCRIPTION = "Напишите первым — сообщение уйдёт, как только появится сеть."
-private const val FAILURE_TITLE = "Не удалось загрузить"
-private const val FAILURE_DESCRIPTION =
-    "Проверьте соединение. Отправленные сообщения останутся в очереди и уйдут сами."
-private const val FAILURE_ACTION = "Повторить"
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun DialogView(
@@ -61,24 +57,23 @@ fun DialogView(
         AppTopBar(
             title = state.peerDisplayName,
             leading = TopBarLeading.Back(onClick = onBackClick),
-            subtitle = TopBarSubtitle.Text(PEER_ROLE),
+            subtitle = if (state.peerRoleLabel.isEmpty()) {
+                TopBarSubtitle.None
+            } else {
+                TopBarSubtitle.Text(state.peerRoleLabel)
+            },
             avatarName = state.peerDisplayName,
         )
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             when {
-                state.isFailed && state.items.isEmpty() -> AppStatePlaceholder(
-                    kind = PlaceholderKind.Failure,
-                    title = FAILURE_TITLE,
-                    description = FAILURE_DESCRIPTION,
-                    action = PlaceholderAction.Button(
-                        text = FAILURE_ACTION,
-                        onClick = { onEvent(DialogEvent.OnRetryClicked) },
-                    ),
+                state.failure != null && state.items.isEmpty() -> AppFailureState(
+                    failure = state.failure,
+                    onRetry = { onEvent(DialogEvent.OnRetryClicked) },
                 )
                 state.items.isEmpty() && !state.isLoading -> AppStatePlaceholder(
                     kind = PlaceholderKind.Empty,
-                    title = EMPTY_TITLE,
-                    description = EMPTY_DESCRIPTION,
+                    title = stringResource(Res.string.dialog_empty_title),
+                    description = stringResource(Res.string.dialog_empty_description),
                 )
                 else -> MessageFeed(state = state, onEvent = onEvent)
             }
@@ -165,7 +160,7 @@ private fun LoadOlderIndicator(onAppear: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         AppText(
-            text = LOADING_OLDER,
+            text = stringResource(Res.string.dialog_loading_older),
             style = AppTheme.typography.caption,
             color = AppTheme.colors.textMuted,
             textAlign = TextAlign.Center,

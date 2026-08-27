@@ -1,5 +1,6 @@
 package app.trainer.data.progress.impl
 
+import app.trainer.data.progress.AwaitingCheckIn
 import app.trainer.data.progress.CheckIn
 import app.trainer.data.progress.CheckInPhoto
 import app.trainer.data.progress.Habit
@@ -9,6 +10,19 @@ import kotlinx.datetime.LocalDate
 private const val LOG_TAG = "progress-mapper"
 
 class ProgressMapper(private val logger: Logger) {
+
+    fun toAwaitingCheckIn(response: AwaitingCheckInResponse): AwaitingCheckIn? {
+        val checkInId = response.checkInId ?: return null
+        val clientUserId = response.clientUserId ?: return null
+        val name = response.clientDisplayName ?: return null
+        val date = response.checkInDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return null
+        return AwaitingCheckIn(
+            checkInId = checkInId,
+            clientUserId = clientUserId,
+            clientDisplayName = name,
+            checkInDate = date,
+        )
+    }
 
     fun toCheckIn(response: CheckInResponse): CheckIn? {
         val id = response.id ?: return skipped(entity = "CheckIn", field = "id")
@@ -25,7 +39,10 @@ class ProgressMapper(private val logger: Logger) {
             hipsMillimeters = response.hipsMillimeters,
             wellbeing = response.wellbeing,
             sleepQuality = response.sleepQuality,
+            adherence = response.adherence,
             notes = response.notes,
+            coachComment = response.coachComment,
+            isReviewed = response.isReviewed == true,
             photos = response.photos.orEmpty().mapNotNull(::toPhoto),
         )
     }
@@ -59,7 +76,7 @@ class ProgressMapper(private val logger: Logger) {
     }
 
     private fun <T> skipped(entity: String, field: String): T? {
-        logger.error(tag = LOG_TAG, message = "Пропущен ${'$'}entity: в ответе нет или не разобрано поле ${'$'}field")
+        logger.error(tag = LOG_TAG, message = "Пропущен $entity: в ответе нет или не разобрано поле $field")
         return null
     }
 }

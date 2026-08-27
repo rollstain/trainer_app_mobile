@@ -12,7 +12,7 @@ class ClientsDataModule {
     val module = module {
         single { ClientsMapper(logger = get()) }
         single<ParticipantsRepository> {
-            ParticipantsRepositoryImpl(httpClientProvider = get(), mapper = get(), logger = get())
+            ParticipantsRepositoryImpl(httpClientProvider = get(), mapper = get())
         }
         single<ClientNotesRepository> {
             ClientNotesRepositoryImpl(httpClientProvider = get(), mapper = get())

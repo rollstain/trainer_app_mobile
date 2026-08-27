@@ -1,29 +1,30 @@
 package app.trainer.feature.schedule.presentation.coach.mvi
 
 import app.trainer.base.BaseScreenModel
+import app.trainer.base.date.ScheduleWeeks
+import app.trainer.base.date.timeOfDayOf
+import app.trainer.base.date.weekdayShortOf
+import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.schedule.CoachSchedule
 import app.trainer.data.schedule.CoachSlot
-import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.schedule.SlotChangeRequest
+import app.trainer.data.schedule.SlotStatus
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
-import app.trainer.feature.schedule.domain.ScheduleWeeks
+import app.trainer.feature.schedule.presentation.formatScheduleWeekTitle
+import app.trainer.strings.Res
+import app.trainer.strings.slot_duration_minutes
+import kotlin.time.Clock
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.datetime.Clock
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.getString
 
 private const val MINUTES_IN_HOUR = 60
-
-private val WEEKDAY_LABELS = listOf("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
-
-private val MONTH_NAMES = listOf(
-    "января", "февраля", "марта", "апреля", "мая", "июня",
-    "июля", "августа", "сентября", "октября", "ноября", "декабря",
-)
+private const val SLOT_TITLE_SEPARATOR = " · "
 
 class CoachScheduleScreenModel(
     private val scheduleRepository: ScheduleRepository,
@@ -52,9 +53,10 @@ class CoachScheduleScreenModel(
             CoachScheduleEvent.OnRetryClicked -> onFetchData()
             CoachScheduleEvent.OnPreviousWeekClicked -> shiftWeek(offset = -1)
             CoachScheduleEvent.OnNextWeekClicked -> shiftWeek(offset = 1)
-            CoachScheduleEvent.OnCreateSlotClicked -> openSlotCreation()
-            is CoachScheduleEvent.OnDateSelected -> selectDate(event.date)
+            is CoachScheduleEvent.OnCreateSlotClicked -> openSlotCreation(event.date)
+            CoachScheduleEvent.OnSlotCreated -> reloadCurrentWeek()
             is CoachScheduleEvent.OnSlotClicked -> openSlot(event.slotId)
+            CoachScheduleEvent.OnSlotActionsDismissed -> updateState { it.copy(slotActions = null) }
             is CoachScheduleEvent.OnCancelSlotClicked -> cancelSlot(event.slotId)
             is CoachScheduleEvent.OnCompleteSlotClicked -> completeSlot(event.slotId)
             is CoachScheduleEvent.OnChangeRequestResolved -> resolveRequest(
@@ -72,36 +74,60 @@ class CoachScheduleScreenModel(
         }
     }
 
-    private fun selectDate(date: LocalDate) {
-        updateState { it.copy(selectedDate = date) }
-    }
-
-    private fun openSlotCreation() {
+    private fun openSlotCreation(date: LocalDate?) {
         screenModelScope {
-            postSideEffect(CoachScheduleSideEffect.OpenSlotCreation)
+            postSideEffect(CoachScheduleSideEffect.OpenSlotCreation(dateIso = date?.toString()))
         }
     }
 
     private fun openSlot(slotId: String) {
-        screenModelScope {
-            postSideEffect(CoachScheduleSideEffect.OpenSlotDetails(slotId = slotId))
-        }
-    }
-
-    private fun cancelSlot(slotId: String) {
-        screenModelScope {
-            when (val cancelled = scheduleRepository.cancelSlot(slotId = slotId)) {
-                is RequestResult.Error -> postSideEffect(CoachScheduleSideEffect.ShowFailure(cancelled))
-                is RequestResult.Success -> reloadCurrentWeek()
+        screenModelScope { state ->
+            val slot = state.days.firstNotNullOfOrNull { day ->
+                day.slots.firstOrNull { it.slotId == slotId }
+            } ?: return@screenModelScope
+            val kind = when (slot.status) {
+                SlotStatus.BOOKED -> SlotActionsKind.Booked
+                SlotStatus.FREE -> SlotActionsKind.Free
+                SlotStatus.CANCELLED, SlotStatus.COMPLETED -> return@screenModelScope
+            }
+            updateState { current ->
+                current.copy(
+                    slotActions = SlotActions(
+                        slotId = slot.slotId,
+                        title = titleOf(slot),
+                        kind = kind,
+                        isResolving = false,
+                    )
+                )
             }
         }
     }
 
+    private fun titleOf(slot: CoachSlotRow): String = listOfNotNull(
+        slot.timeLabel,
+        slot.clientDisplayName,
+    ).joinToString(separator = SLOT_TITLE_SEPARATOR)
+
+    private fun cancelSlot(slotId: String) {
+        resolveSlot(slotId = slotId) { scheduleRepository.cancelSlot(slotId = it) }
+    }
+
     private fun completeSlot(slotId: String) {
+        resolveSlot(slotId = slotId) { scheduleRepository.completeSlot(slotId = it) }
+    }
+
+    private fun resolveSlot(slotId: String, call: suspend (String) -> RequestResult<CoachSlot>) {
         screenModelScope {
-            when (val completed = scheduleRepository.completeSlot(slotId = slotId)) {
-                is RequestResult.Error -> postSideEffect(CoachScheduleSideEffect.ShowFailure(completed))
-                is RequestResult.Success -> reloadCurrentWeek()
+            updateState { it.copy(slotActions = it.slotActions?.copy(isResolving = true)) }
+            when (val resolved = call(slotId)) {
+                is RequestResult.Error -> {
+                    updateState { it.copy(slotActions = it.slotActions?.copy(isResolving = false)) }
+                    postSideEffect(CoachScheduleSideEffect.ShowFailure(resolved))
+                }
+                is RequestResult.Success -> {
+                    updateState { it.copy(slotActions = null) }
+                    reloadCurrentWeek()
+                }
             }
         }
     }
@@ -130,7 +156,7 @@ class CoachScheduleScreenModel(
 
         when (val profile = profileRepository.me()) {
             is RequestResult.Error -> {
-                updateState { it.copy(isLoading = false, isFailed = true) }
+                updateState { it.copy(isLoading = false, failure = profile) }
                 postSideEffect(CoachScheduleSideEffect.ShowFailure(profile))
                 return null
             }
@@ -138,16 +164,14 @@ class CoachScheduleScreenModel(
                 val zoneId = profile.data.zoneId
                 val zone = zoneId?.let(weeks::parseZone)
                 if (zone == null) {
-                    updateState { it.copy(isLoading = false, isFailed = true) }
-                    postSideEffect(
-                        CoachScheduleSideEffect.ShowFailure(
-                            RequestResult.Error(
-                                statusCode = null,
-                                userMessage = "",
-                                devMessage = "У пользователя нет часового пояса тренера: zoneId=$zoneId",
-                            )
-                        )
+                    val failure = RequestResult.Error(
+                        kind = RequestFailure.Parsing,
+                        statusCode = null,
+                        userMessage = "",
+                        devMessage = "У пользователя нет часового пояса тренера: zoneId=$zoneId",
                     )
+                    updateState { it.copy(isLoading = false, failure = failure) }
+                    postSideEffect(CoachScheduleSideEffect.ShowFailure(failure))
                     return null
                 }
                 coachZone = zone
@@ -157,21 +181,21 @@ class CoachScheduleScreenModel(
     }
 
     private suspend fun loadWeek(weekStart: LocalDate, zone: TimeZone) {
-        updateState { it.copy(isLoading = true, isFailed = false) }
+        updateState { it.copy(isLoading = true, failure = null) }
 
         val schedule = scheduleRepository.coachSchedule(
             from = weeks.startInstant(weekStart = weekStart, zone = zone),
             to = weeks.endInstant(weekStart = weekStart, zone = zone),
         )
         if (schedule is RequestResult.Error) {
-            updateState { it.copy(isLoading = false, isFailed = true) }
+            updateState { it.copy(isLoading = false, failure = schedule) }
             postSideEffect(CoachScheduleSideEffect.ShowFailure(schedule))
             return
         }
 
         val requests = scheduleRepository.pendingChangeRequests()
         if (requests is RequestResult.Error) {
-            updateState { it.copy(isLoading = false, isFailed = true) }
+            updateState { it.copy(isLoading = false, failure = requests) }
             postSideEffect(CoachScheduleSideEffect.ShowFailure(requests))
             return
         }
@@ -194,14 +218,11 @@ class CoachScheduleScreenModel(
     ) {
         val today = weeks.dateOf(Clock.System.now(), zone)
         val slotsByDate = schedule.slots.groupBy { slot -> weeks.dateOf(slot.startsAt, zone) }
-        val selectedDate = state.selectedDate?.takeIf { it in weeks.datesOf(weekStart) } ?: weekStart
-
         val days = weeks.datesOf(weekStart).map { date ->
             ScheduleDay(
                 date = date,
-                weekdayLabel = WEEKDAY_LABELS[date.dayOfWeek.ordinal],
-                dayNumberLabel = date.dayOfMonth.toString(),
-                isSelected = date == selectedDate,
+                weekdayLabel = weekdayShortOf(date),
+                dayNumberLabel = date.day.toString(),
                 isToday = date == today,
                 isWeekend = date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY,
                 slots = slotsByDate[date]
@@ -214,51 +235,55 @@ class CoachScheduleScreenModel(
         val requestRows = requests.map { request ->
             ChangeRequestRow(
                 requestId = request.id,
-                slotTimeLabel = formatTime(request.slotStartsAt.toLocalDateTime(zone)),
+                slotTimeLabel = timeOfDayOf(request.slotStartsAt.toLocalDateTime(zone)),
                 proposedTimeLabel = request.proposedStartsAt?.let {
-                    formatTime(it.toLocalDateTime(zone))
+                    timeOfDayOf(it.toLocalDateTime(zone))
                 },
                 kind = request.kind,
                 requestedByDisplayName = request.requestedByDisplayName,
             )
         }
 
+        val weekTitle = formatWeekTitle(weekStart = weekStart)
+        val nextSlotId = nextSlotIdOf(days = days, today = today, zone = zone)
         updateState { current ->
             current.copy(
                 weekStart = weekStart,
-                weekTitle = formatWeekTitle(weekStart = weekStart),
-                selectedDate = selectedDate,
+                weekTitle = weekTitle,
                 days = days.toImmutableList(),
                 pendingRequests = requestRows.toImmutableList(),
+                nextSlotId = nextSlotId,
                 isLoading = false,
-                isFailed = false,
+                failure = null,
             )
         }
     }
 
-    private fun toRow(slot: CoachSlot, zone: TimeZone): CoachSlotRow {
+    private fun nextSlotIdOf(days: List<ScheduleDay>, today: LocalDate, zone: TimeZone): String? {
+        val currentTime = Clock.System.now().toLocalDateTime(zone).time
+        val minutesNow = currentTime.hour * MINUTES_IN_HOUR + currentTime.minute
+        return days
+            .firstOrNull { it.date == today }
+            ?.slots
+            ?.filter { it.status == SlotStatus.BOOKED && it.startMinutesOfDay >= minutesNow }
+            ?.minByOrNull { it.startMinutesOfDay }
+            ?.slotId
+    }
+
+    private suspend fun toRow(slot: CoachSlot, zone: TimeZone): CoachSlotRow {
         val startsAt = slot.startsAt.toLocalDateTime(zone)
         return CoachSlotRow(
             slotId = slot.id,
             startMinutesOfDay = startsAt.hour * MINUTES_IN_HOUR + startsAt.minute,
             durationMinutes = slot.durationMinutes,
-            timeLabel = formatTime(startsAt),
-            durationLabel = "${slot.durationMinutes} мин",
+            timeLabel = timeOfDayOf(startsAt),
+            durationLabel = getString(Res.string.slot_duration_minutes, slot.durationMinutes),
             status = slot.status,
             clientDisplayName = slot.clientDisplayName,
             hasPendingChangeRequest = slot.pendingChangeRequestId != null,
         )
     }
 
-    private fun formatTime(dateTime: LocalDateTime): String {
-        val hours = dateTime.hour.toString().padStart(length = 2, padChar = '0')
-        val minutes = dateTime.minute.toString().padStart(length = 2, padChar = '0')
-        return "$hours:$minutes"
-    }
-
-    private fun formatWeekTitle(weekStart: LocalDate): String {
-        val weekEnd = weeks.datesOf(weekStart).last()
-        val month = MONTH_NAMES[weekEnd.monthNumber - 1]
-        return "${weekStart.dayOfMonth}—${weekEnd.dayOfMonth} $month"
-    }
+    private suspend fun formatWeekTitle(weekStart: LocalDate): String =
+        formatScheduleWeekTitle(weekStart = weekStart, weekEnd = weeks.datesOf(weekStart).last())
 }

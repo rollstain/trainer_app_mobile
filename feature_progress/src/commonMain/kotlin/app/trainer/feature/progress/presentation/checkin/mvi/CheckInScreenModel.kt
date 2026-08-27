@@ -1,21 +1,24 @@
 package app.trainer.feature.progress.presentation.checkin.mvi
 
 import app.trainer.base.BaseScreenModel
+import app.trainer.base.date.monthGenitiveOf
 import app.trainer.base.input.WeightInput
 import app.trainer.data.progress.CheckIn
 import app.trainer.data.progress.CheckInDraft
 import app.trainer.data.progress.CheckInRepository
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.media.PickedImage
+import app.trainer.strings.Res
+import app.trainer.strings.check_in_weight_not_a_number
+import app.trainer.strings.check_in_weight_out_of_range
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.LocalDate
+import org.jetbrains.compose.resources.getString
 
 private const val MILLIMETERS_IN_CENTIMETER = 10
-
-private val MONTH_NAMES = listOf(
-    "января", "февраля", "марта", "апреля", "мая", "июня",
-    "июля", "августа", "сентября", "октября", "ноября", "декабря",
-)
+private const val MIN_BODY_WEIGHT_GRAMS = 20_000
+private const val MAX_BODY_WEIGHT_GRAMS = 400_000
 
 class CheckInScreenModel(
     dateIso: String,
@@ -33,11 +36,11 @@ class CheckInScreenModel(
 
     override fun onFetchData() {
         onFetchDataScope {
-            updateState { it.copy(isLoading = true, isFailed = false) }
+            updateState { it.copy(isLoading = true, failure = null) }
             val loaded = checkInRepository.ownCheckIns(from = checkInDate, to = checkInDate)
             when (loaded) {
                 is RequestResult.Error -> {
-                    updateState { it.copy(isLoading = false, isFailed = true) }
+                    updateState { it.copy(isLoading = false, failure = loaded) }
                     postSideEffect(CheckInSideEffect.ShowFailure(loaded))
                 }
                 is RequestResult.Success -> showLoaded(loaded.data.firstOrNull())
@@ -61,6 +64,7 @@ class CheckInScreenModel(
             }
             is CheckInEvent.OnWellbeingSelected -> updateState { it.copy(wellbeing = event.rating) }
             is CheckInEvent.OnSleepQualitySelected -> updateState { it.copy(sleepQuality = event.rating) }
+            is CheckInEvent.OnAdherenceSelected -> updateState { it.copy(adherence = event.rating) }
             is CheckInEvent.OnNotesChanged -> updateState { it.copy(notes = event.notes) }
             is CheckInEvent.OnPhotoPicked -> uploadPhoto(event.image)
             is CheckInEvent.OnPhotoRemoved -> removePhoto(event.photoId)
@@ -68,21 +72,23 @@ class CheckInScreenModel(
     }
 
     private suspend fun showLoaded(checkIn: CheckIn?) {
+        val dateLabel = formatDate(checkInDate)
         updateState { current ->
             current.copy(
-                dateLabel = formatDate(checkInDate),
+                dateLabel = dateLabel,
                 weightText = checkIn?.weightGrams?.let(weightInput::toKilogramsText).orEmpty(),
                 waistText = toCentimetersText(checkIn?.waistMillimeters),
                 chestText = toCentimetersText(checkIn?.chestMillimeters),
                 hipsText = toCentimetersText(checkIn?.hipsMillimeters),
                 wellbeing = checkIn?.wellbeing,
+                adherence = checkIn?.adherence,
                 sleepQuality = checkIn?.sleepQuality,
                 notes = checkIn?.notes.orEmpty(),
                 photos = checkIn?.photos.orEmpty()
                     .map { photo -> PhotoRow(photoId = photo.id, url = photo.downloadUrl) }
                     .toImmutableList(),
                 isLoading = false,
-                isFailed = false,
+                failure = null,
             )
         }
     }
@@ -91,17 +97,12 @@ class CheckInScreenModel(
         screenModelScope { state ->
             if (!state.isSaveEnabled) return@screenModelScope
             val weightGrams = weightInput.toGrams(state.weightText)
-            if (state.weightText.isNotBlank() && weightGrams == null) {
-                postSideEffect(
-                    CheckInSideEffect.ShowFailure(
-                        RequestResult.Error(
-                            statusCode = null,
-                            userMessage = "Проверьте вес: нужно число, например 82,4",
-                            devMessage = "Не разобран вес ${state.weightText}",
-                        )
-                    )
-                )
-                return@screenModelScope
+            if (state.weightText.isNotBlank()) {
+                val rejection = rejectWeight(text = state.weightText, grams = weightGrams)
+                if (rejection != null) {
+                    postSideEffect(CheckInSideEffect.ShowFailure(rejection))
+                    return@screenModelScope
+                }
             }
 
             updateState { it.copy(isSaving = true) }
@@ -114,6 +115,7 @@ class CheckInScreenModel(
                     hipsMillimeters = toMillimeters(state.hipsText),
                     wellbeing = state.wellbeing,
                     sleepQuality = state.sleepQuality,
+                    adherence = state.adherence,
                     notes = state.notes.trim().ifEmpty { null },
                     photoIds = state.photos.map { it.photoId },
                 ),
@@ -176,6 +178,28 @@ class CheckInScreenModel(
         }
     }
 
+    private suspend fun rejectWeight(text: String, grams: Int?): RequestResult.Error? {
+        if (grams == null) {
+            return RequestResult.Error(
+                kind = RequestFailure.Validation,
+                statusCode = null,
+                userMessage = getString(Res.string.check_in_weight_not_a_number),
+                devMessage = "Не разобран вес $text",
+            )
+        }
+        if (grams < MIN_BODY_WEIGHT_GRAMS || grams > MAX_BODY_WEIGHT_GRAMS) {
+            val minKilograms = weightInput.toKilogramsText(MIN_BODY_WEIGHT_GRAMS)
+            val maxKilograms = weightInput.toKilogramsText(MAX_BODY_WEIGHT_GRAMS)
+            return RequestResult.Error(
+                kind = RequestFailure.Validation,
+                statusCode = null,
+                userMessage = getString(Res.string.check_in_weight_out_of_range, minKilograms, maxKilograms),
+                devMessage = "Вес вне допустимого диапазона: $grams г",
+            )
+        }
+        return null
+    }
+
     private fun toMillimeters(centimetersText: String): Int? {
         val centimeters = centimetersText.trim().toIntOrNull() ?: return null
         if (centimeters <= 0) return null
@@ -187,8 +211,8 @@ class CheckInScreenModel(
         return (millimeters / MILLIMETERS_IN_CENTIMETER).toString()
     }
 
-    private fun formatDate(date: LocalDate): String {
-        val month = MONTH_NAMES[date.monthNumber - 1]
-        return "${date.dayOfMonth} $month"
+    private suspend fun formatDate(date: LocalDate): String {
+        val month = monthGenitiveOf(date)
+        return "${date.day} $month"
     }
 }

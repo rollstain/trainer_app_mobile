@@ -2,6 +2,7 @@ package app.trainer.feature.traininglog.presentation.coach.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import app.trainer.base.failure.toastMessage
 import app.trainer.feature.traininglog.presentation.coach.mvi.CoachTrainingLogScreenModel
 import app.trainer.feature.traininglog.presentation.coach.mvi.CoachTrainingLogSideEffect
 import app.trainer.navigation.LocalNavigator
@@ -36,8 +37,8 @@ class CoachTrainingLogScreen(private val clientUserId: String) : Screen {
     }
 }
 
-private fun handleSideEffect(effect: CoachTrainingLogSideEffect, toastHost: ToastHostState) {
+private suspend fun handleSideEffect(effect: CoachTrainingLogSideEffect, toastHost: ToastHostState) {
     when (effect) {
-        is CoachTrainingLogSideEffect.ShowFailure -> toastHost.show(effect.failure.userMessage)
+        is CoachTrainingLogSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
     }
 }

@@ -7,13 +7,17 @@ import kotlinx.collections.immutable.persistentListOf
 data class PersonRow(
     val userId: String,
     val displayName: String,
+    val hasMedicalNotes: Boolean,
+    val nextSessionLabel: String?,
+    val hasPendingChangeRequest: Boolean,
+    val unreadCount: Long,
 )
 
 data class PeopleState(
     val people: ImmutableList<PersonRow>,
     val isLoading: Boolean,
     val isCreatingInvite: Boolean,
-    val isFailed: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     companion object {
@@ -22,7 +26,7 @@ data class PeopleState(
             people = persistentListOf(),
             isLoading = true,
             isCreatingInvite = false,
-            isFailed = false,
+            failure = null,
         )
     }
 }

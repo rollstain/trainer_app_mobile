@@ -2,6 +2,9 @@ package app.trainer.feature.account.profile.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import app.trainer.base.failure.toastMessage
+import app.trainer.feature.account.contact.ui.CONTACT_LINK_REQUEST
+import app.trainer.feature.account.profile.mvi.ProfileEvent
 import app.trainer.feature.account.profile.mvi.ProfileScreenModel
 import app.trainer.feature.account.profile.mvi.ProfileSideEffect
 import app.trainer.navigation.LocalNavigator
@@ -22,6 +25,10 @@ class ProfileScreen : Screen {
         val screenModel: ProfileScreenModel = koinScreenModel()
         val state by screenModel.collectAsState()
 
+        navigator.handleResult(CONTACT_LINK_REQUEST) {
+            screenModel.dispatch(event = ProfileEvent.OnReloadRequested)
+        }
+
         ProfileView(
             state = state,
             onEvent = { screenModel.dispatch(event = it) },
@@ -34,14 +41,16 @@ class ProfileScreen : Screen {
     }
 }
 
-private fun handleSideEffect(
+private suspend fun handleSideEffect(
     effect: ProfileSideEffect,
     navigator: Navigator,
     toastHost: ToastHostState,
 ) {
     when (effect) {
         ProfileSideEffect.OpenContactLink -> navigator.push(Screens.ContactLink)
-        ProfileSideEffect.SignedOut -> navigator.replaceAll(Screens.Invite(code = null))
-        is ProfileSideEffect.ShowFailure -> toastHost.show(effect.failure.userMessage)
+        ProfileSideEffect.OpenExerciseLibrary -> navigator.push(Screens.ExerciseLibrary)
+        ProfileSideEffect.OpenPrograms -> navigator.push(Screens.Programs)
+        ProfileSideEffect.SignedOut -> Unit
+        is ProfileSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
     }
 }

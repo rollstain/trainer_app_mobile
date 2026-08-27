@@ -5,10 +5,10 @@ import app.trainer.data.chat.Message
 import app.trainer.data.chat.MessageAttachment
 import app.trainer.data.chat.MessageDelivery
 import app.trainer.database.AttachmentEntity
-import app.trainer.database.MessageEntity
 import app.trainer.database.DialogEntity
+import app.trainer.database.MessageEntity
 import app.trainer.logger.Logger
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 private const val LOG_TAG = "chat-mapper"
 

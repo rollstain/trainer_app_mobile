@@ -1,0 +1,65 @@
+build:
+  maxIssues: 0
+
+complexity:
+  CyclomaticComplexMethod:
+    ignoreSimpleWhenEntries: true
+    ignoreAnnotated: ['Composable']
+  LongMethod:
+    excludes: ['**/uikit/semantic/**']
+    ignoreAnnotated: ['Composable']
+  LongParameterList:
+    functionThreshold: 9
+    constructorThreshold: 10
+    ignoreAnnotated: ['Composable']
+  TooManyFunctions:
+    thresholdInFiles: 30
+    thresholdInClasses: 20
+    thresholdInInterfaces: 15
+    thresholdInObjects: 20
+    ignoreAnnotatedFunctions: ['Composable']
+    ignorePrivate: true
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+
+naming:
+  FunctionNaming:
+    ignoreAnnotated: ['Composable']
+  MatchingDeclarationName:
+    active: false
+
+style:
+  ForbiddenComment:
+    active: true
+    comments:
+      - reason: 'Задачи заводятся в трекере, а не в коде'
+        value: 'TODO:'
+      - reason: 'Задачи заводятся в трекере, а не в коде'
+        value: 'FIXME:'
+  MagicNumber:
+    excludes: ['**/uikit/semantic/**', '**/test/**', '**/androidUnitTest/**']
+    ignorePropertyDeclaration: true
+    ignoreRanges: true
+    ignoreAnnotated: ['Preview']
+  MaxLineLength:
+    maxLineLength: 120
+  ReturnCount:
+    active: false
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Composable', 'Preview']
+  WildcardImport:
+    active: true
+
+formatting:
+  ArgumentListWrapping:
+    active: false
+  Filename:
+    active: false
+  ImportOrdering:
+    layout: '*'
+  MaximumLineLength:
+    active: false
+  NoWildcardImports:
+    active: true

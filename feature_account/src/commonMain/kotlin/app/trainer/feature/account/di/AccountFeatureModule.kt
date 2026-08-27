@@ -15,9 +15,8 @@ import org.koin.dsl.module
 class AccountFeatureModule {
 
     val module = module {
-        viewModel { (prefilledCode: String) ->
+        viewModel {
             InviteScreenModel(
-                prefilledCode = prefilledCode.ifEmpty { null },
                 authRepository = get(),
                 deviceInfo = get(named(DEVICE_INFO_QUALIFIER)),
             )

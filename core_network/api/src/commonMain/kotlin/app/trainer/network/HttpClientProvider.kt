@@ -7,4 +7,6 @@ interface HttpClientProvider {
     val client: HttpClient
 
     val plainClient: HttpClient
+
+    fun forgetAuthenticatedUser()
 }

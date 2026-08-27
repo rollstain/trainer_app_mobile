@@ -1,8 +1,8 @@
 package app.trainer.data.schedule
 
 import app.trainer.entities.RequestResult
+import kotlin.time.Instant
 import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 

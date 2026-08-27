@@ -4,17 +4,19 @@ import app.trainer.data.auth.impl.di.AuthDataModule
 import app.trainer.data.chat.impl.di.ChatDataModule
 import app.trainer.data.clients.impl.di.ClientsDataModule
 import app.trainer.data.profile.impl.di.ProfileDataModule
+import app.trainer.data.program.impl.di.ProgramDataModule
 import app.trainer.data.progress.impl.di.ProgressDataModule
 import app.trainer.data.push.impl.di.PushDataModule
-import app.trainer.data.traininglog.impl.di.TrainingLogDataModule
 import app.trainer.data.schedule.impl.di.ScheduleDataModule
+import app.trainer.data.traininglog.impl.di.TrainingLogDataModule
 import app.trainer.database.di.CoreDatabaseModule
 import app.trainer.feature.account.di.AccountFeatureModule
 import app.trainer.feature.chat.di.ChatFeatureModule
 import app.trainer.feature.clientcard.di.ClientCardFeatureModule
+import app.trainer.feature.home.di.HomeFeatureModule
 import app.trainer.feature.progress.di.ProgressFeatureModule
-import app.trainer.feature.traininglog.di.TrainingLogFeatureModule
 import app.trainer.feature.schedule.di.ScheduleFeatureModule
+import app.trainer.feature.traininglog.di.TrainingLogFeatureModule
 import app.trainer.logger.di.CoreLoggerModule
 import app.trainer.network.impl.NetworkConfig
 import app.trainer.network.impl.di.CoreNetworkModule
@@ -30,6 +32,7 @@ fun sharedModules(networkConfig: NetworkConfig, deviceInfo: String): List<Module
     AuthDataModule().module,
     ProfileDataModule().module,
     ProgressDataModule().module,
+    ProgramDataModule().module,
     PushDataModule().module,
     TrainingLogDataModule().module,
     ChatDataModule().module,
@@ -38,6 +41,7 @@ fun sharedModules(networkConfig: NetworkConfig, deviceInfo: String): List<Module
     AccountFeatureModule().module,
     ChatFeatureModule().module,
     ClientCardFeatureModule().module,
+    HomeFeatureModule().module,
     ProgressFeatureModule().module,
     TrainingLogFeatureModule().module,
     ScheduleFeatureModule().module,

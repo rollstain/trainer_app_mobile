@@ -20,12 +20,13 @@ data class CheckInState(
     val hipsText: String,
     val wellbeing: Int?,
     val sleepQuality: Int?,
+    val adherence: Int?,
     val notes: String,
     val photos: ImmutableList<PhotoRow>,
     val isLoading: Boolean,
     val isSaving: Boolean,
     val isUploadingPhoto: Boolean,
-    val isFailed: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     val canAddPhoto: Boolean
@@ -39,6 +40,7 @@ data class CheckInState(
                 hipsText.isNotBlank() ||
                 wellbeing != null ||
                 sleepQuality != null ||
+                adherence != null ||
                 notes.isNotBlank() ||
                 photos.isNotEmpty()
             )
@@ -53,12 +55,13 @@ data class CheckInState(
             hipsText = "",
             wellbeing = null,
             sleepQuality = null,
+            adherence = null,
             notes = "",
             photos = persistentListOf(),
             isLoading = true,
             isSaving = false,
             isUploadingPhoto = false,
-            isFailed = false,
+            failure = null,
         )
     }
 }
@@ -80,6 +83,8 @@ sealed interface CheckInEvent {
     data class OnWellbeingSelected(val rating: Int) : CheckInEvent
 
     data class OnSleepQualitySelected(val rating: Int) : CheckInEvent
+
+    data class OnAdherenceSelected(val rating: Int) : CheckInEvent
 
     data class OnNotesChanged(val notes: String) : CheckInEvent
 

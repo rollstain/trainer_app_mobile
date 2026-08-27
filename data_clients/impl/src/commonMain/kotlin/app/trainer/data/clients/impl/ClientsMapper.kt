@@ -3,9 +3,10 @@ package app.trainer.data.clients.impl
 import app.trainer.data.clients.ClientNote
 import app.trainer.data.clients.ClientNoteKind
 import app.trainer.data.clients.CoachClient
+import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.clients.CoachSummary
 import app.trainer.logger.Logger
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 private const val LOG_TAG = "clients-mapper"
 
@@ -50,10 +51,34 @@ class ClientsMapper(private val logger: Logger) {
         )
     }
 
+    fun toCoachPolicy(response: CoachPolicyResponse): CoachPolicy? {
+        val cancellationWindowHours = response.cancellationWindowHours
+            ?: return skipped(entity = "CoachPolicy", field = "cancellationWindowHours")
+        val reminderHour = response.reminderHour ?: return skipped(entity = "CoachPolicy", field = "reminderHour")
+        val sessionRemindersEnabled = response.sessionRemindersEnabled
+            ?: return skipped(entity = "CoachPolicy", field = "sessionRemindersEnabled")
+        val diaryRemindersEnabled = response.diaryRemindersEnabled
+            ?: return skipped(entity = "CoachPolicy", field = "diaryRemindersEnabled")
+        val checkInRemindersEnabled = response.checkInRemindersEnabled
+            ?: return skipped(entity = "CoachPolicy", field = "checkInRemindersEnabled")
+        return CoachPolicy(
+            cancellationWindowHours = cancellationWindowHours,
+            reminderHour = reminderHour,
+            sessionRemindersEnabled = sessionRemindersEnabled,
+            diaryRemindersEnabled = diaryRemindersEnabled,
+            checkInRemindersEnabled = checkInRemindersEnabled,
+        )
+    }
+
     fun toCoachClient(response: CoachClientResponse): CoachClient? {
         val userId = response.userId ?: return skipped(entity = "CoachClient", field = "userId")
         val displayName = response.displayName ?: return skipped(entity = "CoachClient", field = "displayName")
-        return CoachClient(userId = userId, displayName = displayName)
+        return CoachClient(
+            userId = userId,
+            displayName = displayName,
+            hasMedicalNotes = response.hasMedicalNotes == true,
+            linkedAt = parseInstant(response.linkedAt),
+        )
     }
 
     private fun parseInstant(raw: String?): Instant? {

@@ -8,6 +8,9 @@ import app.trainer.network.TokenStorage
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +23,10 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 private const val LOG_TAG = "chat-socket"
-private const val RECONNECT_DELAY_MS = 3_000L
+private const val RECONNECT_MIN_DELAY_MS = 1_000L
+private const val RECONNECT_MAX_DELAY_MS = 60_000L
+private const val RECONNECT_BACKOFF_FACTOR = 2
+private val CONNECTION_CONSIDERED_STABLE_AFTER = 30.seconds
 
 class ChatRealtimeImpl(
     private val httpClientProvider: HttpClientProvider,
@@ -36,6 +42,7 @@ class ChatRealtimeImpl(
 
     private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
     private var connection: Job? = null
+    private var reconnectDelayMs = RECONNECT_MIN_DELAY_MS
 
     override fun start() {
         if (connection?.isActive == true) return
@@ -57,8 +64,14 @@ class ChatRealtimeImpl(
             } catch (failure: Exception) {
                 logger.error(tag = LOG_TAG, message = "Соединение разорвано", throwable = failure)
             }
-            delay(RECONNECT_DELAY_MS)
+            awaitBeforeReconnect()
         }
+    }
+
+    private suspend fun awaitBeforeReconnect() {
+        val plannedDelayMs = reconnectDelayMs
+        reconnectDelayMs = (plannedDelayMs * RECONNECT_BACKOFF_FACTOR).coerceAtMost(RECONNECT_MAX_DELAY_MS)
+        delay(plannedDelayMs / 2 + Random.nextLong(plannedDelayMs / 2 + 1))
     }
 
     private suspend fun listen() {
@@ -66,12 +79,16 @@ class ChatRealtimeImpl(
             logger.info(tag = LOG_TAG, message = "Нет токена, подключение отложено")
             return
         }
+        val attemptStarted = TimeSource.Monotonic.markNow()
         httpClientProvider.client.webSocket(webSocketUrl) {
             logger.info(tag = LOG_TAG, message = "Подключено")
             for (frame in incoming) {
                 if (frame !is Frame.Text) continue
                 handleFrame(frame.readText())
             }
+        }
+        if (attemptStarted.elapsedNow() >= CONNECTION_CONSIDERED_STABLE_AFTER) {
+            reconnectDelayMs = RECONNECT_MIN_DELAY_MS
         }
     }
 

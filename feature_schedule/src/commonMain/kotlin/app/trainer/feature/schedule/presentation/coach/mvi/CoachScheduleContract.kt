@@ -22,7 +22,6 @@ data class ScheduleDay(
     val date: LocalDate,
     val weekdayLabel: String,
     val dayNumberLabel: String,
-    val isSelected: Boolean,
     val isToday: Boolean,
     val isWeekend: Boolean,
     val slots: ImmutableList<CoachSlotRow>,
@@ -36,14 +35,24 @@ data class ChangeRequestRow(
     val requestedByDisplayName: String?,
 )
 
+enum class SlotActionsKind { Booked, Free }
+
+data class SlotActions(
+    val slotId: String,
+    val title: String,
+    val kind: SlotActionsKind,
+    val isResolving: Boolean,
+)
+
 data class CoachScheduleState(
     val weekStart: LocalDate?,
     val weekTitle: String,
-    val selectedDate: LocalDate?,
     val days: ImmutableList<ScheduleDay>,
     val pendingRequests: ImmutableList<ChangeRequestRow>,
+    val nextSlotId: String?,
+    val slotActions: SlotActions?,
     val isLoading: Boolean,
-    val isFailed: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     companion object {
@@ -51,11 +60,12 @@ data class CoachScheduleState(
         fun initial(): CoachScheduleState = CoachScheduleState(
             weekStart = null,
             weekTitle = "",
-            selectedDate = null,
             days = persistentListOf(),
             pendingRequests = persistentListOf(),
+            nextSlotId = null,
+            slotActions = null,
             isLoading = true,
-            isFailed = false,
+            failure = null,
         )
     }
 }
@@ -68,11 +78,13 @@ sealed interface CoachScheduleEvent {
 
     data object OnNextWeekClicked : CoachScheduleEvent
 
-    data object OnCreateSlotClicked : CoachScheduleEvent
+    data class OnCreateSlotClicked(val date: LocalDate?) : CoachScheduleEvent
 
-    data class OnDateSelected(val date: LocalDate) : CoachScheduleEvent
+    data object OnSlotCreated : CoachScheduleEvent
 
     data class OnSlotClicked(val slotId: String) : CoachScheduleEvent
+
+    data object OnSlotActionsDismissed : CoachScheduleEvent
 
     data class OnCancelSlotClicked(val slotId: String) : CoachScheduleEvent
 
@@ -85,7 +97,5 @@ sealed interface CoachScheduleSideEffect {
 
     data class ShowFailure(val failure: RequestResult.Error) : CoachScheduleSideEffect
 
-    data class OpenSlotDetails(val slotId: String) : CoachScheduleSideEffect
-
-    data object OpenSlotCreation : CoachScheduleSideEffect
+    data class OpenSlotCreation(val dateIso: String?) : CoachScheduleSideEffect
 }

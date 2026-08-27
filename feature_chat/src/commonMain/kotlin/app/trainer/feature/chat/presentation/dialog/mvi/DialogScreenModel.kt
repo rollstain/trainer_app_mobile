@@ -1,30 +1,35 @@
 package app.trainer.feature.chat.presentation.dialog.mvi
 
 import app.trainer.base.BaseScreenModel
+import app.trainer.base.date.monthGenitiveOf
+import app.trainer.base.date.timeOfDayOf
 import app.trainer.data.chat.ChatRepository
+import app.trainer.data.chat.Dialog
 import app.trainer.data.chat.Message
 import app.trainer.data.chat.MessageAttachment
 import app.trainer.data.chat.MessageDelivery
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.entities.RequestResult
+import app.trainer.strings.Res
+import app.trainer.strings.attachment_size_bytes
+import app.trainer.strings.attachment_size_kilobytes
+import app.trainer.strings.attachment_size_megabytes
+import app.trainer.strings.dialog_client_role
+import app.trainer.strings.dialog_coach_role
+import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.jetbrains.compose.resources.getString
 
 private const val IMAGE_CONTENT_TYPE_PREFIX = "image/"
 private const val BYTES_IN_KILOBYTE = 1024
 private const val BYTES_IN_MEGABYTE = 1024 * 1024
-
-private val MONTH_NAMES = listOf(
-    "ЯНВАРЯ", "ФЕВРАЛЯ", "МАРТА", "АПРЕЛЯ", "МАЯ", "ИЮНЯ",
-    "ИЮЛЯ", "АВГУСТА", "СЕНТЯБРЯ", "ОКТЯБРЯ", "НОЯБРЯ", "ДЕКАБРЯ",
-)
 
 class DialogScreenModel(
     private val dialogId: String,
@@ -68,7 +73,7 @@ class DialogScreenModel(
         if (currentUserId != null) return true
         return when (val profile = profileRepository.me()) {
             is RequestResult.Error -> {
-                updateState { it.copy(isLoading = false, isFailed = true) }
+                updateState { it.copy(isLoading = false, failure = profile) }
                 postSideEffect(DialogSideEffect.ShowFailure(profile))
                 false
             }
@@ -86,14 +91,17 @@ class DialogScreenModel(
             attachmentUrls,
         ) { dialog, messages, urls -> Triple(dialog, messages, urls) }
             .collectLatest { (dialog, messages, urls) ->
+                val peerRoleLabel = dialog?.let { toPeerRoleLabel(it) }
+                val items = toItems(
+                    messages = messages,
+                    peerReadSeq = dialog?.peerReadSeq ?: 0,
+                    urls = urls,
+                ).toImmutableList()
                 updateState { current ->
                     current.copy(
                         peerDisplayName = dialog?.peerDisplayName ?: current.peerDisplayName,
-                        items = toItems(
-                            messages = messages,
-                            peerReadSeq = dialog?.peerReadSeq ?: 0,
-                            urls = urls,
-                        ).toImmutableList(),
+                        peerRoleLabel = peerRoleLabel ?: current.peerRoleLabel,
+                        items = items,
                         isLoading = false,
                     )
                 }
@@ -111,12 +119,14 @@ class DialogScreenModel(
         screenModelScope {
             when (val synced = chatRepository.syncMessages(dialogId = dialogId)) {
                 is RequestResult.Error -> {
-                    updateState { current -> current.copy(isFailed = current.items.isEmpty()) }
+                    updateState { current ->
+                        current.copy(failure = synced.takeIf { current.items.isEmpty() })
+                    }
                     postSideEffect(DialogSideEffect.ShowFailure(synced))
                 }
                 is RequestResult.Success -> {
                     chatRepository.refreshDialogs()
-                    updateState { it.copy(isFailed = false) }
+                    updateState { it.copy(failure = null) }
                 }
             }
         }
@@ -160,6 +170,7 @@ class DialogScreenModel(
             )
             updateState { it.copy(isUploading = false) }
             uploadedSizes[upload.attachmentId] = event.bytes.size.toLong()
+            val sizeLabel = formatSize(event.bytes.size.toLong())
             when (uploaded) {
                 is RequestResult.Error -> postSideEffect(DialogSideEffect.ShowFailure(uploaded))
                 is RequestResult.Success -> updateState { current ->
@@ -169,7 +180,7 @@ class DialogScreenModel(
                                 attachmentId = upload.attachmentId,
                                 originalName = event.fileName,
                                 contentType = event.contentType,
-                                sizeLabel = formatSize(event.bytes.size.toLong()),
+                                sizeLabel = sizeLabel,
                                 isImage = event.contentType.startsWith(IMAGE_CONTENT_TYPE_PREFIX),
                                 state = PendingAttachmentState.Ready,
                             )
@@ -256,7 +267,16 @@ class DialogScreenModel(
         }
     }
 
-    private fun toItems(
+    private suspend fun toPeerRoleLabel(dialog: Dialog): String {
+        val role = if (dialog.peerUserId == dialog.clientUserId) {
+            Res.string.dialog_client_role
+        } else {
+            Res.string.dialog_coach_role
+        }
+        return getString(role)
+    }
+
+    private suspend fun toItems(
         messages: List<Message>,
         peerReadSeq: Long,
         urls: Map<String, String>,
@@ -309,22 +329,20 @@ class DialogScreenModel(
         }
     }
 
-    private fun formatTimeOfDay(instant: Instant, zone: TimeZone): String {
-        val dateTime = instant.toLocalDateTime(zone)
-        val hours = dateTime.hour.toString().padStart(length = 2, padChar = '0')
-        val minutes = dateTime.minute.toString().padStart(length = 2, padChar = '0')
-        return "$hours:$minutes"
+    private fun formatTimeOfDay(instant: Instant, zone: TimeZone): String =
+        timeOfDayOf(instant.toLocalDateTime(zone))
+
+    private suspend fun formatSize(sizeBytes: Long): String = when {
+        sizeBytes >= BYTES_IN_MEGABYTE ->
+            getString(Res.string.attachment_size_megabytes, sizeBytes / BYTES_IN_MEGABYTE)
+        sizeBytes >= BYTES_IN_KILOBYTE ->
+            getString(Res.string.attachment_size_kilobytes, sizeBytes / BYTES_IN_KILOBYTE)
+        else -> getString(Res.string.attachment_size_bytes, sizeBytes)
     }
 
-    private fun formatSize(sizeBytes: Long): String = when {
-        sizeBytes >= BYTES_IN_MEGABYTE -> "${sizeBytes / BYTES_IN_MEGABYTE} МБ"
-        sizeBytes >= BYTES_IN_KILOBYTE -> "${sizeBytes / BYTES_IN_KILOBYTE} КБ"
-        else -> "$sizeBytes Б"
-    }
-
-    private fun formatDay(date: LocalDate): String {
-        val month = MONTH_NAMES[date.monthNumber - 1]
-        return "${date.dayOfMonth} $month"
+    private suspend fun formatDay(date: LocalDate): String {
+        val month = monthGenitiveOf(date)
+        return "${date.day} $month"
     }
 
     private fun toAttachmentRow(attachment: MessageAttachment, url: String?): AttachmentRow = AttachmentRow(

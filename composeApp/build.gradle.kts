@@ -22,6 +22,7 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
+            api(project(":core_strings"))
             api(project(":navigation"))
             api(project(":uikit"))
             api(project(":core_base_feature"))
@@ -46,7 +47,10 @@ kotlin {
             api(project(":data_schedule:api"))
             api(project(":data_schedule:impl"))
             api(project(":feature_account"))
+            api(project(":data_program:api"))
+            api(project(":data_program:impl"))
             api(project(":feature_chat"))
+            api(project(":feature_home"))
             api(project(":feature_client_card"))
             api(project(":feature_training_log"))
             api(project(":feature_progress"))
@@ -61,3 +65,4 @@ kotlin {
         }
     }
 }
+

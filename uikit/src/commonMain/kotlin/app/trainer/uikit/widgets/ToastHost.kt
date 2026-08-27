@@ -19,10 +19,12 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import app.trainer.uikit.AppTheme
+import app.trainer.uikit.resources.Res
+import app.trainer.uikit.resources.toast_default_action
 import kotlinx.coroutines.delay
+import org.jetbrains.compose.resources.stringResource
 
 private const val TOAST_VISIBLE_MILLIS = 4_000L
-private const val DEFAULT_ACTION_TEXT = "Понятно"
 
 @Stable
 class ToastHostState {
@@ -68,7 +70,7 @@ fun AppToastHost(
             ) {
                 AppToast(
                     text = message.orEmpty(),
-                    actionText = DEFAULT_ACTION_TEXT,
+                    actionText = stringResource(Res.string.toast_default_action),
                     onAction = state::dismiss,
                 )
             }

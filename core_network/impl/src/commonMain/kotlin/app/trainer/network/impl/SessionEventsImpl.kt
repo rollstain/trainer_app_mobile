@@ -5,18 +5,29 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 
-private const val EXPIRED_EVENTS_BUFFER = 1
+private const val SESSION_EVENTS_BUFFER = 1
 
 class SessionEventsImpl : SessionEvents {
 
     private val mutableExpired = MutableSharedFlow<Unit>(
-        extraBufferCapacity = EXPIRED_EVENTS_BUFFER,
+        extraBufferCapacity = SESSION_EVENTS_BUFFER,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    private val mutableAuthChanged = MutableSharedFlow<Unit>(
+        extraBufferCapacity = SESSION_EVENTS_BUFFER,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
 
     override val expired: Flow<Unit> = mutableExpired
 
+    override val authChanged: Flow<Unit> = mutableAuthChanged
+
     override suspend fun notifyExpired() {
         mutableExpired.emit(Unit)
+    }
+
+    override suspend fun notifyAuthChanged() {
+        mutableAuthChanged.emit(Unit)
     }
 }

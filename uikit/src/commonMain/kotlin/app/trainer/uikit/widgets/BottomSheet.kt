@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,6 +56,7 @@ fun AppBottomSheetContainer(
                     bottomEnd = AppTheme.radius.none,
                 ),
             )
+            .navigationBarsPadding()
             .padding(
                 top = SHEET_PADDING_TOP,
                 start = SHEET_PADDING_HORIZONTAL,
@@ -101,7 +104,7 @@ fun AppSheetActionRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(AppTheme.sizing.sheetRowHeight)
+                .heightIn(min = AppTheme.sizing.sheetRowHeight)
                 .clickable(onClick = onClick),
             horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
             verticalAlignment = Alignment.CenterVertically,

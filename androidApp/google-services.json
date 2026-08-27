@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "670916102715",
+    "project_id": "trainerapp-c667b",
+    "storage_bucket": "trainerapp-c667b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670916102715:android:a84dc626d9c77da518aa1e",
+        "android_client_info": {
+          "package_name": "app.trainer.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCwGi_B_96Z7t0YtAOxrF1GTCueIcT6-Es"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

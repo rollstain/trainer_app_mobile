@@ -27,7 +27,7 @@ data class CoachTrainingLogState(
     val totalVolumeLabel: String,
     val days: ImmutableList<LoggedDayRow>,
     val isLoading: Boolean,
-    val isFailed: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     companion object {
@@ -41,7 +41,7 @@ data class CoachTrainingLogState(
             totalVolumeLabel = "",
             days = persistentListOf(),
             isLoading = true,
-            isFailed = false,
+            failure = null,
         )
     }
 }

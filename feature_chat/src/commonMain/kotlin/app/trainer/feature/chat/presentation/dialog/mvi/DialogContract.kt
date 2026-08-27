@@ -43,6 +43,7 @@ data class PendingAttachment(
 
 data class DialogState(
     val peerDisplayName: String,
+    val peerRoleLabel: String,
     val items: ImmutableList<ChatItem>,
     val draft: String,
     val pendingAttachments: ImmutableList<PendingAttachment>,
@@ -51,7 +52,7 @@ data class DialogState(
     val isUploading: Boolean,
     val isLoadingOlder: Boolean,
     val hasMoreHistory: Boolean,
-    val isFailed: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     val isSendEnabled: Boolean
@@ -61,6 +62,7 @@ data class DialogState(
 
         fun initial(): DialogState = DialogState(
             peerDisplayName = "",
+            peerRoleLabel = "",
             items = persistentListOf(),
             draft = "",
             pendingAttachments = persistentListOf(),
@@ -69,7 +71,7 @@ data class DialogState(
             isUploading = false,
             isLoadingOlder = false,
             hasMoreHistory = true,
-            isFailed = false,
+            failure = null,
         )
     }
 }

@@ -1,17 +1,20 @@
 package app.trainer.feature.chat.presentation.list.mvi
 
 import app.trainer.base.BaseScreenModel
+import app.trainer.base.date.timeOfDayOf
 import app.trainer.data.chat.ChatRepository
 import app.trainer.data.chat.Dialog
+import app.trainer.data.profile.ProfileRepository
 import app.trainer.entities.RequestResult
+import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 class ChatListScreenModel(
     private val chatRepository: ChatRepository,
+    private val profileRepository: ProfileRepository,
 ) : BaseScreenModel<ChatListState, ChatListSideEffect, ChatListEvent>(
     initialState = ChatListState.initial(),
 ) {
@@ -22,9 +25,28 @@ class ChatListScreenModel(
 
     override fun onFetchData() {
         onFetchDataScope {
+            if (!loadRole()) return@onFetchDataScope
             observeDialogs()
         }
         refresh(isPullToRefresh = false)
+    }
+
+    private suspend fun loadRole(): Boolean {
+        profileRepository.lastKnownIsCoach()?.let { isCoach ->
+            updateState { it.copy(isCoach = isCoach) }
+            return true
+        }
+        return when (val profile = profileRepository.me()) {
+            is RequestResult.Error -> {
+                updateState { it.copy(isLoading = false, failure = profile) }
+                postSideEffect(ChatListSideEffect.ShowFailure(profile))
+                false
+            }
+            is RequestResult.Success -> {
+                updateState { it.copy(isCoach = profile.data.coachId != null) }
+                true
+            }
+        }
     }
 
     override fun dispatch(event: ChatListEvent) {
@@ -42,6 +64,7 @@ class ChatListScreenModel(
                 current.copy(
                     dialogs = dialogs.map(::toRow).toImmutableList(),
                     isLoading = false,
+                    failure = if (dialogs.isEmpty()) current.failure else null,
                 )
             }
         }
@@ -49,20 +72,19 @@ class ChatListScreenModel(
 
     private fun refresh(isPullToRefresh: Boolean) {
         screenModelScope {
-            updateState { it.copy(isRefreshing = isPullToRefresh, isFailed = false) }
+            updateState { it.copy(isRefreshing = isPullToRefresh, failure = null) }
             when (val refreshed = chatRepository.refreshDialogs()) {
                 is RequestResult.Error -> {
                     updateState { current ->
                         current.copy(
-                            isLoading = false,
                             isRefreshing = false,
-                            isFailed = current.dialogs.isEmpty(),
+                            failure = refreshed.takeIf { current.dialogs.isEmpty() },
                         )
                     }
                     postSideEffect(ChatListSideEffect.ShowFailure(refreshed))
                 }
                 is RequestResult.Success -> {
-                    updateState { it.copy(isLoading = false, isRefreshing = false, isFailed = false) }
+                    updateState { it.copy(isRefreshing = false, failure = null) }
                 }
             }
         }
@@ -88,10 +110,6 @@ class ChatListScreenModel(
         unreadCount = dialog.unreadCount,
     )
 
-    private fun formatTimeOfDay(instant: Instant): String {
-        val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-        val hours = dateTime.hour.toString().padStart(length = 2, padChar = '0')
-        val minutes = dateTime.minute.toString().padStart(length = 2, padChar = '0')
-        return "$hours:$minutes"
-    }
+    private fun formatTimeOfDay(instant: Instant): String =
+        timeOfDayOf(instant.toLocalDateTime(TimeZone.currentSystemDefault()))
 }

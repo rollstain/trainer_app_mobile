@@ -8,9 +8,11 @@ interface ParticipantsRepository {
 
     suspend fun clientsOfCoach(): RequestResult<List<CoachClient>>
 
-    suspend fun coachPolicy(): RequestResult<Int>
+    suspend fun archiveClient(clientUserId: String): RequestResult<Unit>
 
-    suspend fun updateCoachPolicy(cancellationWindowHours: Int): RequestResult<Int>
+    suspend fun coachPolicy(): RequestResult<CoachPolicy>
+
+    suspend fun updateCoachPolicy(policy: CoachPolicy): RequestResult<CoachPolicy>
 }
 
 interface ClientNotesRepository {

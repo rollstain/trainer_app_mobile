@@ -2,6 +2,9 @@ package app.trainer.feature.progress.presentation.progress.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import app.trainer.base.failure.toastMessage
+import app.trainer.feature.progress.presentation.checkin.ui.CHECK_IN_SAVED
+import app.trainer.feature.progress.presentation.progress.mvi.ProgressEvent
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressScreenModel
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressSideEffect
 import app.trainer.navigation.LocalNavigator
@@ -22,6 +25,10 @@ class ProgressScreen : Screen {
         val screenModel: ProgressScreenModel = koinScreenModel()
         val state by screenModel.collectAsState()
 
+        navigator.handleResult(CHECK_IN_SAVED) {
+            screenModel.dispatch(event = ProgressEvent.OnReloadRequested)
+        }
+
         ProgressView(
             state = state,
             onEvent = { screenModel.dispatch(event = it) },
@@ -29,7 +36,7 @@ class ProgressScreen : Screen {
 
         screenModel.collectSideEffect { effect ->
             when (effect) {
-                is ProgressSideEffect.ShowFailure -> toastHost.show(effect.failure.userMessage)
+                is ProgressSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
                 is ProgressSideEffect.OpenCheckIn -> navigator.push(Screens.CheckIn(dateIso = effect.dateIso))
             }
         }

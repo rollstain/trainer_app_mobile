@@ -8,44 +8,61 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import app.trainer.base.BaseScreenModel
+import app.trainer.base.failure.toastMessage
 import app.trainer.data.traininglog.ExerciseKind
 import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.entities.RequestResult
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.Navigator
 import app.trainer.navigation.Screen
+import app.trainer.navigation.ScreenRequestKey
 import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
+import app.trainer.strings.Res
+import app.trainer.strings.exercise_fields_bodyweight
+import app.trainer.strings.exercise_fields_cardio
+import app.trainer.strings.exercise_fields_strength
+import app.trainer.strings.exercise_kind_bodyweight
+import app.trainer.strings.exercise_kind_cardio
+import app.trainer.strings.exercise_kind_strength
+import app.trainer.strings.new_exercise_description_label
+import app.trainer.strings.new_exercise_kind_hint
+import app.trainer.strings.new_exercise_muscle_label
+import app.trainer.strings.new_exercise_name_label
+import app.trainer.strings.new_exercise_save_action
+import app.trainer.strings.new_exercise_saved_message
+import app.trainer.strings.new_exercise_title
+import app.trainer.strings.new_exercise_video_label
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTextField
+import app.trainer.uikit.widgets.AppTopBar
 import app.trainer.uikit.widgets.ButtonSize
 import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.LocalToastHost
+import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
 import app.trainer.uikit.widgets.ToastHostState
 import app.trainer.uikit.widgets.TopBarLeading
-import app.trainer.uikit.widgets.AppTopBar
-
-private const val TITLE = "Новое упражнение"
-private const val NAME_LABEL = "Название"
-private const val MUSCLE_LABEL = "Группа мышц"
-private const val SAVE_ACTION = "Сохранить в справочник"
-private const val KIND_HINT = "Тип нельзя изменить после первой записи."
-private const val SAVED_MESSAGE = "Упражнение добавлено"
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 
 data class NewExerciseState(
     val name: String,
     val muscleGroup: String,
     val kind: ExerciseKind,
+    val description: String,
+    val videoUrl: String,
     val isSaving: Boolean,
 ) {
 
@@ -55,6 +72,8 @@ data class NewExerciseState(
     companion object {
 
         fun initial(): NewExerciseState = NewExerciseState(
+            description = "",
+            videoUrl = "",
             name = "",
             muscleGroup = "",
             kind = ExerciseKind.STRENGTH,
@@ -72,6 +91,10 @@ sealed interface NewExerciseEvent {
     data class OnMuscleGroupChanged(val muscleGroup: String) : NewExerciseEvent
 
     data class OnKindChanged(val kind: ExerciseKind) : NewExerciseEvent
+
+    data class OnDescriptionChanged(val text: String) : NewExerciseEvent
+
+    data class OnVideoUrlChanged(val text: String) : NewExerciseEvent
 }
 
 sealed interface NewExerciseSideEffect {
@@ -97,6 +120,8 @@ class NewExerciseScreenModel(
                 it.copy(muscleGroup = event.muscleGroup)
             }
             is NewExerciseEvent.OnKindChanged -> updateState { it.copy(kind = event.kind) }
+            is NewExerciseEvent.OnDescriptionChanged -> updateState { it.copy(description = event.text) }
+            is NewExerciseEvent.OnVideoUrlChanged -> updateState { it.copy(videoUrl = event.text) }
         }
     }
 
@@ -108,6 +133,8 @@ class NewExerciseScreenModel(
                 name = state.name.trim(),
                 muscleGroup = state.muscleGroup.trim().ifEmpty { null },
                 kind = state.kind,
+                description = state.description.trim().ifEmpty { null },
+                videoUrl = state.videoUrl.trim().ifEmpty { null },
             )
             updateState { it.copy(isSaving = false) }
             when (created) {
@@ -117,6 +144,8 @@ class NewExerciseScreenModel(
         }
     }
 }
+
+internal val EXERCISE_CREATED = ScreenRequestKey<Unit>("exerciseCreated")
 
 class NewExerciseScreen : Screen {
 
@@ -136,10 +165,10 @@ class NewExerciseScreen : Screen {
         screenModel.collectSideEffect { effect ->
             when (effect) {
                 NewExerciseSideEffect.Saved -> {
-                    toastHost.show(SAVED_MESSAGE)
-                    navigator.pop()
+                    toastHost.show(getString(Res.string.new_exercise_saved_message))
+                    navigator.popWithResult(EXERCISE_CREATED, Unit)
                 }
-                is NewExerciseSideEffect.ShowFailure -> toastHost.show(effect.failure.userMessage)
+                is NewExerciseSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
             }
         }
     }
@@ -152,20 +181,26 @@ private fun NewExerciseView(
     onBackClick: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize().screenBackground()) {
-        AppTopBar(title = TITLE, leading = TopBarLeading.Back(onClick = onBackClick))
+        AppTopBar(
+            title = stringResource(Res.string.new_exercise_title),
+            leading = TopBarLeading.Back(onClick = onBackClick),
+        )
         Column(
-            modifier = Modifier.weight(1f).padding(AppTheme.spacing.dp16),
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(AppTheme.spacing.dp16),
             verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp16),
         ) {
             AppTextField(
                 value = state.name,
                 onValueChange = { onEvent(NewExerciseEvent.OnNameChanged(it)) },
-                label = TextFieldLabel.Text(NAME_LABEL),
+                label = TextFieldLabel.Text(stringResource(Res.string.new_exercise_name_label)),
             )
             AppTextField(
                 value = state.muscleGroup,
                 onValueChange = { onEvent(NewExerciseEvent.OnMuscleGroupChanged(it)) },
-                label = TextFieldLabel.Text(MUSCLE_LABEL),
+                label = TextFieldLabel.Text(stringResource(Res.string.new_exercise_muscle_label)),
             )
             ExerciseKind.entries.forEach { kind ->
                 KindOption(
@@ -174,15 +209,26 @@ private fun NewExerciseView(
                     onClick = { onEvent(NewExerciseEvent.OnKindChanged(kind)) },
                 )
             }
+            AppTextField(
+                value = state.description,
+                onValueChange = { onEvent(NewExerciseEvent.OnDescriptionChanged(it)) },
+                kind = TextFieldKind.Multiline,
+                label = TextFieldLabel.Text(stringResource(Res.string.new_exercise_description_label)),
+            )
+            AppTextField(
+                value = state.videoUrl,
+                onValueChange = { onEvent(NewExerciseEvent.OnVideoUrlChanged(it)) },
+                label = TextFieldLabel.Text(stringResource(Res.string.new_exercise_video_label)),
+            )
             AppText(
-                text = KIND_HINT,
+                text = stringResource(Res.string.new_exercise_kind_hint),
                 style = AppTheme.typography.caption,
                 color = AppTheme.colors.textMuted,
             )
         }
         AppButton(
             modifier = Modifier.fillMaxWidth().padding(AppTheme.spacing.dp16),
-            text = SAVE_ACTION,
+            text = stringResource(Res.string.new_exercise_save_action),
             onClick = { onEvent(NewExerciseEvent.OnSaveClicked) },
             tone = ButtonTone.Primary,
             size = ButtonSize.Large,
@@ -227,14 +273,16 @@ private fun KindOption(kind: ExerciseKind, isSelected: Boolean, onClick: () -> U
     }
 }
 
+@Composable
 private fun kindTitle(kind: ExerciseKind): String = when (kind) {
-    ExerciseKind.STRENGTH -> "Силовое"
-    ExerciseKind.BODYWEIGHT -> "Свой вес"
-    ExerciseKind.CARDIO -> "Кардио"
+    ExerciseKind.STRENGTH -> stringResource(Res.string.exercise_kind_strength)
+    ExerciseKind.BODYWEIGHT -> stringResource(Res.string.exercise_kind_bodyweight)
+    ExerciseKind.CARDIO -> stringResource(Res.string.exercise_kind_cardio)
 }
 
+@Composable
 private fun kindHint(kind: ExerciseKind): String = when (kind) {
-    ExerciseKind.STRENGTH -> "повторы и вес"
-    ExerciseKind.BODYWEIGHT -> "только повторы"
-    ExerciseKind.CARDIO -> "минуты и метры"
+    ExerciseKind.STRENGTH -> stringResource(Res.string.exercise_fields_strength)
+    ExerciseKind.BODYWEIGHT -> stringResource(Res.string.exercise_fields_bodyweight)
+    ExerciseKind.CARDIO -> stringResource(Res.string.exercise_fields_cardio)
 }

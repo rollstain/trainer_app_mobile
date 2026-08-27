@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,9 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.dashedBorder
-
-private const val ADD_SET_LABEL = "+ Подход"
-private const val PERSONAL_RECORD_LABEL = "рекорд"
+import app.trainer.uikit.resources.Res
+import app.trainer.uikit.resources.set_add
+import app.trainer.uikit.resources.set_personal_record
+import app.trainer.uikit.resources.set_unit_distance
+import app.trainer.uikit.resources.set_unit_duration
+import app.trainer.uikit.resources.set_unit_repetitions
+import app.trainer.uikit.resources.set_unit_weight
+import org.jetbrains.compose.resources.stringResource
 
 enum class SetRowType { Strength, Bodyweight, Cardio }
 
@@ -79,14 +84,14 @@ fun AppSetRow(
                     modifier = Modifier.weight(1f),
                     value = values.repetitions,
                     onValueChange = callbacks.onRepetitionsChange,
-                    unit = TextFieldUnit.Text("повт"),
+                    unit = TextFieldUnit.Text(stringResource(Res.string.set_unit_repetitions)),
                     placeholder = hints.repetitions,
                 )
                 AppNumericField(
                     modifier = Modifier.weight(1f),
                     value = values.weight,
                     onValueChange = callbacks.onWeightChange,
-                    unit = TextFieldUnit.Text("кг"),
+                    unit = TextFieldUnit.Text(stringResource(Res.string.set_unit_weight)),
                     placeholder = hints.weight,
                 )
             }
@@ -94,7 +99,7 @@ fun AppSetRow(
                 modifier = Modifier.weight(1f),
                 value = values.repetitions,
                 onValueChange = callbacks.onRepetitionsChange,
-                unit = TextFieldUnit.Text("повт"),
+                unit = TextFieldUnit.Text(stringResource(Res.string.set_unit_repetitions)),
                 placeholder = hints.repetitions,
             )
             SetRowType.Cardio -> {
@@ -102,14 +107,14 @@ fun AppSetRow(
                     modifier = Modifier.weight(1f),
                     value = values.duration,
                     onValueChange = callbacks.onDurationChange,
-                    unit = TextFieldUnit.Text("мин"),
+                    unit = TextFieldUnit.Text(stringResource(Res.string.set_unit_duration)),
                     placeholder = hints.duration,
                 )
                 AppNumericField(
                     modifier = Modifier.weight(1f),
                     value = values.distance,
                     onValueChange = callbacks.onDistanceChange,
-                    unit = TextFieldUnit.Text("м"),
+                    unit = TextFieldUnit.Text(stringResource(Res.string.set_unit_distance)),
                     placeholder = hints.distance,
                 )
             }
@@ -124,7 +129,7 @@ fun AppSetRow(
 private fun PersonalRecordMark(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .height(AppTheme.sizing.chipHeight)
+            .heightIn(min = AppTheme.sizing.chipHeight)
             .background(
                 color = AppTheme.colors.successSoft,
                 shape = RoundedCornerShape(AppTheme.radius.pill),
@@ -133,7 +138,7 @@ private fun PersonalRecordMark(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = PERSONAL_RECORD_LABEL,
+            text = stringResource(Res.string.set_personal_record),
             style = AppTheme.typography.overline,
             color = AppTheme.colors.success,
         )
@@ -145,7 +150,7 @@ fun AppAddSetButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(AppTheme.sizing.setFieldHeight)
+            .heightIn(min = AppTheme.sizing.setFieldHeight)
             .dashedBorder(
                 color = AppTheme.colors.borderStrong,
                 cornerRadius = AppTheme.radius.dp8,
@@ -154,7 +159,7 @@ fun AppAddSetButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = ADD_SET_LABEL,
+            text = stringResource(Res.string.set_add),
             style = AppTheme.typography.label,
             color = AppTheme.colors.accent,
         )

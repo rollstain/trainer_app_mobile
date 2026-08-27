@@ -19,10 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.trainer.uikit.AppTheme
+import app.trainer.uikit.resources.Res
+import app.trainer.uikit.resources.rest_extend
+import app.trainer.uikit.resources.rest_skip
+import app.trainer.uikit.resources.rest_title
+import org.jetbrains.compose.resources.stringResource
 
-private const val REST_TITLE = "Отдых"
-private const val EXTEND_ACTION = "+15 с"
-private const val SKIP_ACTION = "Пропустить"
 private val PROGRESS_HEIGHT = 4.dp
 
 @Composable
@@ -56,7 +58,7 @@ fun AppRestBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = REST_TITLE,
+                text = stringResource(Res.string.rest_title),
                 style = AppTheme.typography.label,
                 color = AppTheme.colors.accent,
             )
@@ -67,13 +69,13 @@ fun AppRestBar(
                 color = AppTheme.colors.accent,
             )
             AppButton(
-                text = EXTEND_ACTION,
+                text = stringResource(Res.string.rest_extend),
                 onClick = onExtend,
                 tone = ButtonTone.Text,
                 size = ButtonSize.Small,
             )
             AppButton(
-                text = SKIP_ACTION,
+                text = stringResource(Res.string.rest_skip),
                 onClick = onSkip,
                 tone = ButtonTone.Text,
                 size = ButtonSize.Small,

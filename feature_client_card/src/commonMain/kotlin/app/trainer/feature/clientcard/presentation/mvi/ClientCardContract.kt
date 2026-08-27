@@ -44,13 +44,27 @@ data class CheckInPhotoRow(
     val url: String,
 )
 
+sealed interface CheckInReview {
+
+    data object Awaiting : CheckInReview
+
+    data class Answered(val comment: String?) : CheckInReview
+}
+
 data class CheckInRow(
     val checkInId: String,
     val dateLabel: String,
     val measurements: String,
     val wellbeingLabel: String,
     val notes: String?,
+    val review: CheckInReview,
     val photos: ImmutableList<CheckInPhotoRow>,
+)
+
+data class ReviewEditor(
+    val checkInId: String,
+    val comment: String,
+    val isSaving: Boolean,
 )
 
 data class ClientHabitRow(
@@ -60,6 +74,28 @@ data class ClientHabitRow(
     val isSetByCoach: Boolean,
 )
 
+sealed interface ClientProgramState {
+
+    data object None : ClientProgramState
+
+    data class Assigned(val title: String, val startsLabel: String) : ClientProgramState
+}
+
+enum class ProgramStart { Today, NextMonday }
+
+data class ProgramPickRow(
+    val programId: String,
+    val title: String,
+    val summary: String,
+)
+
+data class ProgramPicker(
+    val programs: ImmutableList<ProgramPickRow>,
+    val startsOn: ProgramStart,
+    val isLoading: Boolean,
+    val isSaving: Boolean,
+)
+
 data class ClientCardState(
     val clientUserId: String,
     val notes: ImmutableList<NoteRow>,
@@ -67,8 +103,13 @@ data class ClientCardState(
     val habits: ImmutableList<ClientHabitRow>,
     val newHabitTitle: String,
     val editor: NoteEditor?,
+    val program: ClientProgramState,
+    val programPicker: ProgramPicker?,
+    val reviewEditor: ReviewEditor?,
+    val isArchiveDialogVisible: Boolean,
+    val isArchiving: Boolean,
     val isLoading: Boolean,
-    val isFailed: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     val isAddHabitEnabled: Boolean
@@ -86,8 +127,13 @@ data class ClientCardState(
             habits = persistentListOf(),
             newHabitTitle = "",
             editor = null,
+            program = ClientProgramState.None,
+            programPicker = null,
+            reviewEditor = null,
+            isArchiveDialogVisible = false,
+            isArchiving = false,
             isLoading = true,
-            isFailed = false,
+            failure = null,
         )
     }
 }
@@ -117,6 +163,30 @@ sealed interface ClientCardEvent {
     data class OnNewHabitTitleChanged(val title: String) : ClientCardEvent
 
     data object OnHabitAdded : ClientCardEvent
+
+    data class OnReviewClicked(val checkInId: String) : ClientCardEvent
+
+    data object OnReviewDismissed : ClientCardEvent
+
+    data object OnReviewSaveClicked : ClientCardEvent
+
+    data class OnReviewCommentChanged(val comment: String) : ClientCardEvent
+
+    data object OnAssignProgramClicked : ClientCardEvent
+
+    data object OnProgramPickerDismissed : ClientCardEvent
+
+    data object OnProgramRemoved : ClientCardEvent
+
+    data class OnProgramStartSelected(val start: ProgramStart) : ClientCardEvent
+
+    data class OnProgramPicked(val programId: String) : ClientCardEvent
+
+    data object OnArchiveClientClicked : ClientCardEvent
+
+    data object OnArchiveConfirmed : ClientCardEvent
+
+    data object OnArchiveDismissed : ClientCardEvent
 }
 
 sealed interface ClientCardSideEffect {
@@ -124,4 +194,6 @@ sealed interface ClientCardSideEffect {
     data class ShowFailure(val failure: RequestResult.Error) : ClientCardSideEffect
 
     data object ShowNoteArchived : ClientCardSideEffect
+
+    data object ClientArchived : ClientCardSideEffect
 }

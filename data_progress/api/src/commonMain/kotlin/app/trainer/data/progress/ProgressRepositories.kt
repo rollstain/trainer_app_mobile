@@ -15,6 +15,14 @@ interface CheckInRepository {
 
     suspend fun save(checkInDate: LocalDate, draft: CheckInDraft): RequestResult<CheckIn>
 
+    suspend fun awaitingReview(): RequestResult<List<AwaitingCheckIn>>
+
+    suspend fun review(
+        clientUserId: String,
+        checkInId: String,
+        comment: String?,
+    ): RequestResult<CheckIn>
+
     suspend fun preparePhotoUpload(
         fileName: String,
         contentType: String,

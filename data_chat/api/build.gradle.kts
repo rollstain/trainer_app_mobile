@@ -3,6 +3,10 @@ plugins {
     id(libs.plugins.androidKmpLibrary.get().pluginId)
 }
 
+base {
+    archivesName = "data_chat-api"
+}
+
 kotlin {
     android {
         namespace = "app.trainer.data_chat.api"

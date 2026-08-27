@@ -5,8 +5,8 @@ import app.trainer.network.PresignedUploader
 import app.trainer.network.SessionEvents
 import app.trainer.network.TokenStorage
 import app.trainer.network.impl.HttpTokenRefresher
-import app.trainer.network.impl.PlainPresignedUploader
 import app.trainer.network.impl.NetworkConfig
+import app.trainer.network.impl.PlainPresignedUploader
 import app.trainer.network.impl.SecureSettingsFactory
 import app.trainer.network.impl.SessionEventsImpl
 import app.trainer.network.impl.SettingsTokenStorage

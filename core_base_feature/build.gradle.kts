@@ -26,11 +26,16 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
+            api(project(":core_strings"))
             api(compose.runtime)
             api(libs.lifecycle.viewmodel)
+            api(libs.kotlinx.datetime)
             implementation(libs.kotlinx.coroutines)
             implementation(libs.koin.core)
             api(project(":core_logger"))
+            api(project(":core_entities"))
+            api(project(":uikit"))
         }
     }
 }
+

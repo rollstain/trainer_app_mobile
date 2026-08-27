@@ -4,6 +4,10 @@ plugins {
     id(libs.plugins.kotlinSerialization.get().pluginId)
 }
 
+base {
+    archivesName = "data_training_log-api"
+}
+
 kotlin {
     android {
         namespace = "app.trainer.data_training_log.api"
@@ -23,6 +27,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":core_entities"))
             api(libs.kotlinx.datetime)
+            api(libs.kotlinx.coroutines)
         }
     }
 }

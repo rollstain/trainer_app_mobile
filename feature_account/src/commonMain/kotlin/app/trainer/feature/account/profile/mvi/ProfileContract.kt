@@ -1,15 +1,17 @@
 package app.trainer.feature.account.profile.mvi
 
+import app.trainer.data.clients.CoachPolicy
 import app.trainer.entities.RequestResult
 
 data class ProfileState(
     val displayName: String,
     val roleLabel: String,
     val contactLabel: String?,
-    val cancellationWindowHours: Int?,
+    val policy: CoachPolicy?,
+    val isCoach: Boolean,
     val isSignOutDialogVisible: Boolean,
     val isLoading: Boolean,
-    val isFailed: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     val hasContact: Boolean
@@ -21,21 +23,34 @@ data class ProfileState(
             displayName = "",
             roleLabel = "",
             contactLabel = null,
-            cancellationWindowHours = null,
+            policy = null,
+            isCoach = false,
             isSignOutDialogVisible = false,
             isLoading = true,
-            isFailed = false,
+            failure = null,
         )
     }
 }
 
 sealed interface ProfileEvent {
 
-    data object OnRetryClicked : ProfileEvent
+    data object OnReloadRequested : ProfileEvent
 
     data object OnAddContactClicked : ProfileEvent
 
+    data object OnExerciseLibraryClicked : ProfileEvent
+
+    data object OnProgramsClicked : ProfileEvent
+
     data class OnCancellationWindowSelected(val hours: Int) : ProfileEvent
+
+    data class OnReminderHourSelected(val hour: Int) : ProfileEvent
+
+    data class OnSessionRemindersToggled(val enabled: Boolean) : ProfileEvent
+
+    data class OnDiaryRemindersToggled(val enabled: Boolean) : ProfileEvent
+
+    data class OnCheckInRemindersToggled(val enabled: Boolean) : ProfileEvent
 
     data object OnSignOutClicked : ProfileEvent
 
@@ -47,6 +62,10 @@ sealed interface ProfileEvent {
 sealed interface ProfileSideEffect {
 
     data object OpenContactLink : ProfileSideEffect
+
+    data object OpenExerciseLibrary : ProfileSideEffect
+
+    data object OpenPrograms : ProfileSideEffect
 
     data object SignedOut : ProfileSideEffect
 

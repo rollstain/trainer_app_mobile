@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="top_bar_back">Back</string>
+    <string name="toast_default_action">Got it</string>
+
+    <string name="message_photo_description">Photo in the message</string>
+    <string name="message_delivery_sent">Sent</string>
+    <string name="message_delivery_read">Read</string>
+    <string name="message_delivery_pending">Queued</string>
+    <string name="message_delivery_failed">Not sent, tap to retry</string>
+    <string name="message_input_placeholder">Message</string>
+    <string name="message_input_attach">Attach a file</string>
+    <string name="message_input_send">Send</string>
+    <string name="message_input_remove_attachment">Remove attachment</string>
+    <string name="message_input_upload_failed">Upload failed, tap to retry</string>
+
+    <string name="photo_remove">Remove photo</string>
+    <string name="photo_add">Add photo</string>
+
+    <string name="note_medical">MEDICAL</string>
+    <string name="note_pinned">PINNED</string>
+
+    <string name="rest_title">Rest</string>
+    <string name="rest_extend">+15 s</string>
+    <string name="rest_skip">Skip</string>
+
+    <string name="set_add">+ Set</string>
+    <string name="set_personal_record">record</string>
+    <string name="set_unit_repetitions">reps</string>
+    <string name="set_unit_weight">kg</string>
+    <string name="set_unit_duration">min</string>
+    <string name="set_unit_distance">m</string>
+
+    <string name="slot_free">Free</string>
+    <string name="slot_taken">Taken</string>
+    <string name="slot_mine">My session</string>
+    <string name="slot_completed">✓ Completed</string>
+    <string name="slot_request_reschedule">Asks to move to %1$s</string>
+    <string name="slot_request_cancel">Asks to cancel the session</string>
+    <string name="slot_request_sent">Request sent, waiting for the coach</string>
+    <string name="slot_book">Book</string>
+    <string name="slot_cancel">Cancel</string>
+    <string name="slot_wait">Join waitlist</string>
+    <string name="slot_stop_waiting">Leave waitlist</string>
+    <string name="slot_approve">Approve</string>
+    <string name="slot_reject">Decline</string>
+</resources>

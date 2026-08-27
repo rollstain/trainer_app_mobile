@@ -53,12 +53,28 @@ data class CoachSummaryResponse(
 data class CoachPolicyResponse(
     @SerialName("cancellationWindowHours")
     val cancellationWindowHours: Int?,
+    @SerialName("reminderHour")
+    val reminderHour: Int?,
+    @SerialName("sessionRemindersEnabled")
+    val sessionRemindersEnabled: Boolean?,
+    @SerialName("diaryRemindersEnabled")
+    val diaryRemindersEnabled: Boolean?,
+    @SerialName("checkInRemindersEnabled")
+    val checkInRemindersEnabled: Boolean?,
 )
 
 @Serializable
 data class UpdateCoachPolicyRequest(
     @SerialName("cancellationWindowHours")
     val cancellationWindowHours: Int,
+    @SerialName("reminderHour")
+    val reminderHour: Int,
+    @SerialName("sessionRemindersEnabled")
+    val sessionRemindersEnabled: Boolean,
+    @SerialName("diaryRemindersEnabled")
+    val diaryRemindersEnabled: Boolean,
+    @SerialName("checkInRemindersEnabled")
+    val checkInRemindersEnabled: Boolean,
 )
 
 @Serializable
@@ -69,4 +85,8 @@ data class CoachClientResponse(
     val displayName: String?,
     @SerialName("status")
     val status: String?,
+    @SerialName("hasMedicalNotes")
+    val hasMedicalNotes: Boolean?,
+    @SerialName("linkedAt")
+    val linkedAt: String?,
 )

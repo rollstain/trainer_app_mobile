@@ -6,6 +6,7 @@ import app.trainer.data.chat.Message
 import app.trainer.data.chat.MessageAttachment
 import app.trainer.data.chat.MessageDelivery
 import app.trainer.data.chat.PreparedUpload
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.network.HttpClientProvider
 import app.trainer.network.PresignedUploader
@@ -16,10 +17,10 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.Clock
 
 class ChatRepositoryImpl(
     private val httpClientProvider: HttpClientProvider,
@@ -131,6 +132,7 @@ class ChatRepositoryImpl(
                 val uploadUrl = prepared.data.uploadUrl
                 if (attachmentId == null || uploadUrl == null) {
                     RequestResult.Error(
+                        kind = RequestFailure.Parsing,
                         statusCode = null,
                         userMessage = "",
                         devMessage = "В ответе на подготовку загрузки нет mediaFileId или uploadUrl",
@@ -163,6 +165,7 @@ class ChatRepositoryImpl(
                 val downloadUrl = loaded.data.downloadUrl
                 if (downloadUrl == null) {
                     RequestResult.Error(
+                        kind = RequestFailure.Parsing,
                         statusCode = null,
                         userMessage = "",
                         devMessage = "В ответе нет downloadUrl",

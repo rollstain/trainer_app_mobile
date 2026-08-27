@@ -17,6 +17,8 @@ data class Exercise(
     val muscleGroup: String?,
     val kind: ExerciseKind,
     val isOwnedByCoach: Boolean,
+    val description: String?,
+    val videoUrl: String?,
     val lastPerformed: LastPerformed?,
 )
 

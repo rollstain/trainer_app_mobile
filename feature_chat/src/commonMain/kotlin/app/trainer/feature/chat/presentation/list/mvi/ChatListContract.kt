@@ -14,18 +14,20 @@ data class DialogRow(
 
 data class ChatListState(
     val dialogs: ImmutableList<DialogRow>,
+    val isCoach: Boolean,
     val isLoading: Boolean,
     val isRefreshing: Boolean,
-    val isFailed: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     companion object {
 
         fun initial(): ChatListState = ChatListState(
             dialogs = persistentListOf(),
+            isCoach = false,
             isLoading = true,
             isRefreshing = false,
-            isFailed = false,
+            failure = null,
         )
     }
 }

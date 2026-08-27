@@ -5,13 +5,16 @@ android-compileSdk = "36"
 android-targetSdk = "36"
 
 agp = "8.12.0"
+googleServices = "4.4.2"
 kotlin = "2.3.0"
-compose-plugin = "1.9.0"
+compose-plugin = "1.10.2"
 detekt = "1.23.6"
+robolectric = "4.14.1"
+androidx-compose-ui = "1.10.4"
 
 coroutines = "1.10.2"
 kotlinx-serialization = "1.8.1"
-kotlinx-datetime = "0.6.2"
+kotlinx-datetime = "0.7.1"
 kotlinx-collections-immutable = "0.3.8"
 
 koin = "4.2.1"
@@ -20,6 +23,8 @@ sqldelight = "2.0.0"
 multiplatform-settings = "1.1.0"
 androidx-security-crypto = "1.1.0-alpha06"
 firebase-messaging = "24.1.1"
+firebase-crashlytics = "19.4.4"
+firebase-crashlytics-plugin = "3.0.6"
 
 coil = "3.3.0"
 
@@ -41,6 +46,9 @@ koin-compose-viewmodel = { group = "io.insert-koin", name = "koin-compose-viewmo
 koin-compose-navigation3 = { group = "io.insert-koin", name = "koin-compose-navigation3", version.ref = "koin" }
 koin-test = { group = "io.insert-koin", name = "koin-test", version.ref = "koin" }
 junit = { group = "junit", name = "junit", version = "4.13.2" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "androidx-compose-ui" }
+androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "androidx-compose-ui" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.9.3" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version = "1.15.0" }
 
@@ -61,6 +69,7 @@ sqldelight-native-driver = { group = "app.cash.sqldelight", name = "native-drive
 multiplatform-settings = { group = "com.russhwolf", name = "multiplatform-settings", version.ref = "multiplatform-settings" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "androidx-security-crypto" }
 firebase-messaging = { group = "com.google.firebase", name = "firebase-messaging-ktx", version.ref = "firebase-messaging" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics-ktx", version.ref = "firebase-crashlytics" }
 
 navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
@@ -79,5 +88,8 @@ jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidKotlin = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 androidKmpLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+googleServices = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+firebaseCrashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-plugin" }

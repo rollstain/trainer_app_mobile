@@ -2,6 +2,7 @@ package app.trainer.feature.chat.presentation.dialog.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import app.trainer.base.failure.toastMessage
 import app.trainer.feature.chat.presentation.dialog.mvi.DialogScreenModel
 import app.trainer.feature.chat.presentation.dialog.mvi.DialogSideEffect
 import app.trainer.navigation.LocalNavigator
@@ -36,9 +37,9 @@ class DialogScreen(private val dialogId: String) : Screen {
     }
 }
 
-private fun handleSideEffect(effect: DialogSideEffect, toastHost: ToastHostState) {
+private suspend fun handleSideEffect(effect: DialogSideEffect, toastHost: ToastHostState) {
     when (effect) {
-        is DialogSideEffect.ShowFailure -> toastHost.show(effect.failure.userMessage)
+        is DialogSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
         is DialogSideEffect.OpenAttachment -> Unit
         DialogSideEffect.ScrollToLatest -> Unit
     }

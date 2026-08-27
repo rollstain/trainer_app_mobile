@@ -2,6 +2,7 @@ package app.trainer.data.progress.impl
 
 import app.trainer.data.progress.Habit
 import app.trainer.data.progress.HabitsRepository
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.network.HttpClientProvider
 import app.trainer.network.safeRequest
@@ -92,6 +93,7 @@ class HabitsRepositoryImpl(
                 val habit = mapper.toHabit(loaded.data)
                 if (habit == null) {
                     RequestResult.Error(
+                        kind = RequestFailure.Parsing,
                         statusCode = null,
                         userMessage = "Не удалось прочитать привычку",
                         devMessage = "HabitResponse не разобран",

@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -20,7 +20,7 @@ import app.trainer.uikit.dashedBorder
 
 private val CONTENT_GAP = 6.dp
 
-enum class StatusChipKind { Free, Booked, Cancelled, Completed, PendingRequest, Medical }
+enum class StatusChipKind { Free, Booked, Cancelled, Completed, PendingRequest, Medical, Fresh, SetByCoach }
 
 @Composable
 fun AppStatusChip(
@@ -30,15 +30,15 @@ fun AppStatusChip(
 ) {
     val colors = AppTheme.colors
     val background = when (kind) {
-        StatusChipKind.Free -> colors.successSoft
-        StatusChipKind.Booked -> colors.accentSoft
+        StatusChipKind.Free, StatusChipKind.Fresh -> colors.successSoft
+        StatusChipKind.Booked, StatusChipKind.SetByCoach -> colors.accentSoft
         StatusChipKind.Cancelled, StatusChipKind.Completed -> colors.bgSurfaceSunken
         StatusChipKind.PendingRequest -> colors.warningSoft
         StatusChipKind.Medical -> colors.dangerSoft
     }
     val content = when (kind) {
-        StatusChipKind.Free -> colors.success
-        StatusChipKind.Booked -> colors.accent
+        StatusChipKind.Free, StatusChipKind.Fresh -> colors.success
+        StatusChipKind.Booked, StatusChipKind.SetByCoach -> colors.accent
         StatusChipKind.Cancelled, StatusChipKind.Completed -> colors.textSecondary
         StatusChipKind.PendingRequest -> colors.warning
         StatusChipKind.Medical -> colors.danger
@@ -46,7 +46,7 @@ fun AppStatusChip(
     val hasDot = kind == StatusChipKind.Free || kind == StatusChipKind.Booked
     val chipShape = RoundedCornerShape(AppTheme.radius.pill)
     val chipModifier = modifier
-        .height(AppTheme.sizing.chipHeight)
+        .heightIn(min = AppTheme.sizing.chipHeight)
         .background(color = background, shape = chipShape)
         .let { base ->
             if (kind == StatusChipKind.PendingRequest) {

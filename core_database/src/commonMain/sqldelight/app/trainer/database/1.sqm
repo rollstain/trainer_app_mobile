@@ -1,0 +1,5 @@
+CREATE TABLE trainingLogOutboxEntity (
+    dateIso TEXT NOT NULL PRIMARY KEY,
+    payloadJson TEXT NOT NULL,
+    queuedAtEpochMs INTEGER NOT NULL
+);

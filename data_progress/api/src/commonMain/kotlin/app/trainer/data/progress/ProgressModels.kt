@@ -24,7 +24,10 @@ data class CheckIn(
     val hipsMillimeters: Int?,
     val wellbeing: Int?,
     val sleepQuality: Int?,
+    val adherence: Int?,
     val notes: String?,
+    val coachComment: String?,
+    val isReviewed: Boolean,
     val photos: List<CheckInPhoto>,
 )
 
@@ -35,8 +38,16 @@ data class CheckInDraft(
     val hipsMillimeters: Int?,
     val wellbeing: Int?,
     val sleepQuality: Int?,
+    val adherence: Int?,
     val notes: String?,
     val photoIds: List<String>,
+)
+
+data class AwaitingCheckIn(
+    val checkInId: String,
+    val clientUserId: String,
+    val clientDisplayName: String,
+    val checkInDate: LocalDate,
 )
 
 data class Habit(

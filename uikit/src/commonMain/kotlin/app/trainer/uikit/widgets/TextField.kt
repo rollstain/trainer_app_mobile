@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -173,7 +173,7 @@ fun AppNumericField(
         AppTextField(
             modifier = Modifier
                 .weight(1f)
-                .height(AppTheme.sizing.setFieldHeight),
+                .heightIn(min = AppTheme.sizing.setFieldHeight),
             value = value,
             onValueChange = onValueChange,
             kind = TextFieldKind.Numeric,

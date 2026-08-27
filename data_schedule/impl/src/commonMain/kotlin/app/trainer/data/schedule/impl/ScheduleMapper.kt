@@ -12,7 +12,7 @@ import app.trainer.data.schedule.SlotChangeStatus
 import app.trainer.data.schedule.SlotSeriesResult
 import app.trainer.data.schedule.SlotStatus
 import app.trainer.logger.Logger
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 private const val LOG_TAG = "schedule-mapper"
 
@@ -94,7 +94,8 @@ class ScheduleMapper(private val logger: Logger) {
         val requestedBy = response.requestedByUserId
             ?: return skipped(entity = "SlotChangeRequest", field = "requestedByUserId")
         val kind = parseChangeKind(response.kind) ?: return skipped(entity = "SlotChangeRequest", field = "kind")
-        val status = parseChangeStatus(response.status) ?: return skipped(entity = "SlotChangeRequest", field = "status")
+        val status = parseChangeStatus(response.status)
+            ?: return skipped(entity = "SlotChangeRequest", field = "status")
         val createdAt = parseInstant(response.createdAt)
             ?: return skipped(entity = "SlotChangeRequest", field = "createdAt")
         return SlotChangeRequest(

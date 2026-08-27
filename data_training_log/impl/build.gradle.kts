@@ -4,6 +4,10 @@ plugins {
     id(libs.plugins.kotlinSerialization.get().pluginId)
 }
 
+base {
+    archivesName = "data_training_log-impl"
+}
+
 kotlin {
     android {
         namespace = "app.trainer.data_training_log.impl"
@@ -29,6 +33,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.sqldelight.coroutines)
             implementation(libs.koin.core)
         }
     }

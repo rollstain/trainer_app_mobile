@@ -21,10 +21,24 @@ import androidx.compose.ui.unit.dp
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.dashedBorder
 import app.trainer.uikit.leadingStripe
+import app.trainer.uikit.resources.Res
+import app.trainer.uikit.resources.slot_approve
+import app.trainer.uikit.resources.slot_book
+import app.trainer.uikit.resources.slot_cancel
+import app.trainer.uikit.resources.slot_completed
+import app.trainer.uikit.resources.slot_free
+import app.trainer.uikit.resources.slot_mine
+import app.trainer.uikit.resources.slot_reject
+import app.trainer.uikit.resources.slot_request_cancel
+import app.trainer.uikit.resources.slot_request_reschedule
+import app.trainer.uikit.resources.slot_request_sent
+import app.trainer.uikit.resources.slot_stop_waiting
+import app.trainer.uikit.resources.slot_taken
+import app.trainer.uikit.resources.slot_wait
+import org.jetbrains.compose.resources.stringResource
 
 private val CARD_PADDING_VERTICAL = 12.dp
 private val CARD_PADDING_HORIZONTAL = 14.dp
-private const val COMPLETED_MARK = "✓"
 
 enum class SlotStatusView { Free, Booked, Cancelled, Completed }
 
@@ -77,7 +91,7 @@ fun AppCoachSlotCard(
             ) {
                 when (client) {
                     SlotClientView.Nobody -> Text(
-                        text = "Свободно",
+                        text = stringResource(Res.string.slot_free),
                         style = AppTheme.typography.body,
                         color = colors.textSecondary,
                     )
@@ -89,7 +103,7 @@ fun AppCoachSlotCard(
                 }
                 if (status == SlotStatusView.Completed) {
                     Text(
-                        text = "$COMPLETED_MARK Проведена",
+                        text = stringResource(Res.string.slot_completed),
                         style = AppTheme.typography.caption,
                         color = colors.success,
                     )
@@ -97,12 +111,12 @@ fun AppCoachSlotCard(
                 when (request) {
                     SlotRequestView.None -> Unit
                     is SlotRequestView.Reschedule -> Text(
-                        text = "Просит перенос на ${request.proposedTime}",
+                        text = stringResource(Res.string.slot_request_reschedule, request.proposedTime),
                         style = AppTheme.typography.caption,
                         color = requestTone,
                     )
                     is SlotRequestView.Cancel -> Text(
-                        text = "Просит отменить тренировку",
+                        text = stringResource(Res.string.slot_request_cancel),
                         style = AppTheme.typography.caption,
                         color = requestTone,
                     )
@@ -177,9 +191,9 @@ fun AppClientSlotCard(
             Text(
                 modifier = Modifier.weight(1f),
                 text = when (availability) {
-                    ClientSlotAvailability.Free -> "Свободно"
-                    ClientSlotAvailability.TakenBySomeone -> "Занято"
-                    ClientSlotAvailability.Mine -> "Моя тренировка"
+                    ClientSlotAvailability.Free -> stringResource(Res.string.slot_free)
+                    ClientSlotAvailability.TakenBySomeone -> stringResource(Res.string.slot_taken)
+                    ClientSlotAvailability.Mine -> stringResource(Res.string.slot_mine)
                 },
                 style = AppTheme.typography.body,
                 color = when (availability) {
@@ -199,7 +213,7 @@ fun AppClientSlotCard(
         }
         if (hasPendingRequest) {
             Text(
-                text = "Заявка отправлена, ждём ответа тренера",
+                text = stringResource(Res.string.slot_request_sent),
                 style = AppTheme.typography.caption,
                 color = colors.warning,
             )
@@ -212,25 +226,25 @@ private fun ClientSlotActionButton(action: ClientSlotAction) {
     when (action) {
         ClientSlotAction.None -> Unit
         is ClientSlotAction.Book -> AppButton(
-            text = "Записаться",
+            text = stringResource(Res.string.slot_book),
             onClick = action.onClick,
             tone = ButtonTone.Primary,
             size = ButtonSize.Small,
         )
         is ClientSlotAction.Cancel -> AppButton(
-            text = "Отменить",
+            text = stringResource(Res.string.slot_cancel),
             onClick = action.onClick,
             tone = ButtonTone.Text,
             size = ButtonSize.Small,
         )
         is ClientSlotAction.JoinWaitlist -> AppButton(
-            text = "Ждать",
+            text = stringResource(Res.string.slot_wait),
             onClick = action.onClick,
             tone = ButtonTone.Secondary,
             size = ButtonSize.Small,
         )
         is ClientSlotAction.LeaveWaitlist -> AppButton(
-            text = "Не ждать",
+            text = stringResource(Res.string.slot_stop_waiting),
             onClick = action.onClick,
             tone = ButtonTone.Text,
             size = ButtonSize.Small,
@@ -332,14 +346,14 @@ private fun RequestActions(request: SlotRequestView) {
     ) {
         AppButton(
             modifier = Modifier.weight(1f),
-            text = "Подтвердить",
+            text = stringResource(Res.string.slot_approve),
             onClick = actions.first,
             tone = ButtonTone.Primary,
             size = ButtonSize.Small,
         )
         AppButton(
             modifier = Modifier.weight(1f),
-            text = "Отклонить",
+            text = stringResource(Res.string.slot_reject),
             onClick = actions.second,
             tone = ButtonTone.Secondary,
             size = ButtonSize.Small,

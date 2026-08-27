@@ -4,6 +4,10 @@ plugins {
     id(libs.plugins.kotlinSerialization.get().pluginId)
 }
 
+base {
+    archivesName = "core_network-impl"
+}
+
 kotlin {
     android {
         namespace = "app.trainer.core_network.impl"

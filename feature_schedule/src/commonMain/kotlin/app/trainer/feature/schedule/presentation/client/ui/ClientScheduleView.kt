@@ -12,15 +12,31 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import app.trainer.base.failure.AppFailureState
 import app.trainer.feature.schedule.presentation.client.mvi.ClientScheduleDay
 import app.trainer.feature.schedule.presentation.client.mvi.ClientScheduleEvent
 import app.trainer.feature.schedule.presentation.client.mvi.ClientScheduleState
 import app.trainer.feature.schedule.presentation.client.mvi.ClientSlotRow
+import app.trainer.strings.Res
+import app.trainer.strings.client_schedule_cancel_dialog_confirm
+import app.trainer.strings.client_schedule_cancel_dialog_description
+import app.trainer.strings.client_schedule_cancel_dialog_title
+import app.trainer.strings.client_schedule_day_empty_description
+import app.trainer.strings.client_schedule_day_empty_title
+import app.trainer.strings.client_schedule_empty_action
+import app.trainer.strings.client_schedule_empty_description
+import app.trainer.strings.client_schedule_empty_title
+import app.trainer.strings.client_schedule_no_coach_action
+import app.trainer.strings.client_schedule_no_coach_description
+import app.trainer.strings.client_schedule_no_coach_title
+import app.trainer.strings.client_schedule_privacy_note
+import app.trainer.strings.client_schedule_title
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppClientSlotCard
 import app.trainer.uikit.widgets.AppConfirmDialog
+import app.trainer.uikit.widgets.AppSlotShimmerList
 import app.trainer.uikit.widgets.AppStatePlaceholder
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTopBar
@@ -35,23 +51,9 @@ import app.trainer.uikit.widgets.PlaceholderKind
 import app.trainer.uikit.widgets.SlotRequestView
 import app.trainer.uikit.widgets.WeekDay
 import app.trainer.uikit.widgets.WeekDayState
+import org.jetbrains.compose.resources.stringResource
 
-private const val TITLE = "Запись"
-private const val PRIVACY_NOTE = "Кто занял соседнее время, не показывается."
-private const val EMPTY_TITLE = "У тренера пока нет свободного времени"
-private const val EMPTY_DESCRIPTION =
-    "Как только он откроет запись, время появится здесь. Если нужно раньше — напишите ему."
-private const val EMPTY_ACTION = "Написать тренеру"
-private const val NO_COACH_TITLE = "Вы ещё не связаны с тренером"
-private const val NO_COACH_DESCRIPTION = "Введите код приглашения — он есть в сообщении от тренера."
-private const val NO_COACH_ACTION = "Ввести код"
-private const val FAILURE_TITLE = "Не удалось загрузить"
-private const val FAILURE_DESCRIPTION = "Проверьте соединение и попробуйте ещё раз."
-private const val FAILURE_ACTION = "Повторить"
-private const val CANCEL_DIALOG_TITLE = "Отменить тренировку?"
-private const val CANCEL_DIALOG_DESCRIPTION =
-    "Тренер получит заявку и подтвердит отмену. Время станет свободным для других."
-private const val CANCEL_DIALOG_CONFIRM = "Отменить запись"
+private const val SHIMMER_SLOTS = 4
 
 @Composable
 fun ClientScheduleView(
@@ -60,12 +62,14 @@ fun ClientScheduleView(
     onEvent: (ClientScheduleEvent) -> Unit,
 ) {
     Column(modifier = modifier.fillMaxSize().screenBackground()) {
-        AppTopBar(title = if (state.weekTitle.isEmpty()) TITLE else state.weekTitle)
+        AppTopBar(
+            title = state.weekTitle.ifEmpty { stringResource(Res.string.client_schedule_title) },
+        )
         if (state.coaches.size > 1) {
             CoachSelector(state = state, onEvent = onEvent)
         }
         AppWeekStrip(
-            days = state.days.map(::toWeekDay),
+            days = state.days.map { toWeekDay(day = it, isSelected = it.date == state.selectedDate) },
             onSelect = { dayId ->
                 state.days.firstOrNull { it.date.toString() == dayId }?.let { day ->
                     onEvent(ClientScheduleEvent.OnDateSelected(day.date))
@@ -74,32 +78,34 @@ fun ClientScheduleView(
         )
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             when {
-                state.isFailed -> AppStatePlaceholder(
-                    kind = PlaceholderKind.Failure,
-                    title = FAILURE_TITLE,
-                    description = FAILURE_DESCRIPTION,
+                state.failure != null -> AppFailureState(
+                    failure = state.failure,
+                    onRetry = { onEvent(ClientScheduleEvent.OnRetryClicked) },
+                )
+                state.isLoading -> AppSlotShimmerList(count = SHIMMER_SLOTS)
+                state.coaches.isEmpty() -> AppStatePlaceholder(
+                    kind = PlaceholderKind.Empty,
+                    title = stringResource(Res.string.client_schedule_no_coach_title),
+                    description = stringResource(Res.string.client_schedule_no_coach_description),
                     action = PlaceholderAction.Button(
-                        text = FAILURE_ACTION,
+                        text = stringResource(Res.string.client_schedule_no_coach_action),
                         onClick = { onEvent(ClientScheduleEvent.OnRetryClicked) },
                     ),
                 )
-                state.coaches.isEmpty() && !state.isLoading -> AppStatePlaceholder(
+                state.days.all { it.slots.isEmpty() } -> AppStatePlaceholder(
                     kind = PlaceholderKind.Empty,
-                    title = NO_COACH_TITLE,
-                    description = NO_COACH_DESCRIPTION,
+                    title = stringResource(Res.string.client_schedule_empty_title),
+                    description = stringResource(Res.string.client_schedule_empty_description),
                     action = PlaceholderAction.Button(
-                        text = NO_COACH_ACTION,
-                        onClick = { onEvent(ClientScheduleEvent.OnRetryClicked) },
+                        text = stringResource(Res.string.client_schedule_empty_action),
+                        onClick = { onEvent(ClientScheduleEvent.OnWriteCoachClicked) },
                     ),
                 )
-                selectedSlots(state).isEmpty() && !state.isLoading -> AppStatePlaceholder(
+                selectedSlots(state).isEmpty() -> AppStatePlaceholder(
                     kind = PlaceholderKind.Empty,
-                    title = EMPTY_TITLE,
-                    description = EMPTY_DESCRIPTION,
-                    action = PlaceholderAction.Button(
-                        text = EMPTY_ACTION,
-                        onClick = { onEvent(ClientScheduleEvent.OnRetryClicked) },
-                    ),
+                    title = stringResource(Res.string.client_schedule_day_empty_title),
+                    description = stringResource(Res.string.client_schedule_day_empty_description),
+                    action = PlaceholderAction.None,
                 )
                 else -> SlotList(slots = selectedSlots(state), onEvent = onEvent)
             }
@@ -107,9 +113,9 @@ fun ClientScheduleView(
     }
     if (state.slotPendingCancel != null) {
         AppConfirmDialog(
-            title = CANCEL_DIALOG_TITLE,
-            description = CANCEL_DIALOG_DESCRIPTION,
-            confirmText = CANCEL_DIALOG_CONFIRM,
+            title = stringResource(Res.string.client_schedule_cancel_dialog_title),
+            description = stringResource(Res.string.client_schedule_cancel_dialog_description),
+            confirmText = stringResource(Res.string.client_schedule_cancel_dialog_confirm),
             onConfirm = { onEvent(ClientScheduleEvent.OnCancelConfirmed) },
             onDismissRequest = { onEvent(ClientScheduleEvent.OnCancelDismissed) },
             tone = ConfirmDialogTone.Danger,
@@ -165,7 +171,7 @@ private fun SlotList(slots: List<ClientSlotRow>, onEvent: (ClientScheduleEvent) 
         item(key = "privacy-note") {
             AppText(
                 modifier = Modifier.padding(top = AppTheme.spacing.dp8),
-                text = PRIVACY_NOTE,
+                text = stringResource(Res.string.client_schedule_privacy_note),
                 style = AppTheme.typography.caption,
                 color = AppTheme.colors.textMuted,
             )
@@ -194,14 +200,14 @@ private fun toAction(
 }
 
 private fun selectedSlots(state: ClientScheduleState): List<ClientSlotRow> =
-    state.days.firstOrNull { it.isSelected }?.slots.orEmpty()
+    state.days.firstOrNull { it.date == state.selectedDate }?.slots.orEmpty()
 
-private fun toWeekDay(day: ClientScheduleDay): WeekDay = WeekDay(
+private fun toWeekDay(day: ClientScheduleDay, isSelected: Boolean): WeekDay = WeekDay(
     id = day.date.toString(),
     weekdayLabel = day.weekdayLabel,
     dayNumber = day.dayNumberLabel,
     state = when {
-        day.isSelected -> WeekDayState.Selected
+        isSelected -> WeekDayState.Selected
         day.isToday -> WeekDayState.Today
         day.isWeekend -> WeekDayState.Weekend
         else -> WeekDayState.Rest

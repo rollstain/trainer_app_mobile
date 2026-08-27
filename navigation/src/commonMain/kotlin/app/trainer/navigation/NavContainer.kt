@@ -1,18 +1,25 @@
 package app.trainer.navigation
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.snap
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.ContentTransform
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 
 @Composable
-fun NavContainer(entries: List<NavEntry<Any>>, onBack: () -> Unit) {
+fun NavContainer(
+    entries: List<NavEntry<Any>>,
+    onBack: () -> Unit,
+    forward: ContentTransform,
+    backward: ContentTransform,
+) {
     val backState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
     NavigationBackHandler(
         state = backState,
@@ -20,9 +27,12 @@ fun NavContainer(entries: List<NavEntry<Any>>, onBack: () -> Unit) {
         onBackCompleted = onBack,
     )
     val topEntry = entries.lastOrNull() ?: return
+    var renderedDepth by remember { mutableIntStateOf(entries.size) }
+    val isForward = entries.size >= renderedDepth
+    SideEffect { renderedDepth = entries.size }
     AnimatedContent(
         targetState = topEntry,
-        transitionSpec = { fadeIn(snap()) togetherWith fadeOut(snap()) },
+        transitionSpec = { if (isForward) forward else backward },
         contentKey = { it.contentKey },
         label = "NavContainer",
         content = { entry -> entry.Content() },

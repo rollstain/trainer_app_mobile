@@ -14,6 +14,12 @@ sealed interface Screens : NavKey {
     data object ContactLink : Screens
 
     @Serializable
+    data object CoachToday : Screens
+
+    @Serializable
+    data object ClientNext : Screens
+
+    @Serializable
     data object CoachChats : Screens
 
     @Serializable
@@ -42,6 +48,22 @@ sealed interface Screens : NavKey {
 
     @Serializable
     data object NewExercise : Screens
+
+    @Serializable
+    data object ExerciseLibrary : Screens
+
+    @Serializable
+    data object Programs : Screens
+
+    @Serializable
+    data class ProgramEditor(val programId: String) : Screens
+
+    @Serializable
+    data class ProgramDay(
+        val programId: String,
+        val weekNumber: Int,
+        val dayOfWeek: Int,
+    ) : Screens
 
     @Serializable
     data class ClientBooking(val coachId: String?, val weekStartIso: String?) : Screens

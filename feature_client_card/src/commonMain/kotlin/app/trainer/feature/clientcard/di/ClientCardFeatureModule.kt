@@ -1,8 +1,9 @@
 package app.trainer.feature.clientcard.di
 
+import app.trainer.feature.clientcard.presentation.diaries.mvi.DiariesScreenModel
+import app.trainer.feature.clientcard.presentation.diaries.ui.DiariesScreen
 import app.trainer.feature.clientcard.presentation.mvi.ClientCardScreenModel
 import app.trainer.feature.clientcard.presentation.people.mvi.PeopleScreenModel
-import app.trainer.feature.clientcard.presentation.people.ui.DiariesScreen
 import app.trainer.feature.clientcard.presentation.people.ui.PeopleScreen
 import app.trainer.feature.clientcard.presentation.ui.ClientCardScreen
 import app.trainer.navigation.Screens
@@ -15,9 +16,24 @@ class ClientCardFeatureModule {
     val module = module {
         screen<Screens.ClientCard> { ClientCardScreen(clientUserId = it.clientUserId) }
         screen<Screens.CoachPeople> { PeopleScreen() }
+        viewModel {
+            DiariesScreenModel(
+                participantsRepository = get(),
+                trainingLogRepository = get(),
+                profileRepository = get(),
+                volumeFormat = get(),
+                weeks = get(),
+            )
+        }
         screen<Screens.CoachDiaries> { DiariesScreen() }
         viewModel {
-            PeopleScreenModel(participantsRepository = get(), authRepository = get())
+            PeopleScreenModel(
+                participantsRepository = get(),
+                authRepository = get(),
+                scheduleRepository = get(),
+                chatRepository = get(),
+                profileRepository = get(),
+            )
         }
         viewModel { (clientUserId: String) ->
             ClientCardScreenModel(
@@ -25,6 +41,8 @@ class ClientCardFeatureModule {
                 notesRepository = get(),
                 checkInRepository = get(),
                 habitsRepository = get(),
+                participantsRepository = get(),
+                programRepository = get(),
                 weightInput = get(),
             )
         }

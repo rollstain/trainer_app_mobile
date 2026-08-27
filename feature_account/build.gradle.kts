@@ -22,6 +22,7 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
+            api(project(":core_strings"))
             api(project(":data_auth:api"))
             api(project(":data_profile:api"))
             api(project(":data_clients:api"))
@@ -37,3 +38,4 @@ kotlin {
         }
     }
 }
+

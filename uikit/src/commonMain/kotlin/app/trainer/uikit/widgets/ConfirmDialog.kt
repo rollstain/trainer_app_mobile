@@ -15,10 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import app.trainer.uikit.AppTheme
 
 private val DIALOG_MAX_WIDTH = 340.dp
@@ -48,7 +48,10 @@ fun AppConfirmDialog(
     tone: ConfirmDialogTone = ConfirmDialogTone.Neutral,
     dismiss: ConfirmDialogDismiss = ConfirmDialogDismiss.None,
 ) {
-    Dialog(onDismissRequest = onDismissRequest) {
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()

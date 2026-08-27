@@ -15,7 +15,7 @@ class ContactLinkScreenModel(
     override fun dispatch(event: ContactLinkEvent) {
         when (event) {
             ContactLinkEvent.OnSubmitClicked -> save()
-            ContactLinkEvent.OnSkipClicked -> finish()
+            ContactLinkEvent.OnSkipClicked -> dismiss()
             is ContactLinkEvent.OnKindChanged -> updateState {
                 it.copy(kind = event.kind, value = "")
             }
@@ -36,14 +36,14 @@ class ContactLinkScreenModel(
             updateState { it.copy(isSubmitting = false) }
             when (updated) {
                 is RequestResult.Error -> postSideEffect(ContactLinkSideEffect.ShowFailure(updated))
-                is RequestResult.Success -> postSideEffect(ContactLinkSideEffect.Finish)
+                is RequestResult.Success -> postSideEffect(ContactLinkSideEffect.Saved)
             }
         }
     }
 
-    private fun finish() {
+    private fun dismiss() {
         screenModelScope {
-            postSideEffect(ContactLinkSideEffect.Finish)
+            postSideEffect(ContactLinkSideEffect.Dismissed)
         }
     }
 }

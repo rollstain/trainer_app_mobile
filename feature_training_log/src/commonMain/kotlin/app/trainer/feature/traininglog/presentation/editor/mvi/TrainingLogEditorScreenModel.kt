@@ -1,8 +1,16 @@
 package app.trainer.feature.traininglog.presentation.editor.mvi
 
 import app.trainer.base.BaseScreenModel
+import app.trainer.base.date.monthGenitiveOf
+import app.trainer.base.format.VolumeFormat
+import app.trainer.base.input.WeightInput
+import app.trainer.data.program.PlannedWorkout
+import app.trainer.data.program.ProgramExerciseLine
+import app.trainer.data.program.ProgramRepository
 import app.trainer.data.traininglog.Exercise
 import app.trainer.data.traininglog.ExerciseKind
+import app.trainer.data.traininglog.LastPerformed
+import app.trainer.data.traininglog.SaveOutcome
 import app.trainer.data.traininglog.TrainingDayInput
 import app.trainer.data.traininglog.TrainingInputRow
 import app.trainer.data.traininglog.TrainingInputStore
@@ -11,31 +19,30 @@ import app.trainer.data.traininglog.TrainingLogEntry
 import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.data.traininglog.TrainingSet
 import app.trainer.data.traininglog.TrainingSetDraft
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
-import app.trainer.data.traininglog.LastPerformed
 import app.trainer.feature.traininglog.domain.DurationInput
 import app.trainer.feature.traininglog.domain.RestCountdown
 import app.trainer.feature.traininglog.domain.RestTimer
-import app.trainer.feature.traininglog.domain.VolumeFormat
-import app.trainer.base.input.WeightInput
+import app.trainer.strings.Res
+import app.trainer.strings.training_log_planned_summary
+import app.trainer.strings.training_log_set_values_invalid
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
+import org.jetbrains.compose.resources.getString
 
 private const val INPUT_SAVE_DELAY_MS = 500L
 private const val SECONDS_IN_MINUTE = 60
 private const val SECONDS_PAD_LENGTH = 2
 private const val TIME_SEPARATOR = ":"
-
-private val MONTH_NAMES = listOf(
-    "января", "февраля", "марта", "апреля", "мая", "июня",
-    "июля", "августа", "сентября", "октября", "ноября", "декабря",
-)
 
 @OptIn(ExperimentalUuidApi::class)
 class TrainingLogEditorScreenModel(
@@ -46,6 +53,7 @@ class TrainingLogEditorScreenModel(
     private val durationInput: DurationInput,
     private val volumeFormat: VolumeFormat,
     private val restTimer: RestTimer,
+    private val programRepository: ProgramRepository,
 ) : BaseScreenModel<TrainingLogEditorState, TrainingLogEditorSideEffect, TrainingLogEditorEvent>(
     initialState = TrainingLogEditorState.initial(entryDate = LocalDate.parse(entryDateIso)),
 ) {
@@ -53,6 +61,8 @@ class TrainingLogEditorScreenModel(
     private val entryDate: LocalDate get() = state.entryDate
 
     private var slotId: String? = null
+
+    private var plannedWorkout: PlannedWorkout? = null
 
     private var syncedInput: TrainingDayInput? = null
 
@@ -83,17 +93,19 @@ class TrainingLogEditorScreenModel(
     }
 
     override fun onFetchData() {
+        screenModelScope { observeQueue() }
         onFetchDataScope {
-            updateState { it.copy(isLoading = true, isFailed = false) }
+            trainingLogRepository.sendQueuedEntries()
+            updateState { it.copy(isLoading = true, failure = null) }
             val exercises = trainingLogRepository.availableExercises()
             if (exercises is RequestResult.Error) {
-                updateState { it.copy(isLoading = false, isFailed = true) }
+                updateState { it.copy(isLoading = false, failure = exercises) }
                 postSideEffect(TrainingLogEditorSideEffect.ShowFailure(exercises))
                 return@onFetchDataScope
             }
             val entries = trainingLogRepository.ownEntries(from = entryDate, to = entryDate)
             if (entries is RequestResult.Error) {
-                updateState { it.copy(isLoading = false, isFailed = true) }
+                updateState { it.copy(isLoading = false, failure = entries) }
                 postSideEffect(TrainingLogEditorSideEffect.ShowFailure(entries))
                 return@onFetchDataScope
             }
@@ -101,12 +113,58 @@ class TrainingLogEditorScreenModel(
                 exercises = (exercises as RequestResult.Success).data,
                 entry = (entries as RequestResult.Success).data.firstOrNull(),
             )
+            loadPlan()
+        }
+    }
+
+    private suspend fun loadPlan() {
+        val planned = programRepository.plannedWorkouts(from = entryDate, to = entryDate)
+        if (planned !is RequestResult.Success) return
+        val workout = planned.data.firstOrNull()?.takeIf { it.exercises.isNotEmpty() }
+        plannedWorkout = workout
+        val forDay = when (workout) {
+            null -> PlannedForDay.None
+            else -> PlannedForDay.Workout(
+                dayTitle = workout.dayTitle,
+                summary = getString(
+                    Res.string.training_log_planned_summary,
+                    workout.exercises.size,
+                    workout.exercises.sumOf { it.setsCount },
+                ),
+            )
+        }
+        updateState { it.copy(planned = forDay) }
+    }
+
+    private fun applyPlan() {
+        screenModelScope { state ->
+            val workout = plannedWorkout ?: return@screenModelScope
+            val rows = workout.exercises.flatMap { line -> rowsOf(line = line, options = state.exercises) }
+            if (rows.isEmpty()) return@screenModelScope
+            updateState { current -> current.copy(sets = (current.sets + rows).toImmutableList()) }
+        }
+    }
+
+    private fun rowsOf(line: ProgramExerciseLine, options: List<ExerciseOption>): List<SetRow> {
+        val option = options.firstOrNull { it.exerciseId == line.exerciseId } ?: return emptyList()
+        return (0 until line.setsCount).map {
+            emptyRowFor(option).copy(
+                repetitionsText = line.repetitions?.toString().orEmpty(),
+                weightText = line.weightGrams?.let(weightInput::toKilogramsText).orEmpty(),
+            )
+        }
+    }
+
+    private suspend fun observeQueue() {
+        trainingLogRepository.observeQueuedDates().collectLatest { dates ->
+            updateState { it.copy(isQueued = entryDate in dates) }
         }
     }
 
     override fun dispatch(event: TrainingLogEditorEvent) {
         when (event) {
             TrainingLogEditorEvent.OnRetryClicked -> onFetchData()
+            TrainingLogEditorEvent.OnPlanApplied -> applyPlan()
             TrainingLogEditorEvent.OnSaveClicked -> save()
             is TrainingLogEditorEvent.OnExerciseAdded -> addSet(event.exerciseId)
             is TrainingLogEditorEvent.OnSetRemoved -> removeSet(event.rowId)
@@ -150,20 +208,23 @@ class TrainingLogEditorScreenModel(
         val restoredRows = storedInput?.rows
             ?.map { row -> toRow(input = row, hints = hintsByExercise[row.exerciseId]) }
 
+        val dateLabel = formatDate(entryDate)
+        val volumeLabel = volumeFormat.toKilograms(entry?.totalVolumeGrams ?: 0)
         updateState { current ->
             current.copy(
-                dateLabel = formatDate(entryDate),
-                volumeLabel = volumeFormat.toKilograms(entry?.totalVolumeGrams ?: 0),
+                dateLabel = dateLabel,
+                volumeLabel = volumeLabel,
                 exercises = options.toImmutableList(),
                 sets = (restoredRows ?: syncedRows).toImmutableList(),
                 notes = storedInput?.notes ?: syncedNotes,
                 isLoading = false,
-                isFailed = false,
+                failure = null,
             )
         }
         observeInput()
     }
 
+    @OptIn(FlowPreview::class)
     private fun observeInput() {
         inputObserver?.cancel()
         inputObserver = screenModelScope {
@@ -219,8 +280,12 @@ class TrainingLogEditorScreenModel(
                 postSideEffect(
                     TrainingLogEditorSideEffect.ShowFailure(
                         RequestResult.Error(
+                            kind = RequestFailure.Validation,
                             statusCode = null,
-                            userMessage = "Проверьте значения в подходе «${unparsed.first.exerciseName}»",
+                            userMessage = getString(
+                                Res.string.training_log_set_values_invalid,
+                                unparsed.first.exerciseName,
+                            ),
                             devMessage = "Не разобраны числовые поля подхода ${unparsed.first.rowId}",
                         )
                     )
@@ -240,9 +305,12 @@ class TrainingLogEditorScreenModel(
             updateState { it.copy(isSaving = false) }
             when (saved) {
                 is RequestResult.Error -> postSideEffect(TrainingLogEditorSideEffect.ShowFailure(saved))
-                is RequestResult.Success -> {
-                    showSaved(saved.data)
-                    postSideEffect(TrainingLogEditorSideEffect.ShowSaved)
+                is RequestResult.Success -> when (val outcome = saved.data) {
+                    is SaveOutcome.Sent -> {
+                        showSaved(outcome.entry)
+                        postSideEffect(TrainingLogEditorSideEffect.ShowSaved)
+                    }
+                    SaveOutcome.Queued -> postSideEffect(TrainingLogEditorSideEffect.ShowQueued)
                 }
             }
         }
@@ -253,9 +321,10 @@ class TrainingLogEditorScreenModel(
         val savedRows = entry.sets.map { set -> toRow(set = set, hints = hintsByExercise[set.exerciseId]) }
         val savedNotes = entry.notes.orEmpty()
         syncedInput = TrainingDayInput(notes = savedNotes, rows = savedRows.map(::toInputRow))
+        val volumeLabel = volumeFormat.toKilograms(entry.totalVolumeGrams)
         updateState { current ->
             current.copy(
-                volumeLabel = volumeFormat.toKilograms(entry.totalVolumeGrams),
+                volumeLabel = volumeLabel,
                 sets = savedRows.toImmutableList(),
                 notes = savedNotes,
             )
@@ -343,9 +412,9 @@ class TrainingLogEditorScreenModel(
         )
     }
 
-    private fun formatDate(date: LocalDate): String {
-        val month = MONTH_NAMES[date.monthNumber - 1]
-        return "${date.dayOfMonth} $month"
+    private suspend fun formatDate(date: LocalDate): String {
+        val month = monthGenitiveOf(date)
+        return "${date.day} $month"
     }
 
     private fun toDraft(row: SetRow): TrainingSetDraft = TrainingSetDraft(

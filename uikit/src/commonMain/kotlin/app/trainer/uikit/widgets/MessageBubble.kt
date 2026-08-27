@@ -23,6 +23,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.dashedBorder
+import app.trainer.uikit.resources.Res
+import app.trainer.uikit.resources.message_delivery_failed
+import app.trainer.uikit.resources.message_delivery_pending
+import app.trainer.uikit.resources.message_delivery_read
+import app.trainer.uikit.resources.message_delivery_sent
+import app.trainer.uikit.resources.message_photo_description
+import org.jetbrains.compose.resources.stringResource
 
 private const val PENDING_ALPHA = 0.55f
 private const val MAX_WIDTH_FRACTION = 0.78f
@@ -30,7 +37,6 @@ private val BUBBLE_PADDING_VERTICAL = 10.dp
 private val BUBBLE_PADDING_HORIZONTAL = 12.dp
 private val TAIL_RADIUS = 4.dp
 private val BUBBLE_PHOTO_HEIGHT = 200.dp
-private const val PHOTO_DESCRIPTION = "Фото в сообщении"
 
 data class BubbleAttachment(
     val id: String,
@@ -137,7 +143,7 @@ private fun BubblePhoto(attachment: BubbleAttachment) {
                 modifier = Modifier.fillMaxSize(),
                 url = attachment.url,
                 cacheKey = attachment.id,
-                contentDescription = PHOTO_DESCRIPTION,
+                contentDescription = stringResource(Res.string.message_photo_description),
             )
         }
     }
@@ -149,13 +155,13 @@ private fun OwnDeliveryIcon(delivery: MessageDeliveryState) {
         MessageDeliveryState.Pending, MessageDeliveryState.Failed -> Unit
         MessageDeliveryState.Sent -> AppIcon(
             painter = AppIcons.sent,
-            contentDescription = "Отправлено",
+            contentDescription = stringResource(Res.string.message_delivery_sent),
             size = IconSize.Small,
             tint = AppTheme.colors.accent,
         )
         MessageDeliveryState.Read -> AppIcon(
             painter = AppIcons.read,
-            contentDescription = "Прочитано",
+            contentDescription = stringResource(Res.string.message_delivery_read),
             size = IconSize.Small,
             tint = AppTheme.colors.accent,
         )
@@ -176,7 +182,7 @@ private fun DeliveryMarker(delivery: MessageDeliveryState, onClick: () -> Unit) 
         ) {
             AppIcon(
                 painter = AppIcons.pending,
-                contentDescription = "В очереди",
+                contentDescription = stringResource(Res.string.message_delivery_pending),
                 size = IconSize.Small,
                 tint = colors.warning,
             )
@@ -190,7 +196,7 @@ private fun DeliveryMarker(delivery: MessageDeliveryState, onClick: () -> Unit) 
         ) {
             AppIcon(
                 painter = AppIcons.failed,
-                contentDescription = "Не отправлено, повторить",
+                contentDescription = stringResource(Res.string.message_delivery_failed),
                 size = IconSize.Small,
                 tint = colors.accentOn,
             )

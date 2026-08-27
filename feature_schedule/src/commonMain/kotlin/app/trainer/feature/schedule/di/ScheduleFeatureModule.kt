@@ -1,26 +1,25 @@
 package app.trainer.feature.schedule.di
 
-import app.trainer.feature.schedule.domain.ScheduleWeeks
 import app.trainer.feature.schedule.domain.SlotSeriesResults
+import app.trainer.feature.schedule.presentation.client.mvi.ClientScheduleScreenModel
+import app.trainer.feature.schedule.presentation.client.ui.ClientScheduleScreen
+import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleScreenModel
+import app.trainer.feature.schedule.presentation.coach.ui.CoachScheduleScreen
 import app.trainer.feature.schedule.presentation.newslot.mvi.NewSlotScreenModel
 import app.trainer.feature.schedule.presentation.newslot.ui.NewSlotScreen
 import app.trainer.feature.schedule.presentation.seriesresult.SeriesResultScreen
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
-import app.trainer.feature.schedule.presentation.client.mvi.ClientScheduleScreenModel
-import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleScreenModel
-import app.trainer.feature.schedule.presentation.client.ui.ClientScheduleScreen
-import app.trainer.feature.schedule.presentation.coach.ui.CoachScheduleScreen
+import app.trainer.feature.schedule.presentation.seriesresult.mvi.SeriesResultScreenModel
 import app.trainer.navigation.Screens
 import app.trainer.navigation.screen
+import kotlin.time.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 class ScheduleFeatureModule {
 
     val module = module {
-        single { ScheduleWeeks() }
         single { SlotSeriesResults() }
         viewModel { (dateIso: String) ->
             NewSlotScreenModel(
@@ -34,6 +33,14 @@ class ScheduleFeatureModule {
             )
         }
         screen<Screens.NewSlot> { NewSlotScreen(dateIso = it.dateIso) }
+        viewModel { (batchId: String) ->
+            SeriesResultScreenModel(
+                batchId = batchId,
+                seriesResults = get(),
+                profileRepository = get(),
+                weeks = get(),
+            )
+        }
         screen<Screens.SlotSeriesResult> { SeriesResultScreen(batchId = it.batchId) }
         screen<Screens.CoachCalendar> { CoachScheduleScreen() }
         screen<Screens.ClientBooking> { ClientScheduleScreen() }

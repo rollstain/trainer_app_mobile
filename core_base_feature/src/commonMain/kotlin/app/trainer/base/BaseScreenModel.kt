@@ -69,7 +69,7 @@ abstract class BaseScreenModel<STATE : Any, SIDE_EFFECT : Any, EVENT : Any>(
     fun collectAsState(): State<STATE> = mutableState.collectAsState()
 
     @Composable
-    fun collectSideEffect(onSideEffect: (SIDE_EFFECT) -> Unit) {
+    fun collectSideEffect(onSideEffect: suspend (SIDE_EFFECT) -> Unit) {
         LaunchedEffect(Unit) {
             sideEffects.receiveAsFlow().collect(onSideEffect)
         }

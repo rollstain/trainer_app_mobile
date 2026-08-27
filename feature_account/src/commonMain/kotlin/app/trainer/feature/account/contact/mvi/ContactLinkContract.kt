@@ -36,7 +36,9 @@ sealed interface ContactLinkEvent {
 
 sealed interface ContactLinkSideEffect {
 
-    data object Finish : ContactLinkSideEffect
+    data object Dismissed : ContactLinkSideEffect
+
+    data object Saved : ContactLinkSideEffect
 
     data class ShowFailure(val failure: RequestResult.Error) : ContactLinkSideEffect
 }

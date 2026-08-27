@@ -24,6 +24,8 @@ class TrainingLogMapper(private val logger: Logger) {
             muscleGroup = response.muscleGroup,
             kind = kind,
             isOwnedByCoach = isOwnedByCoach,
+            description = response.description,
+            videoUrl = response.videoUrl,
             lastPerformed = toLastPerformed(response),
         )
     }

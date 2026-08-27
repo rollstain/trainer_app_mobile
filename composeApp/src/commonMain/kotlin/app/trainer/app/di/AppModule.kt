@@ -1,6 +1,7 @@
 package app.trainer.app.di
 
-import app.trainer.app.AppStartup
+import app.trainer.app.SessionController
+import app.trainer.base.date.ScheduleWeeks
 import app.trainer.base.input.WeightInput
 import app.trainer.data.chat.impl.di.ChatDataModule
 import app.trainer.feature.account.di.AccountFeatureModule
@@ -14,13 +15,16 @@ class AppModule(private val config: NetworkConfig, private val deviceInfo: Strin
     val module = module {
         single<CoroutineDispatcher> { ioDispatcher() }
         single { WeightInput() }
+        single { ScheduleWeeks() }
         single(named(AccountFeatureModule.DEVICE_INFO_QUALIFIER)) { deviceInfo }
         single(named(ChatDataModule.WEB_SOCKET_URL_QUALIFIER)) { config.chatWebSocketUrl }
         single {
-            AppStartup(
+            SessionController(
                 authRepository = get(),
+                profileRepository = get(),
                 chatRealtime = get(),
                 messagingTokenManager = get(),
+                trainingLogRepository = get(),
                 sessionEvents = get(),
                 localDataCleaners = getAll(),
                 logger = get(),

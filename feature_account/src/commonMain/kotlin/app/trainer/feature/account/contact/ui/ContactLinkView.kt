@@ -6,11 +6,23 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import app.trainer.feature.account.contact.mvi.ContactKind
 import app.trainer.feature.account.contact.mvi.ContactLinkEvent
 import app.trainer.feature.account.contact.mvi.ContactLinkState
+import app.trainer.strings.Res
+import app.trainer.strings.contact_link_description
+import app.trainer.strings.contact_link_email_label
+import app.trainer.strings.contact_link_email_toggle
+import app.trainer.strings.contact_link_phone_label
+import app.trainer.strings.contact_link_phone_toggle
+import app.trainer.strings.contact_link_skip_action
+import app.trainer.strings.contact_link_submit_action
+import app.trainer.strings.contact_link_title
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
@@ -20,16 +32,7 @@ import app.trainer.uikit.widgets.ButtonSize
 import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.TextFieldLabel
-
-private const val TITLE = "Как вас найти"
-private const val DESCRIPTION =
-    "Контакт нужен, чтобы вернуть доступ, если смените телефон. Тренер его не видит."
-private const val PHONE_TOGGLE = "Телефон"
-private const val EMAIL_TOGGLE = "Почта"
-private const val PHONE_LABEL = "Номер телефона"
-private const val EMAIL_LABEL = "Электронная почта"
-private const val SUBMIT_ACTION = "Сохранить"
-private const val SKIP_ACTION = "Позже"
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ContactLinkView(
@@ -41,6 +44,8 @@ fun ContactLinkView(
         modifier = modifier
             .fillMaxSize()
             .screenBackground()
+            .statusBarsPadding()
+            .verticalScroll(rememberScrollState())
             .padding(
                 start = AppTheme.spacing.dp16,
                 end = AppTheme.spacing.dp16,
@@ -50,18 +55,18 @@ fun ContactLinkView(
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp16),
     ) {
         AppText(
-            text = TITLE,
+            text = stringResource(Res.string.contact_link_title),
             style = AppTheme.typography.display,
             color = AppTheme.colors.textPrimary,
         )
         AppText(
-            text = DESCRIPTION,
+            text = stringResource(Res.string.contact_link_description),
             style = AppTheme.typography.body,
             color = AppTheme.colors.textSecondary,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
             AppButton(
-                text = PHONE_TOGGLE,
+                text = stringResource(Res.string.contact_link_phone_toggle),
                 onClick = { onEvent(ContactLinkEvent.OnKindChanged(ContactKind.Phone)) },
                 tone = if (state.kind == ContactKind.Phone) {
                     ButtonTone.Primary
@@ -70,7 +75,7 @@ fun ContactLinkView(
                 },
             )
             AppButton(
-                text = EMAIL_TOGGLE,
+                text = stringResource(Res.string.contact_link_email_toggle),
                 onClick = { onEvent(ContactLinkEvent.OnKindChanged(ContactKind.Email)) },
                 tone = if (state.kind == ContactKind.Email) {
                     ButtonTone.Primary
@@ -83,12 +88,16 @@ fun ContactLinkView(
             value = state.value,
             onValueChange = { onEvent(ContactLinkEvent.OnValueChanged(it)) },
             label = TextFieldLabel.Text(
-                if (state.kind == ContactKind.Phone) PHONE_LABEL else EMAIL_LABEL
+                if (state.kind == ContactKind.Phone) {
+                    stringResource(Res.string.contact_link_phone_label)
+                } else {
+                    stringResource(Res.string.contact_link_email_label)
+                }
             ),
         )
         AppButton(
             modifier = Modifier.fillMaxWidth(),
-            text = SUBMIT_ACTION,
+            text = stringResource(Res.string.contact_link_submit_action),
             onClick = { onEvent(ContactLinkEvent.OnSubmitClicked) },
             tone = ButtonTone.Primary,
             size = ButtonSize.Large,
@@ -100,7 +109,7 @@ fun ContactLinkView(
         )
         AppButton(
             modifier = Modifier.fillMaxWidth(),
-            text = SKIP_ACTION,
+            text = stringResource(Res.string.contact_link_skip_action),
             onClick = { onEvent(ContactLinkEvent.OnSkipClicked) },
             tone = ButtonTone.Text,
             size = ButtonSize.Large,

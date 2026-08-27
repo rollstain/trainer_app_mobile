@@ -4,6 +4,10 @@ plugins {
     id(libs.plugins.kotlinSerialization.get().pluginId)
 }
 
+base {
+    archivesName = "data_profile-impl"
+}
+
 kotlin {
     android {
         namespace = "app.trainer.data_profile.impl"
@@ -24,6 +28,7 @@ kotlin {
             implementation(project(":data_profile:api"))
             implementation(project(":core_network:api"))
             implementation(project(":core_logger"))
+            implementation(libs.multiplatform.settings)
             implementation(libs.ktor.client.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines)

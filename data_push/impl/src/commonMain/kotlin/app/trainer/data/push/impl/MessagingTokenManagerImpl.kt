@@ -9,6 +9,8 @@ import kotlinx.coroutines.CancellationException
 
 private const val LOG_TAG = "push-token"
 
+private data class TokenRegistration(val token: String, val language: String)
+
 class MessagingTokenManagerImpl(
     private val notificationsUtils: NotificationsUtils,
     private val pushTokenRepository: PushTokenRepository,
@@ -16,7 +18,7 @@ class MessagingTokenManagerImpl(
     private val logger: Logger,
 ) : MessagingTokenManager {
 
-    private var registeredToken: String? = null
+    private var registration: TokenRegistration? = null
 
     override suspend fun refreshToken() {
         if (tokenStorage.read() == null) {
@@ -24,18 +26,20 @@ class MessagingTokenManagerImpl(
             return
         }
         val messagingToken = readMessagingToken() ?: return
-        if (messagingToken == registeredToken) return
+        val current = TokenRegistration(token = messagingToken, language = deviceLanguage())
+        if (current == registration) return
 
         val registered = pushTokenRepository.register(
-            token = messagingToken,
+            token = current.token,
             platform = notificationsUtils.platform,
+            language = current.language,
         )
         when (registered) {
             is RequestResult.Error -> logger.error(
                 tag = LOG_TAG,
                 message = "Не удалось зарегистрировать пуш-токен: ${registered.devMessage}",
             )
-            is RequestResult.Success -> registeredToken = messagingToken
+            is RequestResult.Success -> registration = current
         }
     }
 

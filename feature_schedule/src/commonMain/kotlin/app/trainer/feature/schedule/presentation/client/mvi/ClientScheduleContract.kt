@@ -1,9 +1,9 @@
 package app.trainer.feature.schedule.presentation.client.mvi
 
 import app.trainer.entities.RequestResult
+import kotlin.time.Instant
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 
 data class CoachOption(
@@ -27,7 +27,6 @@ data class ClientScheduleDay(
     val date: LocalDate,
     val weekdayLabel: String,
     val dayNumberLabel: String,
-    val isSelected: Boolean,
     val isToday: Boolean,
     val isWeekend: Boolean,
     val slots: ImmutableList<ClientSlotRow>,
@@ -42,7 +41,7 @@ data class ClientScheduleState(
     val days: ImmutableList<ClientScheduleDay>,
     val slotPendingCancel: String?,
     val isLoading: Boolean,
-    val isFailed: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     companion object {
@@ -56,7 +55,7 @@ data class ClientScheduleState(
             days = persistentListOf(),
             slotPendingCancel = null,
             isLoading = true,
-            isFailed = false,
+            failure = null,
         )
     }
 }
@@ -64,6 +63,8 @@ data class ClientScheduleState(
 sealed interface ClientScheduleEvent {
 
     data object OnRetryClicked : ClientScheduleEvent
+
+    data object OnWriteCoachClicked : ClientScheduleEvent
 
     data object OnPreviousWeekClicked : ClientScheduleEvent
 
@@ -93,4 +94,6 @@ sealed interface ClientScheduleSideEffect {
     data object ShowChangeRequestSent : ClientScheduleSideEffect
 
     data object ShowSlotBooked : ClientScheduleSideEffect
+
+    data object OpenChat : ClientScheduleSideEffect
 }

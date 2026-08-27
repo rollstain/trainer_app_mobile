@@ -1,0 +1,21 @@
+CREATE TABLE trainingLogOutboxEntity (
+    dateIso TEXT NOT NULL PRIMARY KEY,
+    payloadJson TEXT NOT NULL,
+    queuedAtEpochMs INTEGER NOT NULL
+);
+
+selectQueued:
+SELECT * FROM trainingLogOutboxEntity ORDER BY queuedAtEpochMs;
+
+selectQueuedDates:
+SELECT dateIso FROM trainingLogOutboxEntity;
+
+upsertQueued:
+INSERT OR REPLACE INTO trainingLogOutboxEntity(dateIso, payloadJson, queuedAtEpochMs)
+VALUES (?, ?, ?);
+
+deleteQueued:
+DELETE FROM trainingLogOutboxEntity WHERE dateIso = ?;
+
+deleteAllQueued:
+DELETE FROM trainingLogOutboxEntity;

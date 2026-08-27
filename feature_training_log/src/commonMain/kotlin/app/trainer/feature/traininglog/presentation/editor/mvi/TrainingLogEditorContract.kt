@@ -50,6 +50,13 @@ data class SetRow(
 
 data class RestState(val label: String, val progress: Float)
 
+sealed interface PlannedForDay {
+
+    data object None : PlannedForDay
+
+    data class Workout(val dayTitle: String, val summary: String) : PlannedForDay
+}
+
 data class TrainingLogEditorState(
     val entryDate: LocalDate,
     val dateLabel: String,
@@ -58,9 +65,11 @@ data class TrainingLogEditorState(
     val sets: ImmutableList<SetRow>,
     val notes: String,
     val rest: RestState?,
+    val planned: PlannedForDay,
     val isLoading: Boolean,
     val isSaving: Boolean,
-    val isFailed: Boolean,
+    val isQueued: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     val isSaveEnabled: Boolean
@@ -76,9 +85,11 @@ data class TrainingLogEditorState(
             sets = persistentListOf(),
             notes = "",
             rest = null,
+            planned = PlannedForDay.None,
             isLoading = true,
             isSaving = false,
-            isFailed = false,
+            isQueued = false,
+            failure = null,
         )
     }
 }
@@ -86,6 +97,8 @@ data class TrainingLogEditorState(
 sealed interface TrainingLogEditorEvent {
 
     data object OnRetryClicked : TrainingLogEditorEvent
+
+    data object OnPlanApplied : TrainingLogEditorEvent
 
     data object OnSaveClicked : TrainingLogEditorEvent
 
@@ -115,4 +128,6 @@ sealed interface TrainingLogEditorSideEffect {
     data class ShowFailure(val failure: RequestResult.Error) : TrainingLogEditorSideEffect
 
     data object ShowSaved : TrainingLogEditorSideEffect
+
+    data object ShowQueued : TrainingLogEditorSideEffect
 }

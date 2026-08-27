@@ -22,7 +22,9 @@ kotlin {
     }
     sourceSets {
         commonMain.dependencies {
+            api(project(":core_strings"))
             api(project(":data_training_log:api"))
+            api(project(":data_program:api"))
             api(project(":core_base_feature"))
             api(project(":navigation"))
             api(project(":uikit"))
@@ -37,3 +39,4 @@ kotlin {
         }
     }
 }
+

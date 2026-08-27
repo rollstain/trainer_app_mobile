@@ -1,8 +1,8 @@
 package app.trainer.feature.chat.di
 
 import app.trainer.feature.chat.presentation.dialog.mvi.DialogScreenModel
-import app.trainer.feature.chat.presentation.list.mvi.ChatListScreenModel
 import app.trainer.feature.chat.presentation.dialog.ui.DialogScreen
+import app.trainer.feature.chat.presentation.list.mvi.ChatListScreenModel
 import app.trainer.feature.chat.presentation.list.ui.ChatListScreen
 import app.trainer.navigation.Screens
 import app.trainer.navigation.screen
@@ -13,7 +13,7 @@ class ChatFeatureModule {
 
     val module = module {
         viewModel {
-            ChatListScreenModel(chatRepository = get())
+            ChatListScreenModel(chatRepository = get(), profileRepository = get())
         }
         viewModel { (dialogId: String) ->
             DialogScreenModel(

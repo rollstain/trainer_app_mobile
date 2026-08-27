@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -32,6 +34,9 @@ private const val TITLE_WIDTH_FRACTION = 0.5f
 private const val PREVIEW_WIDTH_FRACTION = 0.7f
 private val TITLE_BAR_HEIGHT = 14.dp
 private val PREVIEW_BAR_HEIGHT = 12.dp
+private val LINE_WIDTH_FRACTIONS = listOf(0.5f, 0.85f, 0.65f)
+private const val SLOT_TITLE_WIDTH_FRACTION = 0.55f
+private const val SLOT_SUBTITLE_WIDTH_FRACTION = 0.35f
 
 @Composable
 fun Modifier.shimmerable(isLoading: Boolean): Modifier {
@@ -88,5 +93,88 @@ fun AppCellShimmer(modifier: Modifier = Modifier, isLastRow: Boolean = false) {
                     .shimmerable(isLoading = true),
             )
         }
+    }
+}
+
+@Composable
+fun AppCardShimmer(modifier: Modifier = Modifier, lines: Int) {
+    AppCard(modifier = modifier) {
+        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
+            repeat(lines) { index ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(LINE_WIDTH_FRACTIONS[index % LINE_WIDTH_FRACTIONS.size])
+                        .height(if (index == 0) TITLE_BAR_HEIGHT else PREVIEW_BAR_HEIGHT)
+                        .shimmerable(isLoading = true),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AppSlotShimmer(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(AppTheme.sizing.slotCardMinHeight)
+            .background(
+                color = AppTheme.colors.bgSurface,
+                shape = RoundedCornerShape(AppTheme.radius.dp12),
+            )
+            .padding(horizontal = AppTheme.spacing.dp12, vertical = AppTheme.spacing.dp12),
+        horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(AppTheme.sizing.slotTimeColumnWidth)
+                .height(TITLE_BAR_HEIGHT)
+                .shimmerable(isLoading = true),
+        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(SLOT_TITLE_WIDTH_FRACTION)
+                    .height(TITLE_BAR_HEIGHT)
+                    .shimmerable(isLoading = true),
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(SLOT_SUBTITLE_WIDTH_FRACTION)
+                    .height(PREVIEW_BAR_HEIGHT)
+                    .shimmerable(isLoading = true),
+            )
+        }
+    }
+}
+
+@Composable
+fun AppCardShimmerList(modifier: Modifier = Modifier, count: Int, lines: Int) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(AppTheme.spacing.dp16),
+        verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
+    ) {
+        repeat(count) { AppCardShimmer(lines = lines) }
+    }
+}
+
+@Composable
+fun AppSlotShimmerList(modifier: Modifier = Modifier, count: Int) {
+    Column(
+        modifier = modifier.fillMaxSize().padding(AppTheme.spacing.dp16),
+        verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
+    ) {
+        repeat(count) { AppSlotShimmer() }
+    }
+}
+
+@Composable
+fun AppCellShimmerList(modifier: Modifier = Modifier, count: Int) {
+    Column(modifier = modifier.fillMaxSize()) {
+        repeat(count) { index -> AppCellShimmer(isLastRow = index == count - 1) }
     }
 }

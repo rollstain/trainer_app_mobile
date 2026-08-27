@@ -1,9 +1,13 @@
 package app.trainer.android
 
+import android.Manifest
 import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import app.trainer.data.push.MessagingTokenManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -49,6 +53,12 @@ class TrainerMessagingService : FirebaseMessagingService(), KoinComponent {
     }
 
     private fun showNotification(title: String, body: String, target: PushTarget) {
+        val postNotificationsGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+        if (!postNotificationsGranted) return
         val manager = NotificationManagerCompat.from(this)
         if (!manager.areNotificationsEnabled()) return
 
@@ -75,7 +85,7 @@ class TrainerMessagingService : FirebaseMessagingService(), KoinComponent {
             .setContentIntent(pendingIntent)
             .build()
 
-        runCatching { manager.notify(notificationId, notification) }
+        manager.notify(notificationId, notification)
     }
 }
 

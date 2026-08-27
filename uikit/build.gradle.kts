@@ -1,15 +1,26 @@
 plugins {
     id(libs.plugins.kotlinMultiplatform.get().pluginId)
-    id(libs.plugins.androidKmpLibrary.get().pluginId)
+    id(libs.plugins.androidLibrary.get().pluginId)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.jetbrainsCompose)
 }
 
-kotlin {
-    android {
-        namespace = "app.trainer.uikit"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
+android {
+    namespace = "app.trainer.uikit"
+    compileSdk = libs.versions.android.compileSdk.get().toInt()
+
+    defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+kotlin {
+    androidTarget {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }

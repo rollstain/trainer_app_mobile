@@ -2,8 +2,11 @@ package app.trainer.feature.schedule.presentation.coach.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import app.trainer.base.failure.toastMessage
+import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleEvent
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleScreenModel
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleSideEffect
+import app.trainer.feature.schedule.presentation.newslot.ui.NEW_SLOT_REQUEST
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.Navigator
 import app.trainer.navigation.Screen
@@ -22,6 +25,10 @@ class CoachScheduleScreen : Screen {
         val screenModel: CoachScheduleScreenModel = koinScreenModel()
         val state by screenModel.collectAsState()
 
+        navigator.handleResult(NEW_SLOT_REQUEST) {
+            screenModel.dispatch(event = CoachScheduleEvent.OnSlotCreated)
+        }
+
         CoachScheduleView(state = state, onEvent = { screenModel.dispatch(event = it) })
 
         screenModel.collectSideEffect { effect ->
@@ -30,14 +37,15 @@ class CoachScheduleScreen : Screen {
     }
 }
 
-private fun handleSideEffect(
+private suspend fun handleSideEffect(
     effect: CoachScheduleSideEffect,
     navigator: Navigator,
     toastHost: ToastHostState,
 ) {
     when (effect) {
-        is CoachScheduleSideEffect.ShowFailure -> toastHost.show(effect.failure.userMessage)
-        is CoachScheduleSideEffect.OpenSlotDetails -> Unit
-        CoachScheduleSideEffect.OpenSlotCreation -> navigator.push(Screens.NewSlot(dateIso = null))
+        is CoachScheduleSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
+        is CoachScheduleSideEffect.OpenSlotCreation -> navigator.push(
+            Screens.NewSlot(dateIso = effect.dateIso)
+        )
     }
 }

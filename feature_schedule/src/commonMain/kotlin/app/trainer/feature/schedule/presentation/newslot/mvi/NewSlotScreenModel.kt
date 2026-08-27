@@ -1,12 +1,17 @@
 package app.trainer.feature.schedule.presentation.newslot.mvi
 
 import app.trainer.base.BaseScreenModel
+import app.trainer.base.date.ScheduleWeeks
+import app.trainer.base.date.weekdayShortOf
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.schedule.SlotSeriesDraft
 import app.trainer.entities.RequestResult
-import app.trainer.feature.schedule.domain.ScheduleWeeks
 import app.trainer.feature.schedule.domain.SlotSeriesResults
+import app.trainer.feature.schedule.presentation.formatScheduleDate
+import app.trainer.strings.Res
+import app.trainer.strings.new_slot_summary_series
+import app.trainer.strings.new_slot_summary_single
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlinx.collections.immutable.toImmutableList
@@ -16,14 +21,13 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
+import org.jetbrains.compose.resources.getString
 
 private const val TIME_SEPARATOR = ':'
 private const val MINUTES_IN_HOUR = 60
-private val WEEKDAY_LABELS = listOf("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
-private val MONTH_NAMES = listOf(
-    "января", "февраля", "марта", "апреля", "мая", "июня",
-    "июля", "августа", "сентября", "октября", "ноября", "декабря",
-)
+private const val HOUR_DIGITS = 2
+private const val MINUTE_DIGITS = 2
+private const val TIME_PARTS = 2
 
 @OptIn(ExperimentalUuidApi::class)
 class NewSlotScreenModel(
@@ -45,10 +49,12 @@ class NewSlotScreenModel(
     override fun onFetchData() {
         onFetchDataScope { state ->
             coachZone = resolveZone()
+            val dateLabel = formatDate(state.date)
+            val weekDays = defaultWeekDays(state.date)
             updateState { current ->
                 current.copy(
-                    dateLabel = formatDate(state.date),
-                    weekDays = defaultWeekDays(state.date).toImmutableList(),
+                    dateLabel = dateLabel,
+                    weekDays = weekDays.toImmutableList(),
                 )
             }
             refreshSummary()
@@ -90,17 +96,23 @@ class NewSlotScreenModel(
     }
 
     private suspend fun refreshSummary() {
-        updateState { current -> current.copy(summaryLabel = buildSummary(current)) }
+        val summaryLabel = buildSummary(state)
+        updateState { current -> current.copy(summaryLabel = summaryLabel) }
     }
 
-    private fun buildSummary(state: NewSlotState): String {
+    private suspend fun buildSummary(state: NewSlotState): String {
         if (state.timeText.length != NewSlotState.TIME_LENGTH) return ""
         return when (state.mode) {
-            SlotMode.Single -> "${formatDate(state.date)}, ${state.timeText}, ${state.durationMinutes} мин"
+            SlotMode.Single -> getString(
+                Res.string.new_slot_summary_single,
+                formatDate(state.date),
+                state.timeText,
+                state.durationMinutes,
+            )
             SlotMode.Series -> {
                 val days = state.weekDays.filter { it.isSelected }.joinToString(", ") { it.label }
                 val count = state.weekDays.count { it.isSelected } * state.weeksCount
-                "$count слотов: $days в ${state.timeText}"
+                getString(Res.string.new_slot_summary_series, count, days, state.timeText)
             }
         }
     }
@@ -161,35 +173,32 @@ class NewSlotScreenModel(
         }
     }
 
-    private fun defaultWeekDays(date: LocalDate): List<WeekDayToggle> {
+    private suspend fun defaultWeekDays(date: LocalDate): List<WeekDayToggle> {
         return DayOfWeek.entries.map { dayOfWeek ->
             WeekDayToggle(
                 dayOfWeek = dayOfWeek,
-                label = WEEKDAY_LABELS[dayOfWeek.ordinal],
+                label = weekdayShortOf(dayOfWeek.ordinal),
                 isSelected = dayOfWeek == date.dayOfWeek,
             )
         }
     }
 
     private fun normalizeTime(raw: String): String {
-        val digits = raw.filter(Char::isDigit).take(4)
+        val digits = raw.filter(Char::isDigit).take(HOUR_DIGITS + MINUTE_DIGITS)
         return when {
-            digits.length <= 2 -> digits
-            else -> "${digits.take(2)}$TIME_SEPARATOR${digits.drop(2)}"
+            digits.length <= HOUR_DIGITS -> digits
+            else -> "${digits.take(HOUR_DIGITS)}$TIME_SEPARATOR${digits.drop(HOUR_DIGITS)}"
         }
     }
 
     private fun parseTime(text: String): LocalTime? {
         val parts = text.split(TIME_SEPARATOR)
-        if (parts.size != 2) return null
+        if (parts.size != TIME_PARTS) return null
         val hours = parts[0].toIntOrNull() ?: return null
         val minutes = parts[1].toIntOrNull() ?: return null
         if (hours !in 0..23 || minutes !in 0 until MINUTES_IN_HOUR) return null
         return LocalTime(hour = hours, minute = minutes)
     }
 
-    private fun formatDate(date: LocalDate): String {
-        val month = MONTH_NAMES[date.monthNumber - 1]
-        return "${date.dayOfMonth} $month"
-    }
+    private suspend fun formatDate(date: LocalDate): String = formatScheduleDate(date)
 }

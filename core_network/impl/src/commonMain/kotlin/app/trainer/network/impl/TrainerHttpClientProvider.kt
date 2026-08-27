@@ -8,6 +8,8 @@ import app.trainer.network.TokenStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.authProvider
+import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -22,6 +24,7 @@ import kotlinx.serialization.json.Json
 private const val LOG_TAG = "network"
 private const val REQUEST_TIMEOUT_MS = 30_000L
 private const val UPLOAD_TIMEOUT_MS = 300_000L
+private const val WEB_SOCKET_PING_INTERVAL_MS = 20_000L
 
 class TrainerHttpClientProvider(
     private val baseUrl: String,
@@ -34,6 +37,10 @@ class TrainerHttpClientProvider(
     override val client: HttpClient by lazy { createClient() }
 
     override val plainClient: HttpClient by lazy { createPlainClient() }
+
+    override fun forgetAuthenticatedUser() {
+        client.authProvider<BearerAuthProvider>()?.clearToken()
+    }
 
     private fun createPlainClient(): HttpClient = createPlatformHttpClient {
         expectSuccess = false
@@ -58,7 +65,9 @@ class TrainerHttpClientProvider(
             requestTimeoutMillis = REQUEST_TIMEOUT_MS
         }
 
-        install(WebSockets)
+        install(WebSockets) {
+            pingIntervalMillis = WEB_SOCKET_PING_INTERVAL_MS
+        }
 
         install(Logging) {
             level = LogLevel.INFO

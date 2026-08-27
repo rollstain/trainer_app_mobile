@@ -1,6 +1,6 @@
 package app.trainer.data.schedule
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 enum class SlotStatus { FREE, BOOKED, CANCELLED, COMPLETED }
 

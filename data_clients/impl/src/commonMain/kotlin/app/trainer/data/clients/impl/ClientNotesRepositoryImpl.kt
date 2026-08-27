@@ -3,6 +3,7 @@ package app.trainer.data.clients.impl
 import app.trainer.data.clients.ClientNote
 import app.trainer.data.clients.ClientNoteDraft
 import app.trainer.data.clients.ClientNotesRepository
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.network.HttpClientProvider
 import app.trainer.network.safeRequest
@@ -81,6 +82,7 @@ class ClientNotesRepositoryImpl(
                 val note = mapper.toNote(result.data)
                 if (note == null) {
                     RequestResult.Error(
+                        kind = RequestFailure.Parsing,
                         statusCode = null,
                         userMessage = "",
                         devMessage = "Ответ сервера не удалось разобрать в ClientNote",

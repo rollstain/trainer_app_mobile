@@ -19,14 +19,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.leadingStripe
+import app.trainer.uikit.resources.Res
+import app.trainer.uikit.resources.note_medical
+import app.trainer.uikit.resources.note_pinned
+import org.jetbrains.compose.resources.stringResource
 
 private val CARD_PADDING_VERTICAL = 12.dp
 private val CARD_PADDING_HORIZONTAL = 14.dp
 private val CONTENT_GAP = 6.dp
 private val MEDICAL_BADGE_HEIGHT = 20.dp
 private val MEDICAL_BADGE_PADDING = 8.dp
-private const val MEDICAL_LABEL = "МЕДИЦИНСКАЯ"
-private const val PINNED_LABEL = "ЗАКРЕПЛЕНА"
 
 enum class NoteKindView { Medical, General }
 
@@ -87,7 +89,7 @@ fun AppNoteCard(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = MEDICAL_LABEL,
+                            text = stringResource(Res.string.note_medical),
                             style = AppTheme.typography.overline.copy(fontWeight = FontWeight.SemiBold),
                             color = colors.danger,
                         )
@@ -95,7 +97,7 @@ fun AppNoteCard(
                 }
                 if (isPinned) {
                     Text(
-                        text = PINNED_LABEL,
+                        text = stringResource(Res.string.note_pinned),
                         style = AppTheme.typography.overline,
                         color = if (isMedical) colors.danger else colors.textSecondary,
                     )

@@ -8,6 +8,7 @@ import app.trainer.network.impl.NetworkConfig
 import app.trainer.network.impl.SecureSettingsFactory
 import com.russhwolf.settings.Settings
 import org.junit.Test
+import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.dsl.module
 import org.koin.test.verify.verify
 
@@ -18,6 +19,7 @@ private val TEST_CONFIG = NetworkConfig(
 
 class KoinGraphTest {
 
+    @OptIn(KoinExperimentalAPI::class)
     @Test
     fun `every dependency in shared graph is resolvable`() {
         val wholeGraph = module {

@@ -27,7 +27,7 @@ fun AppRatingSelector(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
     ) {
-        (MIN_RATING..MAX_RATING).forEach { rating ->
+        for (rating in MIN_RATING..MAX_RATING) {
             RatingCell(rating = rating, isSelected = rating == selected, onClick = { onSelect(rating) })
         }
     }

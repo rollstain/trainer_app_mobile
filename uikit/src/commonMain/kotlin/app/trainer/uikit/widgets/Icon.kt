@@ -21,22 +21,25 @@ import app.trainer.uikit.resources.ic_calendar_month_filled
 import app.trainer.uikit.resources.ic_chat_bubble
 import app.trainer.uikit.resources.ic_chat_bubble_filled
 import app.trainer.uikit.resources.ic_check
-import app.trainer.uikit.resources.ic_done_all
 import app.trainer.uikit.resources.ic_chevron_left
 import app.trainer.uikit.resources.ic_chevron_right
 import app.trainer.uikit.resources.ic_close
 import app.trainer.uikit.resources.ic_delete
+import app.trainer.uikit.resources.ic_done_all
 import app.trainer.uikit.resources.ic_error
 import app.trainer.uikit.resources.ic_fitness_center
 import app.trainer.uikit.resources.ic_group
 import app.trainer.uikit.resources.ic_group_filled
+import app.trainer.uikit.resources.ic_home
+import app.trainer.uikit.resources.ic_home_filled
 import app.trainer.uikit.resources.ic_list_alt
 import app.trainer.uikit.resources.ic_list_alt_filled
 import app.trainer.uikit.resources.ic_logout
-import app.trainer.uikit.resources.ic_more_vert
 import app.trainer.uikit.resources.ic_monitoring
 import app.trainer.uikit.resources.ic_monitoring_filled
+import app.trainer.uikit.resources.ic_more_vert
 import app.trainer.uikit.resources.ic_person
+import app.trainer.uikit.resources.ic_person_filled
 import app.trainer.uikit.resources.ic_schedule
 import org.jetbrains.compose.resources.painterResource
 
@@ -74,7 +77,10 @@ object AppIcons {
 
     val logout: Painter @Composable get() = painterResource(Res.drawable.ic_logout)
 
-    val person: Painter @Composable get() = painterResource(Res.drawable.ic_person)
+    @Composable
+    fun home(isActive: Boolean): Painter = painterResource(
+        if (isActive) Res.drawable.ic_home_filled else Res.drawable.ic_home
+    )
 
     @Composable
     fun chats(isActive: Boolean): Painter = painterResource(
@@ -99,6 +105,11 @@ object AppIcons {
     @Composable
     fun progress(isActive: Boolean): Painter = painterResource(
         if (isActive) Res.drawable.ic_monitoring_filled else Res.drawable.ic_monitoring
+    )
+
+    @Composable
+    fun person(isActive: Boolean): Painter = painterResource(
+        if (isActive) Res.drawable.ic_person_filled else Res.drawable.ic_person
     )
 }
 

@@ -1,29 +1,29 @@
 package app.trainer.feature.schedule.presentation.client.mvi
 
 import app.trainer.base.BaseScreenModel
+import app.trainer.base.date.ScheduleWeeks
+import app.trainer.base.date.timeOfDayOf
+import app.trainer.base.date.weekdayShortOf
 import app.trainer.data.clients.CoachSummary
 import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.schedule.ClientSchedule
 import app.trainer.data.schedule.ClientSlot
 import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.schedule.SlotChangeKind
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
-import app.trainer.feature.schedule.domain.ScheduleWeeks
+import app.trainer.feature.schedule.presentation.formatScheduleWeekTitle
+import app.trainer.strings.Res
+import app.trainer.strings.client_schedule_cancellation_note
+import app.trainer.strings.slot_duration_minutes
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
-
-private val WEEKDAY_LABELS = listOf("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")
-
-private val MONTH_NAMES = listOf(
-    "января", "февраля", "марта", "апреля", "мая", "июня",
-    "июля", "августа", "сентября", "октября", "ноября", "декабря",
-)
+import org.jetbrains.compose.resources.getString
 
 class ClientScheduleScreenModel(
     private val scheduleRepository: ScheduleRepository,
@@ -48,6 +48,9 @@ class ClientScheduleScreenModel(
     override fun dispatch(event: ClientScheduleEvent) {
         when (event) {
             ClientScheduleEvent.OnRetryClicked -> onFetchData()
+            ClientScheduleEvent.OnWriteCoachClicked -> screenModelScope {
+                postSideEffect(ClientScheduleSideEffect.OpenChat)
+            }
             ClientScheduleEvent.OnPreviousWeekClicked -> shiftWeek(offset = -1)
             ClientScheduleEvent.OnNextWeekClicked -> shiftWeek(offset = 1)
             is ClientScheduleEvent.OnCoachSelected -> selectCoach(event.coachId)
@@ -68,10 +71,10 @@ class ClientScheduleScreenModel(
     }
 
     private suspend fun loadCoaches() {
-        updateState { it.copy(isLoading = true, isFailed = false) }
+        updateState { it.copy(isLoading = true, failure = null) }
         when (val loaded = participantsRepository.coachesOfClient()) {
             is RequestResult.Error -> {
-                updateState { it.copy(isLoading = false, isFailed = true) }
+                updateState { it.copy(isLoading = false, failure = loaded) }
                 postSideEffect(ClientScheduleSideEffect.ShowFailure(loaded))
             }
             is RequestResult.Success -> showCoaches(loaded.data)
@@ -89,7 +92,7 @@ class ClientScheduleScreenModel(
 
         val firstCoachId = options.firstOrNull()?.coachId
         if (firstCoachId == null) {
-            updateState { it.copy(isLoading = false, isFailed = false) }
+            updateState { it.copy(isLoading = false, failure = null) }
             return
         }
         openCoachWeek(coachId = firstCoachId, weekStart = null)
@@ -175,21 +178,19 @@ class ClientScheduleScreenModel(
     private suspend fun openCoachWeek(coachId: String, weekStart: LocalDate?) {
         val zone = zonesByCoachId[coachId]
         if (zone == null) {
-            updateState { it.copy(isLoading = false, isFailed = true) }
-            postSideEffect(
-                ClientScheduleSideEffect.ShowFailure(
-                    RequestResult.Error(
-                        statusCode = null,
-                        userMessage = "",
-                        devMessage = "Не разобран часовой пояс тренера coachId=$coachId",
-                    )
-                )
+            val failure = RequestResult.Error(
+                kind = RequestFailure.Parsing,
+                statusCode = null,
+                userMessage = "",
+                devMessage = "Не разобран часовой пояс тренера coachId=$coachId",
             )
+            updateState { it.copy(isLoading = false, failure = failure) }
+            postSideEffect(ClientScheduleSideEffect.ShowFailure(failure))
             return
         }
 
         val targetWeek = weekStart ?: weeks.weekStartOf(weeks.dateOf(Clock.System.now(), zone))
-        updateState { it.copy(isLoading = true, isFailed = false, selectedCoachId = coachId) }
+        updateState { it.copy(isLoading = true, failure = null, selectedCoachId = coachId) }
 
         val schedule = scheduleRepository.clientSchedule(
             coachId = coachId,
@@ -198,7 +199,7 @@ class ClientScheduleScreenModel(
         )
         when (schedule) {
             is RequestResult.Error -> {
-                updateState { it.copy(isLoading = false, isFailed = true) }
+                updateState { it.copy(isLoading = false, failure = schedule) }
                 postSideEffect(ClientScheduleSideEffect.ShowFailure(schedule))
             }
             is RequestResult.Success -> showWeek(
@@ -212,13 +213,11 @@ class ClientScheduleScreenModel(
     private suspend fun showWeek(weekStart: LocalDate, zone: TimeZone, schedule: ClientSchedule) {
         val today = weeks.dateOf(Clock.System.now(), zone)
         val slotsByDate = schedule.slots.groupBy { slot -> weeks.dateOf(slot.startsAt, zone) }
-        val selectedDate = state.selectedDate?.takeIf { it in weeks.datesOf(weekStart) } ?: weekStart
         val days = weeks.datesOf(weekStart).map { date ->
             ClientScheduleDay(
                 date = date,
-                weekdayLabel = WEEKDAY_LABELS[date.dayOfWeek.ordinal],
-                dayNumberLabel = date.dayOfMonth.toString(),
-                isSelected = date == selectedDate,
+                weekdayLabel = weekdayShortOf(date),
+                dayNumberLabel = date.day.toString(),
                 isToday = date == today,
                 isWeekend = date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY,
                 slots = slotsByDate[date]
@@ -234,23 +233,24 @@ class ClientScheduleScreenModel(
                     .toImmutableList(),
             )
         }
+        val weekTitle = formatWeekTitle(weekStart = weekStart)
         updateState { current ->
             current.copy(
                 weekStart = weekStart,
-                weekTitle = formatWeekTitle(weekStart = weekStart),
+                weekTitle = weekTitle,
                 selectedDate = current.selectedDate.takeIf { date -> days.any { it.date == date } } ?: weekStart,
                 days = days.toImmutableList(),
                 isLoading = false,
-                isFailed = false,
+                failure = null,
             )
         }
     }
 
-    private fun toRow(slot: ClientSlot, zone: TimeZone, cancellationWindowHours: Int): ClientSlotRow =
+    private suspend fun toRow(slot: ClientSlot, zone: TimeZone, cancellationWindowHours: Int): ClientSlotRow =
         ClientSlotRow(
             slotId = slot.id,
-            timeLabel = formatTime(slot.startsAt.toLocalDateTime(zone)),
-            durationLabel = "${slot.durationMinutes} мин",
+            timeLabel = timeOfDayOf(slot.startsAt.toLocalDateTime(zone)),
+            durationLabel = getString(Res.string.slot_duration_minutes, slot.durationMinutes),
             isBookedByMe = slot.isBookedByMe,
             isAvailable = slot.isAvailable,
             hasPendingChangeRequest = slot.pendingChangeRequestId != null,
@@ -259,20 +259,11 @@ class ClientScheduleScreenModel(
             note = changeWindowNote(slot = slot, cancellationWindowHours = cancellationWindowHours),
         )
 
-    private fun changeWindowNote(slot: ClientSlot, cancellationWindowHours: Int): String {
+    private suspend fun changeWindowNote(slot: ClientSlot, cancellationWindowHours: Int): String {
         if (!slot.isBookedByMe || slot.canRequestChange) return ""
-        return "Отменить или перенести можно не позже чем за $cancellationWindowHours ч"
+        return getString(Res.string.client_schedule_cancellation_note, cancellationWindowHours)
     }
 
-    private fun formatTime(dateTime: LocalDateTime): String {
-        val hours = dateTime.hour.toString().padStart(length = 2, padChar = '0')
-        val minutes = dateTime.minute.toString().padStart(length = 2, padChar = '0')
-        return "$hours:$minutes"
-    }
-
-    private fun formatWeekTitle(weekStart: LocalDate): String {
-        val weekEnd = weeks.datesOf(weekStart).last()
-        val month = MONTH_NAMES[weekEnd.monthNumber - 1]
-        return "${weekStart.dayOfMonth}—${weekEnd.dayOfMonth} $month"
-    }
+    private suspend fun formatWeekTitle(weekStart: LocalDate): String =
+        formatScheduleWeekTitle(weekStart = weekStart, weekEnd = weeks.datesOf(weekStart).last())
 }

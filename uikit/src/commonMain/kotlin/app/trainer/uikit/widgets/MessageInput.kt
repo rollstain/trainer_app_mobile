@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
@@ -25,6 +25,13 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.trainer.uikit.AppTheme
+import app.trainer.uikit.resources.Res
+import app.trainer.uikit.resources.message_input_attach
+import app.trainer.uikit.resources.message_input_placeholder
+import app.trainer.uikit.resources.message_input_remove_attachment
+import app.trainer.uikit.resources.message_input_send
+import app.trainer.uikit.resources.message_input_upload_failed
+import org.jetbrains.compose.resources.stringResource
 
 private val ACTION_BUTTON_SIZE = 40.dp
 private val INPUT_MIN_HEIGHT = 40.dp
@@ -55,7 +62,7 @@ fun AppMessageInput(
     onSendClick: () -> Unit,
     onAttachmentRemove: (String) -> Unit,
     onAttachmentRetry: (String) -> Unit,
-    placeholder: String = "Сообщение",
+    placeholder: String = stringResource(Res.string.message_input_placeholder),
 ) {
     val colors = AppTheme.colors
     val isSendEnabled = value.isNotBlank() || attachments.any { it.state == AttachmentState.Ready }
@@ -100,7 +107,7 @@ fun AppMessageInput(
             ) {
                 AppIcon(
                     painter = AppIcons.attach,
-                    contentDescription = "Прикрепить файл",
+                    contentDescription = stringResource(Res.string.message_input_attach),
                     size = IconSize.Medium,
                     tint = colors.textSecondary,
                 )
@@ -146,7 +153,7 @@ fun AppMessageInput(
             ) {
                 AppIcon(
                     painter = AppIcons.send,
-                    contentDescription = "Отправить",
+                    contentDescription = stringResource(Res.string.message_input_send),
                     size = IconSize.Medium,
                     tint = if (isSendEnabled) colors.accentOn else colors.textMuted,
                 )
@@ -217,7 +224,7 @@ private fun AttachmentChip(
             ) {
                 AppIcon(
                     painter = AppIcons.close,
-                    contentDescription = "Убрать вложение",
+                    contentDescription = stringResource(Res.string.message_input_remove_attachment),
                     size = IconSize.Small,
                     tint = colors.textSecondary,
                 )
@@ -241,7 +248,7 @@ private fun AttachmentChip(
             ) {
                 AppIcon(
                     painter = AppIcons.failed,
-                    contentDescription = "Не загрузилось, повторить",
+                    contentDescription = stringResource(Res.string.message_input_upload_failed),
                     size = IconSize.Medium,
                     tint = colors.danger,
                 )

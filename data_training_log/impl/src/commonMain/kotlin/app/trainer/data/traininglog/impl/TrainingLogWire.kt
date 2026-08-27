@@ -11,6 +11,10 @@ data class CreateExerciseRequest(
     val muscleGroup: String?,
     @SerialName("kind")
     val kind: String,
+    @SerialName("description")
+    val description: String?,
+    @SerialName("videoUrl")
+    val videoUrl: String?,
 )
 
 @Serializable
@@ -47,6 +51,10 @@ data class ExerciseResponse(
     val muscleGroup: String?,
     @SerialName("kind")
     val kind: String?,
+    @SerialName("description")
+    val description: String?,
+    @SerialName("videoUrl")
+    val videoUrl: String?,
     @SerialName("isOwnedByCoach")
     val isOwnedByCoach: Boolean?,
     @SerialName("lastRepetitions")

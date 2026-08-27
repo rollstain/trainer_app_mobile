@@ -2,13 +2,15 @@ package app.trainer.feature.account.profile.mvi
 
 import app.trainer.base.BaseScreenModel
 import app.trainer.data.auth.AuthRepository
+import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.profile.UserProfile
 import app.trainer.entities.RequestResult
-
-private const val COACH_ROLE = "тренер"
-private const val CLIENT_ROLE = "подопечный"
+import app.trainer.strings.Res
+import app.trainer.strings.profile_client_role
+import app.trainer.strings.profile_coach_role
+import org.jetbrains.compose.resources.getString
 
 class ProfileScreenModel(
     private val profileRepository: ProfileRepository,
@@ -24,10 +26,10 @@ class ProfileScreenModel(
 
     override fun onFetchData() {
         onFetchDataScope {
-            updateState { it.copy(isLoading = true, isFailed = false) }
+            updateState { it.copy(isLoading = true, failure = null) }
             when (val loaded = profileRepository.me()) {
                 is RequestResult.Error -> {
-                    updateState { it.copy(isLoading = false, isFailed = true) }
+                    updateState { it.copy(isLoading = false, failure = loaded) }
                     postSideEffect(ProfileSideEffect.ShowFailure(loaded))
                 }
                 is RequestResult.Success -> showProfile(loaded.data)
@@ -37,9 +39,29 @@ class ProfileScreenModel(
 
     override fun dispatch(event: ProfileEvent) {
         when (event) {
-            ProfileEvent.OnRetryClicked -> onFetchData()
+            ProfileEvent.OnReloadRequested -> onFetchData()
             ProfileEvent.OnAddContactClicked -> openContactLink()
-            is ProfileEvent.OnCancellationWindowSelected -> updateCancellationWindow(event.hours)
+            ProfileEvent.OnProgramsClicked -> screenModelScope {
+                postSideEffect(ProfileSideEffect.OpenPrograms)
+            }
+            ProfileEvent.OnExerciseLibraryClicked -> screenModelScope {
+                postSideEffect(ProfileSideEffect.OpenExerciseLibrary)
+            }
+            is ProfileEvent.OnCancellationWindowSelected -> changePolicy { policy ->
+                policy.copy(cancellationWindowHours = event.hours)
+            }
+            is ProfileEvent.OnReminderHourSelected -> changePolicy { policy ->
+                policy.copy(reminderHour = event.hour)
+            }
+            is ProfileEvent.OnSessionRemindersToggled -> changePolicy { policy ->
+                policy.copy(sessionRemindersEnabled = event.enabled)
+            }
+            is ProfileEvent.OnDiaryRemindersToggled -> changePolicy { policy ->
+                policy.copy(diaryRemindersEnabled = event.enabled)
+            }
+            is ProfileEvent.OnCheckInRemindersToggled -> changePolicy { policy ->
+                policy.copy(checkInRemindersEnabled = event.enabled)
+            }
             ProfileEvent.OnSignOutClicked -> updateState { it.copy(isSignOutDialogVisible = true) }
             ProfileEvent.OnSignOutDismissed -> updateState { it.copy(isSignOutDialogVisible = false) }
             ProfileEvent.OnSignOutConfirmed -> signOut()
@@ -48,37 +70,47 @@ class ProfileScreenModel(
 
     private suspend fun showProfile(profile: UserProfile) {
         val isCoach = profile.coachId != null
-        val cancellationWindowHours = if (isCoach) loadCancellationWindow() else null
+        val policy = if (isCoach) loadPolicy() else null
+        val roleLabel = if (isCoach) {
+            getString(Res.string.profile_coach_role)
+        } else {
+            getString(Res.string.profile_client_role)
+        }
         updateState { current ->
             current.copy(
                 displayName = profile.displayName,
-                roleLabel = if (isCoach) COACH_ROLE else CLIENT_ROLE,
+                roleLabel = roleLabel,
                 contactLabel = profile.phone ?: profile.email,
-                cancellationWindowHours = cancellationWindowHours,
+                policy = policy,
+                isCoach = isCoach,
                 isLoading = false,
-                isFailed = false,
+                failure = null,
             )
         }
     }
 
-    private suspend fun loadCancellationWindow(): Int? {
-        return when (val policy = participantsRepository.coachPolicy()) {
+    private suspend fun loadPolicy(): CoachPolicy? {
+        return when (val loaded = participantsRepository.coachPolicy()) {
             is RequestResult.Error -> {
-                postSideEffect(ProfileSideEffect.ShowFailure(policy))
+                postSideEffect(ProfileSideEffect.ShowFailure(loaded))
                 null
             }
-            is RequestResult.Success -> policy.data
+            is RequestResult.Success -> loaded.data
         }
     }
 
-    private fun updateCancellationWindow(hours: Int) {
+    private fun changePolicy(change: (CoachPolicy) -> CoachPolicy) {
         screenModelScope { state ->
-            if (state.cancellationWindowHours == hours) return@screenModelScope
-            when (val updated = participantsRepository.updateCoachPolicy(cancellationWindowHours = hours)) {
-                is RequestResult.Error -> postSideEffect(ProfileSideEffect.ShowFailure(updated))
-                is RequestResult.Success -> updateState {
-                    it.copy(cancellationWindowHours = updated.data)
+            val current = state.policy ?: return@screenModelScope
+            val changed = change(current)
+            if (changed == current) return@screenModelScope
+            updateState { it.copy(policy = changed) }
+            when (val saved = participantsRepository.updateCoachPolicy(policy = changed)) {
+                is RequestResult.Error -> {
+                    updateState { it.copy(policy = current) }
+                    postSideEffect(ProfileSideEffect.ShowFailure(saved))
                 }
+                is RequestResult.Success -> updateState { it.copy(policy = saved.data) }
             }
         }
     }

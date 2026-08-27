@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -104,7 +104,7 @@ fun AppOfflineBanner(modifier: Modifier = Modifier, text: String) {
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(AppTheme.sizing.offlineBannerHeight)
+            .heightIn(min = AppTheme.sizing.offlineBannerHeight)
             .background(AppTheme.colors.warningSoft)
             .padding(horizontal = AppTheme.spacing.dp16),
         contentAlignment = Alignment.CenterStart,

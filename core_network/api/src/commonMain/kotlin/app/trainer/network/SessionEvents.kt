@@ -6,5 +6,9 @@ interface SessionEvents {
 
     val expired: Flow<Unit>
 
+    val authChanged: Flow<Unit>
+
     suspend fun notifyExpired()
+
+    suspend fun notifyAuthChanged()
 }

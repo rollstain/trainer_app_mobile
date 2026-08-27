@@ -9,6 +9,7 @@ import app.trainer.data.schedule.SlotChangeKind
 import app.trainer.data.schedule.SlotChangeRequest
 import app.trainer.data.schedule.SlotSeriesDraft
 import app.trainer.data.schedule.SlotSeriesResult
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.network.HttpClientProvider
 import app.trainer.network.safeRequest
@@ -17,10 +18,10 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
 import io.ktor.http.contentType
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 class ScheduleRepositoryImpl(
     private val httpClientProvider: HttpClientProvider,
@@ -213,6 +214,7 @@ class ScheduleRepositoryImpl(
     }
 
     private fun mappingFailed(entity: String): RequestResult.Error = RequestResult.Error(
+        kind = RequestFailure.Parsing,
         statusCode = null,
         userMessage = "",
         devMessage = "Ответ сервера не удалось разобрать в $entity",

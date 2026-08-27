@@ -1,6 +1,6 @@
 package app.trainer.data.chat
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 data class Dialog(
     val id: String,

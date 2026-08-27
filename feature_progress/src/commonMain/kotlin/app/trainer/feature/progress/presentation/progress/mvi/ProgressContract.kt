@@ -4,6 +4,19 @@ import app.trainer.entities.RequestResult
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
+enum class ProgressMetric { Weight, Waist, Chest, Hips, Wellbeing, Sleep }
+
+data class MetricChart(
+    val metric: ProgressMetric,
+    val title: String,
+    val values: ImmutableList<Float>,
+    val maxLabel: String,
+    val minLabel: String,
+    val rangeLabel: String,
+    val latestLabel: String,
+    val deltaLabel: String,
+)
+
 data class HabitDay(
     val dateIso: String,
     val weekdayLabel: String,
@@ -20,18 +33,31 @@ data class HabitRow(
     val days: ImmutableList<HabitDay>,
 )
 
+sealed interface CoachReply {
+
+    data object None : CoachReply
+
+    data class Text(val value: String) : CoachReply
+}
+
 data class ProgressState(
     val checkInDateLabel: String,
     val checkInSummary: String,
     val hasCheckIn: Boolean,
+    val coachReply: CoachReply,
+    val charts: ImmutableList<MetricChart>,
+    val selectedMetric: ProgressMetric?,
     val habits: ImmutableList<HabitRow>,
     val newHabitTitle: String,
     val isLoading: Boolean,
-    val isFailed: Boolean,
+    val failure: RequestResult.Error?,
 ) {
 
     val isAddHabitEnabled: Boolean
         get() = newHabitTitle.isNotBlank()
+
+    val selectedChart: MetricChart?
+        get() = charts.firstOrNull { it.metric == selectedMetric }
 
     companion object {
 
@@ -39,19 +65,24 @@ data class ProgressState(
             checkInDateLabel = "",
             checkInSummary = "",
             hasCheckIn = false,
+            coachReply = CoachReply.None,
+            charts = persistentListOf(),
+            selectedMetric = null,
             habits = persistentListOf(),
             newHabitTitle = "",
             isLoading = true,
-            isFailed = false,
+            failure = null,
         )
     }
 }
 
 sealed interface ProgressEvent {
 
-    data object OnRetryClicked : ProgressEvent
+    data object OnReloadRequested : ProgressEvent
 
     data object OnCheckInClicked : ProgressEvent
+
+    data class OnMetricSelected(val metric: ProgressMetric) : ProgressEvent
 
     data object OnHabitAdded : ProgressEvent
 

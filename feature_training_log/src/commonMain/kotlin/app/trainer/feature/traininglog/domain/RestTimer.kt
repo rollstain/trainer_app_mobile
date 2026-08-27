@@ -2,6 +2,7 @@ package app.trainer.feature.traininglog.domain
 
 import app.trainer.data.push.RestTimerAlarm
 import app.trainer.data.traininglog.RestIntervalStore
+import kotlin.time.Clock
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -9,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.datetime.Clock
 
 const val DEFAULT_REST_SECONDS = 90
 const val REST_STEP_SECONDS = 15

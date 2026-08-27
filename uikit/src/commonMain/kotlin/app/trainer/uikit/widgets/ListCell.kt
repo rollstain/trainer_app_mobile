@@ -19,7 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import app.trainer.uikit.AppTheme
 
-enum class ListCellSize { Small, Medium, Large }
+enum class ListCellSize { Small, Large }
 
 sealed interface ListCellPreview {
 
@@ -35,6 +35,12 @@ sealed interface ListCellTrailing {
     data class TimeWithBadge(val time: String, val unreadCount: Long) : ListCellTrailing
 
     data class Time(val value: String) : ListCellTrailing
+
+    data class Unread(val unreadCount: Long) : ListCellTrailing
+
+    data class Alert(val value: String, val unit: String) : ListCellTrailing
+
+    data class Warning(val text: String) : ListCellTrailing
 }
 
 @Composable
@@ -47,7 +53,15 @@ fun AppListCell(
     preview: ListCellPreview = ListCellPreview.None,
     trailing: ListCellTrailing = ListCellTrailing.None,
 ) {
-    val hasUnread = trailing is ListCellTrailing.TimeWithBadge && trailing.unreadCount > 0
+    val hasUnread = when (trailing) {
+        is ListCellTrailing.TimeWithBadge -> trailing.unreadCount > 0
+        is ListCellTrailing.Unread -> trailing.unreadCount > 0
+        ListCellTrailing.None,
+        is ListCellTrailing.Time,
+        is ListCellTrailing.Alert,
+        is ListCellTrailing.Warning,
+        -> false
+    }
     Column(modifier = modifier.background(AppTheme.colors.bgSurface)) {
         Row(
             modifier = Modifier
@@ -60,7 +74,7 @@ fun AppListCell(
         ) {
             AppAvatar(
                 displayName = avatarName,
-                size = AvatarSize.Large,
+                size = avatarOf(size),
                 tone = if (hasUnread) AvatarTone.Active else AvatarTone.Neutral,
             )
             Column(
@@ -107,6 +121,27 @@ private fun TrailingContent(trailing: ListCellTrailing) {
             style = AppTheme.typography.overline,
             color = AppTheme.colors.textMuted,
         )
+        is ListCellTrailing.Unread -> AppBadge(value = BadgeValue.Count(trailing.unreadCount))
+        is ListCellTrailing.Warning -> Text(
+            text = trailing.text,
+            style = AppTheme.typography.caption,
+            color = AppTheme.colors.warning,
+        )
+        is ListCellTrailing.Alert -> Row(
+            horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Text(
+                text = trailing.value,
+                style = AppTheme.typography.numericBig,
+                color = AppTheme.colors.warning,
+            )
+            Text(
+                text = trailing.unit,
+                style = AppTheme.typography.caption,
+                color = AppTheme.colors.warning,
+            )
+        }
         is ListCellTrailing.TimeWithBadge -> Column(
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4),
@@ -123,9 +158,13 @@ private fun TrailingContent(trailing: ListCellTrailing) {
     }
 }
 
+private fun avatarOf(size: ListCellSize): AvatarSize = when (size) {
+    ListCellSize.Small -> AvatarSize.Small
+    ListCellSize.Large -> AvatarSize.Large
+}
+
 @Composable
 private fun heightOf(size: ListCellSize): Dp = when (size) {
     ListCellSize.Small -> AppTheme.sizing.cellSmall
-    ListCellSize.Medium -> AppTheme.sizing.cellMedium
     ListCellSize.Large -> AppTheme.sizing.cellLarge
 }

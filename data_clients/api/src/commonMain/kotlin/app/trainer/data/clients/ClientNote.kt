@@ -1,6 +1,6 @@
 package app.trainer.data.clients
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 enum class ClientNoteKind { MEDICAL, GENERAL }
 

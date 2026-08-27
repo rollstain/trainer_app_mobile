@@ -1,6 +1,6 @@
 package app.trainer.data.chat
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 enum class MessageDelivery { PENDING, SENT, FAILED }
 

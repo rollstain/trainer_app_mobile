@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="top_bar_back">Назад</string>
+    <string name="toast_default_action">Понятно</string>
+
+    <string name="message_photo_description">Фото в сообщении</string>
+    <string name="message_delivery_sent">Отправлено</string>
+    <string name="message_delivery_read">Прочитано</string>
+    <string name="message_delivery_pending">В очереди</string>
+    <string name="message_delivery_failed">Не отправлено, повторить</string>
+    <string name="message_input_placeholder">Сообщение</string>
+    <string name="message_input_attach">Прикрепить файл</string>
+    <string name="message_input_send">Отправить</string>
+    <string name="message_input_remove_attachment">Убрать вложение</string>
+    <string name="message_input_upload_failed">Не загрузилось, повторить</string>
+
+    <string name="photo_remove">Убрать фото</string>
+    <string name="photo_add">Добавить фото</string>
+
+    <string name="note_medical">МЕДИЦИНСКАЯ</string>
+    <string name="note_pinned">ЗАКРЕПЛЕНА</string>
+
+    <string name="rest_title">Отдых</string>
+    <string name="rest_extend">+15 с</string>
+    <string name="rest_skip">Пропустить</string>
+
+    <string name="set_add">+ Подход</string>
+    <string name="set_personal_record">рекорд</string>
+    <string name="set_unit_repetitions">повт</string>
+    <string name="set_unit_weight">кг</string>
+    <string name="set_unit_duration">мин</string>
+    <string name="set_unit_distance">м</string>
+
+    <string name="slot_free">Свободно</string>
+    <string name="slot_taken">Занято</string>
+    <string name="slot_mine">Моя тренировка</string>
+    <string name="slot_completed">✓ Проведена</string>
+    <string name="slot_request_reschedule">Просит перенос на %1$s</string>
+    <string name="slot_request_cancel">Просит отменить тренировку</string>
+    <string name="slot_request_sent">Заявка отправлена, ждём ответа тренера</string>
+    <string name="slot_book">Записаться</string>
+    <string name="slot_cancel">Отменить</string>
+    <string name="slot_wait">Ждать</string>
+    <string name="slot_stop_waiting">Не ждать</string>
+    <string name="slot_approve">Подтвердить</string>
+    <string name="slot_reject">Отклонить</string>
+</resources>

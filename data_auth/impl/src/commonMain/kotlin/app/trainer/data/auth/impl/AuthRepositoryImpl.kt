@@ -2,10 +2,12 @@ package app.trainer.data.auth.impl
 
 import app.trainer.data.auth.AuthRepository
 import app.trainer.data.auth.InviteCode
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.logger.Logger
 import app.trainer.network.AuthTokens
 import app.trainer.network.HttpClientProvider
+import app.trainer.network.SessionEvents
 import app.trainer.network.TokenStorage
 import app.trainer.network.safeRequest
 import io.ktor.client.request.post
@@ -18,6 +20,7 @@ private const val LOG_TAG = "auth"
 class AuthRepositoryImpl(
     private val httpClientProvider: HttpClientProvider,
     private val tokenStorage: TokenStorage,
+    private val sessionEvents: SessionEvents,
     private val logger: Logger,
 ) : AuthRepository {
 
@@ -57,6 +60,7 @@ class AuthRepositoryImpl(
                 if (code == null) {
                     logger.error(tag = LOG_TAG, message = "В ответе на создание приглашения нет кода")
                     RequestResult.Error(
+                        kind = RequestFailure.Parsing,
                         statusCode = null,
                         userMessage = "",
                         devMessage = "Ответ auth/invites не содержит кода",
@@ -72,6 +76,8 @@ class AuthRepositoryImpl(
 
     override suspend fun logout() {
         tokenStorage.clear()
+        httpClientProvider.forgetAuthenticatedUser()
+        sessionEvents.notifyAuthChanged()
     }
 
     private suspend fun storeTokens(response: AuthTokensResponse): RequestResult<Unit> {
@@ -80,12 +86,15 @@ class AuthRepositoryImpl(
         if (accessToken == null || refreshToken == null) {
             logger.error(tag = LOG_TAG, message = "В ответе на приглашение нет одного из токенов")
             return RequestResult.Error(
+                kind = RequestFailure.Parsing,
                 statusCode = null,
                 userMessage = "",
                 devMessage = "Ответ auth/invites/redeem не содержит пары токенов",
             )
         }
         tokenStorage.write(AuthTokens(accessToken = accessToken, refreshToken = refreshToken))
+        httpClientProvider.forgetAuthenticatedUser()
+        sessionEvents.notifyAuthChanged()
         return RequestResult.Success(Unit)
     }
 }

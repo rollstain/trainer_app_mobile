@@ -4,6 +4,10 @@ plugins {
     id(libs.plugins.kotlinSerialization.get().pluginId)
 }
 
+base {
+    archivesName = "data_progress-impl"
+}
+
 kotlin {
     android {
         namespace = "app.trainer.data_progress.impl"

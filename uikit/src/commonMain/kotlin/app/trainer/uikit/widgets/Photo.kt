@@ -17,10 +17,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.dashedBorder
+import app.trainer.uikit.resources.Res
+import app.trainer.uikit.resources.photo_add
+import app.trainer.uikit.resources.photo_remove
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import org.jetbrains.compose.resources.stringResource
 
 private const val PHOTO_ASPECT_RATIO = 1f
 private val REMOVE_BUTTON_SIZE = 24.dp
@@ -86,7 +90,7 @@ fun AppPhotoThumb(
             ) {
                 AppIcon(
                     painter = AppIcons.close,
-                    contentDescription = "Убрать фото",
+                    contentDescription = stringResource(Res.string.photo_remove),
                     size = IconSize.Small,
                     tint = AppTheme.colors.textInverse,
                 )
@@ -106,7 +110,7 @@ fun AppAddPhotoTile(modifier: Modifier = Modifier, onClick: () -> Unit) {
     ) {
         AppIcon(
             painter = AppIcons.add,
-            contentDescription = "Добавить фото",
+            contentDescription = stringResource(Res.string.photo_add),
             size = IconSize.Medium,
             tint = AppTheme.colors.accent,
         )

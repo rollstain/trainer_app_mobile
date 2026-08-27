@@ -17,10 +17,30 @@ data class SaveCheckInRequest(
     val wellbeing: Int?,
     @SerialName("sleepQuality")
     val sleepQuality: Int?,
+    @SerialName("adherence")
+    val adherence: Int?,
     @SerialName("notes")
     val notes: String?,
     @SerialName("photoIds")
     val photoIds: List<String>,
+)
+
+@Serializable
+data class AwaitingCheckInResponse(
+    @SerialName("checkInId")
+    val checkInId: String?,
+    @SerialName("clientUserId")
+    val clientUserId: String?,
+    @SerialName("clientDisplayName")
+    val clientDisplayName: String?,
+    @SerialName("checkInDate")
+    val checkInDate: String?,
+)
+
+@Serializable
+data class ReviewCheckInRequest(
+    @SerialName("comment")
+    val comment: String?,
 )
 
 @Serializable
@@ -77,8 +97,14 @@ data class CheckInResponse(
     val wellbeing: Int?,
     @SerialName("sleepQuality")
     val sleepQuality: Int?,
+    @SerialName("adherence")
+    val adherence: Int?,
     @SerialName("notes")
     val notes: String?,
+    @SerialName("coachComment")
+    val coachComment: String?,
+    @SerialName("isReviewed")
+    val isReviewed: Boolean?,
     @SerialName("photos")
     val photos: List<MediaFileResponse>?,
 )

@@ -17,15 +17,23 @@ data class RegisterPushTokenRequest(
     val token: String,
     @SerialName("platform")
     val platform: String,
+    @SerialName("locale")
+    val locale: String,
 )
 
 class PushTokenRepository(private val httpClientProvider: HttpClientProvider) {
 
-    suspend fun register(token: String, platform: PushPlatform): RequestResult<Unit> {
+    suspend fun register(token: String, platform: PushPlatform, language: String): RequestResult<Unit> {
         return safeRequest<Unit> {
             httpClientProvider.client.post("me/push-tokens") {
                 contentType(ContentType.Application.Json)
-                setBody(RegisterPushTokenRequest(token = token, platform = platform.name))
+                setBody(
+                    RegisterPushTokenRequest(
+                        token = token,
+                        platform = platform.name,
+                        locale = language,
+                    )
+                )
             }
         }
     }

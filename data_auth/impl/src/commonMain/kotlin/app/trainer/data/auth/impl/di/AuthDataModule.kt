@@ -8,7 +8,12 @@ class AuthDataModule {
 
     val module = module {
         single<AuthRepository> {
-            AuthRepositoryImpl(httpClientProvider = get(), tokenStorage = get(), logger = get())
+            AuthRepositoryImpl(
+                httpClientProvider = get(),
+                tokenStorage = get(),
+                sessionEvents = get(),
+                logger = get(),
+            )
         }
     }
 }
