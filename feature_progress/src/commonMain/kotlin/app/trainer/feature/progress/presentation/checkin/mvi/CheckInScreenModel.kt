@@ -8,7 +8,7 @@ import app.trainer.data.progress.CheckInDraft
 import app.trainer.data.progress.CheckInRepository
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
-import app.trainer.media.PickedImage
+import app.trainer.media.PickedMedia
 import app.trainer.strings.Res
 import app.trainer.strings.check_in_weight_not_a_number
 import app.trainer.strings.check_in_weight_out_of_range
@@ -128,7 +128,7 @@ class CheckInScreenModel(
         }
     }
 
-    private fun uploadPhoto(image: PickedImage) {
+    private fun uploadPhoto(image: PickedMedia) {
         screenModelScope { state ->
             if (!state.canAddPhoto) return@screenModelScope
             updateState { it.copy(isUploadingPhoto = true) }

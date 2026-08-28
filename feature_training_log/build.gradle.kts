@@ -29,6 +29,7 @@ kotlin {
             api(project(":navigation"))
             api(project(":uikit"))
             implementation(project(":core_entities"))
+            implementation(project(":core_media"))
             implementation(project(":data_push:api"))
             implementation(libs.kotlinx.coroutines)
             implementation(libs.kotlinx.datetime)

@@ -55,6 +55,8 @@ data class ExerciseResponse(
     val description: String?,
     @SerialName("videoUrl")
     val videoUrl: String?,
+    @SerialName("video")
+    val video: ExerciseVideoResponse?,
     @SerialName("isOwnedByCoach")
     val isOwnedByCoach: Boolean?,
     @SerialName("lastRepetitions")
@@ -129,4 +131,34 @@ data class ClientDiarySummaryResponse(
     val lastEntryDate: String?,
     @SerialName("days")
     val days: List<DiaryDayResponse>?,
+)
+
+@Serializable
+data class ExerciseVideoResponse(
+    @SerialName("downloadUrl")
+    val downloadUrl: String?,
+)
+
+@Serializable
+data class PrepareVideoUploadRequest(
+    @SerialName("fileName")
+    val fileName: String,
+    @SerialName("contentType")
+    val contentType: String,
+    @SerialName("sizeBytes")
+    val sizeBytes: Long,
+)
+
+@Serializable
+data class PrepareVideoUploadResponse(
+    @SerialName("mediaFileId")
+    val mediaFileId: String?,
+    @SerialName("uploadUrl")
+    val uploadUrl: String?,
+)
+
+@Serializable
+data class AttachExerciseVideoRequest(
+    @SerialName("mediaFileId")
+    val mediaFileId: String,
 )

@@ -19,6 +19,13 @@ interface TrainingLogRepository : LocalDataCleaner {
 
     suspend fun coachDiarySummary(from: LocalDate, to: LocalDate): RequestResult<List<ClientDiarySummary>>
 
+    suspend fun uploadExerciseVideo(
+        exerciseId: String,
+        fileName: String,
+        contentType: String,
+        bytes: ByteArray,
+    ): RequestResult<Exercise>
+
     suspend fun createExercise(
         name: String,
         muscleGroup: String?,

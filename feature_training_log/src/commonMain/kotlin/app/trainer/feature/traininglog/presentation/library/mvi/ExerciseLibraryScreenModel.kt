@@ -5,10 +5,12 @@ import app.trainer.data.traininglog.Exercise
 import app.trainer.data.traininglog.ExerciseKind
 import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.entities.RequestResult
+import app.trainer.media.PickedMedia
 import app.trainer.strings.Res
 import app.trainer.strings.exercise_library_bodyweight_label
 import app.trainer.strings.exercise_library_cardio_label
 import app.trainer.strings.exercise_library_strength_label
+import kotlinx.collections.immutable.toImmutableList
 import org.jetbrains.compose.resources.getString
 
 private const val DETAILS_SEPARATOR = " · "
@@ -47,6 +49,10 @@ class ExerciseLibraryScreenModel(
             ExerciseLibraryEvent.OnCreateClicked -> screenModelScope {
                 postSideEffect(ExerciseLibrarySideEffect.OpenExerciseCreation)
             }
+            is ExerciseLibraryEvent.OnVideoPicked -> uploadVideo(
+                exerciseId = event.exerciseId,
+                video = event.video,
+            )
         }
     }
 
@@ -68,6 +74,45 @@ class ExerciseLibraryScreenModel(
         }
     }
 
+    private fun uploadVideo(exerciseId: String, video: PickedMedia) {
+        screenModelScope {
+            markUploading(exerciseId = exerciseId, isUploading = true)
+            val uploaded = trainingLogRepository.uploadExerciseVideo(
+                exerciseId = exerciseId,
+                fileName = video.fileName,
+                contentType = video.contentType,
+                bytes = video.bytes,
+            )
+            when (uploaded) {
+                is RequestResult.Error -> {
+                    markUploading(exerciseId = exerciseId, isUploading = false)
+                    postSideEffect(ExerciseLibrarySideEffect.ShowFailure(uploaded))
+                }
+                is RequestResult.Success -> {
+                    val row = toRow(uploaded.data)
+                    updateState { current ->
+                        current.copy(
+                            exercises = current.exercises
+                                .map { if (it.exerciseId == exerciseId) row else it }
+                                .toImmutableList(),
+                        )
+                    }
+                    postSideEffect(ExerciseLibrarySideEffect.ShowVideoUploaded)
+                }
+            }
+        }
+    }
+
+    private suspend fun markUploading(exerciseId: String, isUploading: Boolean) {
+        updateState { current ->
+            current.copy(
+                exercises = current.exercises
+                    .map { if (it.exerciseId == exerciseId) it.copy(isUploadingVideo = isUploading) else it }
+                    .toImmutableList(),
+            )
+        }
+    }
+
     private suspend fun toRow(exercise: Exercise): ExerciseRow {
         val kindLabel = when (exercise.kind) {
             ExerciseKind.STRENGTH -> getString(Res.string.exercise_library_strength_label)
@@ -84,10 +129,16 @@ class ExerciseLibraryScreenModel(
                 "$muscleGroup$DETAILS_SEPARATOR$kindLabel"
             },
             description = exercise.description,
-            video = exercise.videoUrl
-                ?.takeIf { it.isNotBlank() }
-                ?.let(ExerciseVideo::Link)
-                ?: ExerciseVideo.None,
+            video = videoOf(exercise),
+            isOwnedByCoach = exercise.isOwnedByCoach,
+            isUploadingVideo = false,
         )
     }
+}
+
+private fun videoOf(exercise: Exercise): ExerciseVideo {
+    val uploaded = exercise.videoFileUrl?.takeIf { it.isNotBlank() }
+    if (uploaded != null) return ExerciseVideo.Uploaded(uploaded)
+    val link = exercise.videoUrl?.takeIf { it.isNotBlank() }
+    return if (link == null) ExerciseVideo.None else ExerciseVideo.Link(link)
 }

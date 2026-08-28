@@ -1,7 +1,7 @@
 package app.trainer.feature.progress.presentation.checkin.mvi
 
 import app.trainer.entities.RequestResult
-import app.trainer.media.PickedImage
+import app.trainer.media.PickedMedia
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -88,7 +88,7 @@ sealed interface CheckInEvent {
 
     data class OnNotesChanged(val notes: String) : CheckInEvent
 
-    data class OnPhotoPicked(val image: PickedImage) : CheckInEvent
+    data class OnPhotoPicked(val image: PickedMedia) : CheckInEvent
 
     data class OnPhotoRemoved(val photoId: String) : CheckInEvent
 }

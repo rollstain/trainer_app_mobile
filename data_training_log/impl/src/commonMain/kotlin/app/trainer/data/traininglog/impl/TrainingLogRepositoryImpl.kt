@@ -12,6 +12,7 @@ import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.logger.Logger
 import app.trainer.network.HttpClientProvider
+import app.trainer.network.PresignedUploader
 import app.trainer.network.safePagedRequest
 import app.trainer.network.safeRequest
 import io.ktor.client.request.get
@@ -30,6 +31,7 @@ class TrainingLogRepositoryImpl(
     private val httpClientProvider: HttpClientProvider,
     private val mapper: TrainingLogMapper,
     private val outbox: TrainingLogOutbox,
+    private val presignedUploader: PresignedUploader,
     private val logger: Logger,
 ) : TrainingLogRepository {
 
@@ -66,6 +68,65 @@ class TrainingLogRepositoryImpl(
         return when (loaded) {
             is RequestResult.Error -> loaded
             is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(mapper::toDiarySummary))
+        }
+    }
+
+    override suspend fun uploadExerciseVideo(
+        exerciseId: String,
+        fileName: String,
+        contentType: String,
+        bytes: ByteArray,
+    ): RequestResult<Exercise> {
+        val prepared = safeRequest<PrepareVideoUploadResponse> {
+            client.post("coach/exercises/video-uploads") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    PrepareVideoUploadRequest(
+                        fileName = fileName,
+                        contentType = contentType,
+                        sizeBytes = bytes.size.toLong(),
+                    )
+                )
+            }
+        }
+        if (prepared is RequestResult.Error) return prepared
+        val ready = (prepared as RequestResult.Success).data
+        val mediaFileId = ready.mediaFileId
+        val uploadUrl = ready.uploadUrl
+        if (mediaFileId == null || uploadUrl == null) {
+            logger.error(tag = LOG_TAG, message = "В ответе нет ссылки на загрузку видео")
+            return RequestResult.Error(
+                kind = RequestFailure.Parsing,
+                statusCode = null,
+                userMessage = "Не удалось начать загрузку видео",
+                devMessage = "PrepareVideoUploadResponse без mediaFileId или uploadUrl",
+            )
+        }
+
+        val uploaded = presignedUploader.upload(uploadUrl = uploadUrl, contentType = contentType, bytes = bytes)
+        if (uploaded is RequestResult.Error) return uploaded
+
+        val attached = safeRequest<ExerciseResponse> {
+            client.put("coach/exercises/$exerciseId/video") {
+                contentType(ContentType.Application.Json)
+                setBody(AttachExerciseVideoRequest(mediaFileId = mediaFileId))
+            }
+        }
+        return when (attached) {
+            is RequestResult.Error -> attached
+            is RequestResult.Success -> {
+                val exercise = mapper.toExercise(attached.data)
+                if (exercise == null) {
+                    RequestResult.Error(
+                        kind = RequestFailure.Parsing,
+                        statusCode = null,
+                        userMessage = "Видео загружено, но упражнение не прочиталось",
+                        devMessage = "ExerciseResponse без обязательных полей",
+                    )
+                } else {
+                    RequestResult.Success(exercise)
+                }
+            }
         }
     }
 

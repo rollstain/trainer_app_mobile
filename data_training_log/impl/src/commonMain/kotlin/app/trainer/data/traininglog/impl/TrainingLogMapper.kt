@@ -29,6 +29,7 @@ class TrainingLogMapper(private val logger: Logger) {
             isOwnedByCoach = isOwnedByCoach,
             description = response.description,
             videoUrl = response.videoUrl,
+            videoFileUrl = response.video?.downloadUrl,
             lastPerformed = toLastPerformed(response),
         )
     }

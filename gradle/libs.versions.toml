@@ -22,6 +22,7 @@ ktor = "3.4.3"
 sqldelight = "2.0.0"
 multiplatform-settings = "1.1.0"
 androidx-security-crypto = "1.1.0-alpha06"
+androidx-media3 = "1.4.1"
 firebase-messaging = "24.1.1"
 firebase-crashlytics = "19.4.4"
 firebase-crashlytics-plugin = "3.0.6"
@@ -50,6 +51,8 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "androidx-compose-ui" }
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "androidx-compose-ui" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.9.3" }
+androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "androidx-media3" }
+androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "androidx-media3" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version = "1.15.0" }
 
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }

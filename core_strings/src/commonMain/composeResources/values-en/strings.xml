@@ -426,4 +426,7 @@
     <string name="people_booked_title">Booked</string>
     <string name="people_others_title">Everyone else</string>
     <string name="people_everyone_title">All clients</string>
+    <string name="exercise_library_video_upload">Upload a video</string>
+    <string name="exercise_library_video_replace">Replace the video</string>
+    <string name="exercise_library_video_uploaded">Video uploaded</string>
 </resources>

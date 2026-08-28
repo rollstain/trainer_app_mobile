@@ -1,6 +1,7 @@
 package app.trainer.feature.traininglog.presentation.library.mvi
 
 import app.trainer.entities.RequestResult
+import app.trainer.media.PickedMedia
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -10,6 +11,8 @@ sealed interface ExerciseVideo {
     data object None : ExerciseVideo
 
     data class Link(val url: String) : ExerciseVideo
+
+    data class Uploaded(val url: String) : ExerciseVideo
 }
 
 data class ExerciseRow(
@@ -18,6 +21,8 @@ data class ExerciseRow(
     val details: String,
     val description: String?,
     val video: ExerciseVideo,
+    val isOwnedByCoach: Boolean,
+    val isUploadingVideo: Boolean,
 )
 
 data class ExerciseLibraryState(
@@ -68,11 +73,15 @@ sealed interface ExerciseLibraryEvent {
     data object OnEndReached : ExerciseLibraryEvent
 
     data object OnCreateClicked : ExerciseLibraryEvent
+
+    data class OnVideoPicked(val exerciseId: String, val video: PickedMedia) : ExerciseLibraryEvent
 }
 
 sealed interface ExerciseLibrarySideEffect {
 
     data object OpenExerciseCreation : ExerciseLibrarySideEffect
+
+    data object ShowVideoUploaded : ExerciseLibrarySideEffect
 
     data class ShowFailure(val failure: RequestResult.Error) : ExerciseLibrarySideEffect
 }

@@ -426,4 +426,7 @@
     <string name="people_booked_title">Записаны</string>
     <string name="people_others_title">Остальные</string>
     <string name="people_everyone_title">Все подопечные</string>
+    <string name="exercise_library_video_upload">Загрузить видео</string>
+    <string name="exercise_library_video_replace">Заменить видео</string>
+    <string name="exercise_library_video_uploaded">Видео загружено</string>
 </resources>

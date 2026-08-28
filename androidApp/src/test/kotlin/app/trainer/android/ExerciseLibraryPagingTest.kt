@@ -64,6 +64,8 @@ class ExerciseLibraryPagingTest {
             details = "Ноги · Сила",
             description = null,
             video = ExerciseVideo.None,
+            isOwnedByCoach = true,
+            isUploadingVideo = false,
         )
     }
 }

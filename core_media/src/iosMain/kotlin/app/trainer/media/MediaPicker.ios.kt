@@ -20,27 +20,68 @@ import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 import platform.posix.memcpy
 
-private const val LOG_TAG = "image-picker"
+private const val LOG_TAG = "media-picker"
 private const val JPEG_TYPE_IDENTIFIER = "public.jpeg"
 private const val JPEG_CONTENT_TYPE = "image/jpeg"
-private const val FALLBACK_FILE_NAME = "photo.jpg"
+private const val MOVIE_TYPE_IDENTIFIER = "public.movie"
+private const val MOVIE_CONTENT_TYPE = "video/quicktime"
+private const val FALLBACK_IMAGE_NAME = "photo.jpg"
+private const val FALLBACK_VIDEO_NAME = "video.mov"
+private const val IMAGE_EXTENSION = ".jpg"
+private const val VIDEO_EXTENSION = ".mov"
 private const val SELECTION_LIMIT = 1L
 
 @Composable
-actual fun rememberImagePicker(onPicked: (PickedImage) -> Unit): ImagePicker {
+actual fun rememberImagePicker(onPicked: (PickedMedia) -> Unit): MediaPicker = rememberPicker(
+    filter = PHPickerFilter.imagesFilter,
+    typeIdentifier = JPEG_TYPE_IDENTIFIER,
+    contentType = JPEG_CONTENT_TYPE,
+    fallbackName = FALLBACK_IMAGE_NAME,
+    extension = IMAGE_EXTENSION,
+    onPicked = onPicked,
+)
+
+@Composable
+actual fun rememberVideoPicker(onPicked: (PickedMedia) -> Unit): MediaPicker = rememberPicker(
+    filter = PHPickerFilter.videosFilter,
+    typeIdentifier = MOVIE_TYPE_IDENTIFIER,
+    contentType = MOVIE_CONTENT_TYPE,
+    fallbackName = FALLBACK_VIDEO_NAME,
+    extension = VIDEO_EXTENSION,
+    onPicked = onPicked,
+)
+
+@Composable
+private fun rememberPicker(
+    filter: PHPickerFilter,
+    typeIdentifier: String,
+    contentType: String,
+    fallbackName: String,
+    extension: String,
+    onPicked: (PickedMedia) -> Unit,
+): MediaPicker {
     val logger: Logger = koinInject()
-    val delegate = remember(onPicked) { ImagePickerDelegate(onPicked = onPicked, logger = logger) }
+    val delegate = remember(onPicked, typeIdentifier) {
+        MediaPickerDelegate(
+            typeIdentifier = typeIdentifier,
+            contentType = contentType,
+            fallbackName = fallbackName,
+            extension = extension,
+            onPicked = onPicked,
+            logger = logger,
+        )
+    }
     return remember(delegate) {
-        ImagePicker {
+        MediaPicker {
             val configuration = PHPickerConfiguration().apply {
-                setFilter(PHPickerFilter.imagesFilter)
+                setFilter(filter)
                 setSelectionLimit(SELECTION_LIMIT)
             }
             val controller = PHPickerViewController(configuration = configuration)
             controller.delegate = delegate
             val presenter = UIApplication.sharedApplication.keyWindow?.rootViewController
             if (presenter == null) {
-                logger.error(tag = LOG_TAG, message = "Не найден rootViewController для показа выбора фото")
+                logger.error(tag = LOG_TAG, message = "Не найден rootViewController для показа выбора файла")
             } else {
                 presenter.presentViewController(controller, animated = true, completion = null)
             }
@@ -48,8 +89,12 @@ actual fun rememberImagePicker(onPicked: (PickedImage) -> Unit): ImagePicker {
     }
 }
 
-private class ImagePickerDelegate(
-    private val onPicked: (PickedImage) -> Unit,
+private class MediaPickerDelegate(
+    private val typeIdentifier: String,
+    private val contentType: String,
+    private val fallbackName: String,
+    private val extension: String,
+    private val onPicked: (PickedMedia) -> Unit,
     private val logger: Logger,
 ) : NSObject(), PHPickerViewControllerDelegateProtocol {
 
@@ -57,8 +102,8 @@ private class ImagePickerDelegate(
         picker.dismissViewControllerAnimated(flag = true, completion = null)
         val result = didFinishPicking.firstOrNull() as? PHPickerResult ?: return
         val provider = result.itemProvider
-        val fileName = provider.suggestedName?.let { "$it.jpg" } ?: FALLBACK_FILE_NAME
-        provider.loadDataRepresentationForTypeIdentifier(JPEG_TYPE_IDENTIFIER) { data, error ->
+        val fileName = provider.suggestedName?.let { it + extension } ?: fallbackName
+        provider.loadDataRepresentationForTypeIdentifier(typeIdentifier) { data, error ->
             deliver(data = data, error = error, fileName = fileName)
         }
     }
@@ -67,13 +112,13 @@ private class ImagePickerDelegate(
         if (data == null) {
             logger.error(
                 tag = LOG_TAG,
-                message = "Не удалось прочитать выбранное изображение: ${error?.localizedDescription}",
+                message = "Не удалось прочитать выбранный файл: ${error?.localizedDescription}",
             )
             return
         }
-        val picked = PickedImage(
+        val picked = PickedMedia(
             fileName = fileName,
-            contentType = JPEG_CONTENT_TYPE,
+            contentType = contentType,
             bytes = data.toByteArray(),
         )
         dispatch_async(dispatch_get_main_queue()) { onPicked(picked) }

@@ -22,6 +22,7 @@ class TrainingLogDataModule {
                 httpClientProvider = get(),
                 mapper = get(),
                 outbox = get(),
+                presignedUploader = get(),
                 logger = get(),
             )
         } bind LocalDataCleaner::class

@@ -20,6 +20,7 @@ data class Exercise(
     val isOwnedByCoach: Boolean,
     val description: String?,
     val videoUrl: String?,
+    val videoFileUrl: String?,
     val lastPerformed: LastPerformed?,
 )
 

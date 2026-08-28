@@ -3,6 +3,7 @@ package app.trainer.feature.traininglog.presentation.library.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -24,6 +25,8 @@ import app.trainer.feature.traininglog.presentation.library.mvi.ExerciseLibraryS
 import app.trainer.feature.traininglog.presentation.library.mvi.ExerciseRow
 import app.trainer.feature.traininglog.presentation.library.mvi.ExerciseVideo
 import app.trainer.feature.traininglog.presentation.newexercise.EXERCISE_CREATED
+import app.trainer.media.VideoPlayer
+import app.trainer.media.rememberVideoPicker
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.Navigator
 import app.trainer.navigation.Screen
@@ -36,6 +39,9 @@ import app.trainer.strings.exercise_library_empty_description
 import app.trainer.strings.exercise_library_empty_title
 import app.trainer.strings.exercise_library_title
 import app.trainer.strings.exercise_library_video_action
+import app.trainer.strings.exercise_library_video_replace
+import app.trainer.strings.exercise_library_video_upload
+import app.trainer.strings.exercise_library_video_uploaded
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
@@ -46,17 +52,20 @@ import app.trainer.uikit.widgets.AppStatePlaceholder
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTopBar
 import app.trainer.uikit.widgets.ButtonSize
+import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.LocalToastHost
 import app.trainer.uikit.widgets.PlaceholderAction
 import app.trainer.uikit.widgets.PlaceholderKind
 import app.trainer.uikit.widgets.ToastHostState
 import app.trainer.uikit.widgets.TopBarLeading
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 
 private const val SHIMMER_CARDS = 6
 private const val SHIMMER_CARD_LINES = 2
 private const val LOAD_MORE_SHIMMER_LINES = 2
+private const val VIDEO_ASPECT_RATIO = 16f / 9f
 
 class ExerciseLibraryScreen : Screen {
 
@@ -83,6 +92,8 @@ class ExerciseLibraryScreen : Screen {
                     navigator.push(Screens.NewExercise)
                 is ExerciseLibrarySideEffect.ShowFailure ->
                     toastHost.show(effect.failure.toastMessage())
+                ExerciseLibrarySideEffect.ShowVideoUploaded ->
+                    toastHost.show(getString(Res.string.exercise_library_video_uploaded))
             }
         }
     }
@@ -135,7 +146,7 @@ private fun ExerciseList(state: ExerciseLibraryState, onEvent: (ExerciseLibraryE
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
     ) {
         items(items = state.exercises, key = ExerciseRow::exerciseId) { exercise ->
-            ExerciseCard(modifier = Modifier.animateItem(), exercise = exercise)
+            ExerciseCard(modifier = Modifier.animateItem(), exercise = exercise, onEvent = onEvent)
         }
         if (state.hasMore) {
             item(key = "load-more") {
@@ -147,7 +158,11 @@ private fun ExerciseList(state: ExerciseLibraryState, onEvent: (ExerciseLibraryE
 }
 
 @Composable
-private fun ExerciseCard(modifier: Modifier = Modifier, exercise: ExerciseRow) {
+private fun ExerciseCard(
+    modifier: Modifier = Modifier,
+    exercise: ExerciseRow,
+    onEvent: (ExerciseLibraryEvent) -> Unit,
+) {
     AppCard(modifier = modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4)) {
             AppText(
@@ -179,6 +194,28 @@ private fun ExerciseCard(modifier: Modifier = Modifier, exercise: ExerciseRow) {
                         size = ButtonSize.Small,
                     )
                 }
+                is ExerciseVideo.Uploaded -> VideoPlayer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = AppTheme.spacing.dp8)
+                        .aspectRatio(VIDEO_ASPECT_RATIO),
+                    url = video.url,
+                )
+            }
+            if (exercise.isOwnedByCoach) {
+                val picker = rememberVideoPicker { picked ->
+                    onEvent(ExerciseLibraryEvent.OnVideoPicked(exerciseId = exercise.exerciseId, video = picked))
+                }
+                AppButton(
+                    text = when (exercise.video) {
+                        is ExerciseVideo.Uploaded -> stringResource(Res.string.exercise_library_video_replace)
+                        else -> stringResource(Res.string.exercise_library_video_upload)
+                    },
+                    onClick = picker::pick,
+                    tone = ButtonTone.Text,
+                    size = ButtonSize.Small,
+                    state = if (exercise.isUploadingVideo) ButtonState.Loading else ButtonState.Idle,
+                )
             }
         }
     }
