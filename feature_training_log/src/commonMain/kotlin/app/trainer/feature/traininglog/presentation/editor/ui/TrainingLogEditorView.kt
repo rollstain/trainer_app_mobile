@@ -24,6 +24,7 @@ import app.trainer.strings.Res
 import app.trainer.strings.exercise_fields_bodyweight
 import app.trainer.strings.exercise_fields_cardio
 import app.trainer.strings.exercise_fields_strength
+import app.trainer.strings.training_log_count_set
 import app.trainer.strings.training_log_editor_done_action
 import app.trainer.strings.training_log_editor_empty_description
 import app.trainer.strings.training_log_editor_empty_title
@@ -50,6 +51,7 @@ import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.PlaceholderKind
 import app.trainer.uikit.widgets.SetRowCallbacks
 import app.trainer.uikit.widgets.SetRowHints
+import app.trainer.uikit.widgets.SetRowState
 import app.trainer.uikit.widgets.SetRowType
 import app.trainer.uikit.widgets.SetRowValues
 import app.trainer.uikit.widgets.TextFieldKind
@@ -235,6 +237,13 @@ private fun ExerciseCard(rows: List<SetRow>, onEvent: (TrainingLogEditorEvent) -
                         distance = row.lastResult.distance,
                     ),
                     isPersonalRecord = row.isPersonalRecord,
+                    state = when {
+                        row.isCounted -> SetRowState.Counted
+                        row.isEmpty -> SetRowState.Prefilled
+                        else -> SetRowState.Editing
+                    },
+                    onCount = { onEvent(TrainingLogEditorEvent.OnSetCounted(row.rowId)) },
+                    countDescription = stringResource(Res.string.training_log_count_set),
                     callbacks = SetRowCallbacks(
                         onRepetitionsChange = {
                             onEvent(TrainingLogEditorEvent.OnRepetitionsChanged(row.rowId, it))

@@ -38,6 +38,7 @@ data class SetRow(
     val distanceText: String,
     val lastResult: LastResultHints,
     val isPersonalRecord: Boolean,
+    val isCounted: Boolean,
 ) {
 
     val isFilled: Boolean
@@ -46,6 +47,20 @@ data class SetRow(
             ExerciseKind.BODYWEIGHT -> repetitionsText.isNotBlank()
             ExerciseKind.CARDIO -> durationText.isNotBlank() || distanceText.isNotBlank()
         }
+
+    val isEmpty: Boolean
+        get() = repetitionsText.isBlank() &&
+            weightText.isBlank() &&
+            durationText.isBlank() &&
+            distanceText.isBlank()
+
+    fun counted(): SetRow = copy(
+        repetitionsText = repetitionsText.ifBlank { lastResult.repetitions },
+        weightText = weightText.ifBlank { lastResult.weight },
+        durationText = durationText.ifBlank { lastResult.duration },
+        distanceText = distanceText.ifBlank { lastResult.distance },
+        isCounted = true,
+    )
 }
 
 data class RestState(val label: String, val progress: Float)
@@ -103,6 +118,8 @@ sealed interface TrainingLogEditorEvent {
     data object OnSaveClicked : TrainingLogEditorEvent
 
     data class OnExerciseAdded(val exerciseId: String) : TrainingLogEditorEvent
+
+    data class OnSetCounted(val rowId: String) : TrainingLogEditorEvent
 
     data class OnSetRemoved(val rowId: String) : TrainingLogEditorEvent
 

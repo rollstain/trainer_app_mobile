@@ -501,4 +501,5 @@
     <string name="form_checks_reply_hint">Что поправить</string>
     <string name="form_checks_reply_action">Ответить</string>
     <string name="form_checks_replied">Ответ отправлен</string>
+    <string name="training_log_count_set">Засчитать подход</string>
 </resources>

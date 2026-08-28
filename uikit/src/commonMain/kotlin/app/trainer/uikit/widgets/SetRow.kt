@@ -1,6 +1,7 @@
 package app.trainer.uikit.widgets
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -27,6 +29,8 @@ import app.trainer.uikit.resources.set_unit_weight
 import org.jetbrains.compose.resources.stringResource
 
 enum class SetRowType { Strength, Bodyweight, Cardio }
+
+enum class SetRowState { Prefilled, Editing, Counted }
 
 data class SetRowValues(
     val repetitions: String,
@@ -64,11 +68,29 @@ fun AppSetRow(
     callbacks: SetRowCallbacks,
     hints: SetRowHints = SetRowHints.Empty,
     isPersonalRecord: Boolean = false,
+    state: SetRowState = SetRowState.Prefilled,
+    onCount: (() -> Unit)? = null,
+    countDescription: String = "",
 ) {
+    val colors = AppTheme.colors
+    val shape = RoundedCornerShape(AppTheme.radius.dp8)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .defaultMinSize(minHeight = AppTheme.sizing.setRowHeight),
+            .defaultMinSize(minHeight = AppTheme.sizing.setRowHeight)
+            .then(
+                when (state) {
+                    SetRowState.Prefilled ->
+                        Modifier.border(AppTheme.borders.hairline, colors.border, shape)
+                    SetRowState.Editing ->
+                        Modifier
+                            .background(color = colors.accentTint, shape = shape)
+                            .border(AppTheme.borders.focus, colors.accent, shape)
+                    SetRowState.Counted ->
+                        Modifier.border(AppTheme.borders.hairline, colors.borderStrong, shape)
+                }
+            )
+            .padding(horizontal = AppTheme.spacing.dp8),
         horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -121,6 +143,42 @@ fun AppSetRow(
         }
         if (isPersonalRecord) {
             PersonalRecordMark()
+        }
+        if (onCount != null) {
+            CountMark(isCounted = state == SetRowState.Counted, description = countDescription, onClick = onCount)
+        }
+    }
+}
+
+@Composable
+private fun CountMark(isCounted: Boolean, description: String, onClick: () -> Unit) {
+    val colors = AppTheme.colors
+    Box(
+        modifier = Modifier
+            .size(AppTheme.sizing.minTouchTarget)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(AppTheme.sizing.countMarkSize)
+                .background(
+                    color = if (isCounted) colors.successSoft else colors.bgSurface,
+                    shape = RoundedCornerShape(AppTheme.radius.dp8),
+                )
+                .border(
+                    width = AppTheme.borders.hairline,
+                    color = if (isCounted) colors.success else colors.borderStrong,
+                    shape = RoundedCornerShape(AppTheme.radius.dp8),
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            AppIcon(
+                painter = AppIcons.sent,
+                contentDescription = description,
+                size = IconSize.Small,
+                tint = if (isCounted) colors.success else colors.textMuted,
+            )
         }
     }
 }

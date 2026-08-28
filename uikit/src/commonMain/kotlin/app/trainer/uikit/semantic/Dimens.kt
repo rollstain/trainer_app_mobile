@@ -49,6 +49,7 @@ data class AppSizing(
     val topBarHeight: Dp = 56.dp,
     val bottomBarHeight: Dp = 64.dp,
     val minTouchTarget: Dp = 48.dp,
+    val countMarkSize: Dp = 28.dp,
     val chipHeight: Dp = 24.dp,
     val chipPadding: Dp = 10.dp,
     val chipDot: Dp = 6.dp,

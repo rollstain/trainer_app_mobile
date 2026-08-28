@@ -168,6 +168,7 @@ class TrainingLogEditorScreenModel(
             TrainingLogEditorEvent.OnPlanApplied -> applyPlan()
             TrainingLogEditorEvent.OnSaveClicked -> save()
             is TrainingLogEditorEvent.OnExerciseAdded -> addSet(event.exerciseId)
+            is TrainingLogEditorEvent.OnSetCounted -> countSet(event.rowId)
             is TrainingLogEditorEvent.OnSetRemoved -> removeSet(event.rowId)
             is TrainingLogEditorEvent.OnSetDuplicated -> duplicateSet(event.rowId)
             is TrainingLogEditorEvent.OnNotesChanged -> updateState { it.copy(notes = event.notes) }
@@ -254,6 +255,19 @@ class TrainingLogEditorScreenModel(
         }
     }
 
+    private fun countSet(rowId: String) {
+        screenModelScope { state ->
+            val row = state.sets.firstOrNull { it.rowId == rowId } ?: return@screenModelScope
+            updateState { current ->
+                val counted = current.sets.map { set ->
+                    if (set.rowId == rowId) set.counted() else set
+                }
+                current.copy(sets = counted.toImmutableList())
+            }
+            restTimer.start(row.exerciseId)
+        }
+    }
+
     private fun duplicateSet(rowId: String) {
         screenModelScope { state ->
             val source = state.sets.firstOrNull { it.rowId == rowId } ?: return@screenModelScope
@@ -262,7 +276,6 @@ class TrainingLogEditorScreenModel(
                     sets = (current.sets + source.copy(rowId = Uuid.random().toString())).toImmutableList()
                 )
             }
-            restTimer.start(source.exerciseId)
         }
     }
 
@@ -359,6 +372,7 @@ class TrainingLogEditorScreenModel(
         distanceText = input.distanceText,
         lastResult = hints ?: LastResultHints.Empty,
         isPersonalRecord = false,
+        isCounted = false,
     )
 
     private fun isDraftValid(row: SetRow, draft: TrainingSetDraft): Boolean = when (row.kind) {
@@ -388,6 +402,7 @@ class TrainingLogEditorScreenModel(
         distanceText = "",
         lastResult = exercise.lastResult,
         isPersonalRecord = false,
+        isCounted = false,
     )
 
     private fun toRow(set: TrainingSet, hints: LastResultHints?): SetRow = SetRow(
@@ -401,6 +416,7 @@ class TrainingLogEditorScreenModel(
         distanceText = set.distanceMeters?.toString().orEmpty(),
         lastResult = hints ?: LastResultHints.Empty,
         isPersonalRecord = set.isPersonalRecord,
+        isCounted = true,
     )
 
     private fun toHints(last: LastPerformed?): LastResultHints {
