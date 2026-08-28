@@ -81,6 +81,7 @@ import app.trainer.uikit.widgets.SlotRowNote
 import app.trainer.uikit.widgets.SlotRowStatus
 import app.trainer.uikit.widgets.SlotRowTrailing
 import app.trainer.uikit.widgets.SlotStatusView
+import app.trainer.uikit.widgets.StatusChipKind
 import app.trainer.uikit.widgets.TopBarAction
 import app.trainer.uikit.widgets.TopBarSubtitle
 import org.jetbrains.compose.resources.stringResource
@@ -198,7 +199,11 @@ private fun LazyListScope.sessionsBlock(
             durationLabel = session.durationLabel,
             title = session.clientDisplayName,
             status = SlotRowStatus.Booked,
-            trailing = SlotRowTrailing.Client(displayName = session.clientDisplayName),
+            trailing = if (session.seatsLabel.isEmpty()) {
+                SlotRowTrailing.Client(displayName = session.clientDisplayName)
+            } else {
+                SlotRowTrailing.Status(text = session.seatsLabel, kind = StatusChipKind.Booked)
+            },
             onClick = { onEvent(TodayEvent.OnSessionClicked(session.clientUserId)) },
             note = if (session.isNext) SlotRowNote.Text(session.startsInLabel) else SlotRowNote.None,
             isNext = session.isNext,

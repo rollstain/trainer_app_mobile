@@ -57,6 +57,8 @@ sealed interface SlotClientView {
     data object Nobody : SlotClientView
 
     data class Booked(val displayName: String) : SlotClientView
+
+    data class Group(val seatsLabel: String, val names: String) : SlotClientView
 }
 
 @Composable
@@ -100,6 +102,20 @@ fun AppCoachSlotCard(
                         style = AppTheme.typography.bodyStrong,
                         color = colors.textPrimary,
                     )
+                    is SlotClientView.Group -> {
+                        Text(
+                            text = client.seatsLabel,
+                            style = AppTheme.typography.bodyStrong,
+                            color = colors.textPrimary,
+                        )
+                        if (client.names.isNotEmpty()) {
+                            Text(
+                                text = client.names,
+                                style = AppTheme.typography.caption,
+                                color = colors.textSecondary,
+                            )
+                        }
+                    }
                 }
                 if (status == SlotStatusView.Completed) {
                     Text(
@@ -143,6 +159,7 @@ fun AppClientSlotCard(
     action: ClientSlotAction,
     request: SlotRequestView = SlotRequestView.None,
     note: String = "",
+    seats: String = "",
 ) {
     val colors = AppTheme.colors
     val hasPendingRequest = request != SlotRequestView.None
@@ -203,6 +220,13 @@ fun AppClientSlotCard(
                 },
             )
             ClientSlotActionButton(action = action)
+        }
+        if (seats.isNotEmpty()) {
+            Text(
+                text = seats,
+                style = AppTheme.typography.caption,
+                color = colors.textSecondary,
+            )
         }
         if (note.isNotEmpty()) {
             Text(

@@ -148,12 +148,15 @@
     <string name="new_exercise_saved_message">Exercise added</string>
     <string name="new_exercise_title">New exercise</string>
     <string name="new_slot_days_title">Days of the week</string>
+    <string name="new_slot_capacity_title">Seats</string>
+    <string name="new_slot_capacity_personal">Personal</string>
     <string name="new_slot_duration_title">Duration</string>
     <string name="new_slot_series_mode">Series</string>
     <string name="new_slot_single_mode">One-off</string>
     <string name="new_slot_slot_created_message">Slot created</string>
     <string name="new_slot_submit_series">Create a series</string>
     <string name="new_slot_submit_single">Create a slot</string>
+    <string name="new_slot_summary_seats">%1$d seats</string>
     <string name="new_slot_summary_series">%1$d slots: %2$s at %3$s</string>
     <string name="new_slot_summary_single">%1$s, %2$s, %3$d min</string>
     <string name="new_slot_summary_title">SUMMARY</string>
@@ -225,6 +228,9 @@
     <string name="series_result_skipped_caption">Skipped</string>
     <string name="series_result_skipped_title">Skipped — the time is already taken</string>
     <string name="series_result_title">Series created</string>
+    <string name="slot_seats_taken">%1$d of %2$d</string>
+    <string name="slot_seats_left">%1$d of %2$d seats free</string>
+    <string name="slot_group_empty">Group session</string>
     <string name="slot_duration_minutes">%1$d min</string>
     <string name="tab_booking">Booking</string>
     <string name="tab_calendar">Calendar</string>

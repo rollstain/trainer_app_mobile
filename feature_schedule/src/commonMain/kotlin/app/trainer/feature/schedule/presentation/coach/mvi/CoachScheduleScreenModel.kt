@@ -15,6 +15,7 @@ import app.trainer.entities.RequestResult
 import app.trainer.feature.schedule.presentation.formatScheduleWeekTitle
 import app.trainer.strings.Res
 import app.trainer.strings.slot_duration_minutes
+import app.trainer.strings.slot_seats_taken
 import kotlin.time.Clock
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.DayOfWeek
@@ -25,6 +26,7 @@ import org.jetbrains.compose.resources.getString
 
 private const val MINUTES_IN_HOUR = 60
 private const val SLOT_TITLE_SEPARATOR = " · "
+private const val NAME_SEPARATOR = ", "
 
 class CoachScheduleScreenModel(
     private val scheduleRepository: ScheduleRepository,
@@ -87,7 +89,7 @@ class CoachScheduleScreenModel(
             } ?: return@screenModelScope
             val kind = when (slot.status) {
                 SlotStatus.BOOKED -> SlotActionsKind.Booked
-                SlotStatus.FREE -> SlotActionsKind.Free
+                SlotStatus.FREE -> if (slot.hasParticipants) SlotActionsKind.Booked else SlotActionsKind.Free
                 SlotStatus.CANCELLED, SlotStatus.COMPLETED -> return@screenModelScope
             }
             updateState { current ->
@@ -265,7 +267,7 @@ class CoachScheduleScreenModel(
         return days
             .firstOrNull { it.date == today }
             ?.slots
-            ?.filter { it.status == SlotStatus.BOOKED && it.startMinutesOfDay >= minutesNow }
+            ?.filter { it.hasParticipants && it.startMinutesOfDay >= minutesNow }
             ?.minByOrNull { it.startMinutesOfDay }
             ?.slotId
     }
@@ -281,6 +283,10 @@ class CoachScheduleScreenModel(
             status = slot.status,
             clientDisplayName = slot.clientDisplayName,
             hasPendingChangeRequest = slot.pendingChangeRequestId != null,
+            isGroup = slot.isGroup,
+            hasParticipants = slot.takenSeats > 0,
+            seatsLabel = getString(Res.string.slot_seats_taken, slot.takenSeats, slot.capacity),
+            participantNames = slot.participants.mapNotNull { it.displayName }.joinToString(NAME_SEPARATOR),
         )
     }
 

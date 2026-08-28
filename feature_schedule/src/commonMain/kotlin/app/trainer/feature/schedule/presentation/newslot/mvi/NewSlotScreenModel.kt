@@ -10,6 +10,7 @@ import app.trainer.entities.RequestResult
 import app.trainer.feature.schedule.domain.SlotSeriesResults
 import app.trainer.feature.schedule.presentation.formatScheduleDate
 import app.trainer.strings.Res
+import app.trainer.strings.new_slot_summary_seats
 import app.trainer.strings.new_slot_summary_series
 import app.trainer.strings.new_slot_summary_single
 import kotlin.uuid.ExperimentalUuidApi
@@ -23,6 +24,8 @@ import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import org.jetbrains.compose.resources.getString
 
+private const val SUMMARY_SEPARATOR = ", "
+private const val PERSONAL_CAPACITY = 1
 private const val TIME_SEPARATOR = ':'
 private const val MINUTES_IN_HOUR = 60
 private const val HOUR_DIGITS = 2
@@ -71,6 +74,7 @@ class NewSlotScreenModel(
             is NewSlotEvent.OnDurationChanged -> updateStateAndSummary {
                 it.copy(durationMinutes = event.minutes)
             }
+            is NewSlotEvent.OnCapacityChanged -> updateState { it.copy(capacity = event.capacity) }
             is NewSlotEvent.OnWeeksCountChanged -> updateStateAndSummary {
                 it.copy(weeksCount = event.weeks)
             }
@@ -102,6 +106,12 @@ class NewSlotScreenModel(
 
     private suspend fun buildSummary(state: NewSlotState): String {
         if (state.timeText.length != NewSlotState.TIME_LENGTH) return ""
+        val base = baseSummary(state)
+        if (state.capacity == PERSONAL_CAPACITY) return base
+        return base + SUMMARY_SEPARATOR + getString(Res.string.new_slot_summary_seats, state.capacity)
+    }
+
+    private suspend fun baseSummary(state: NewSlotState): String {
         return when (state.mode) {
             SlotMode.Single -> getString(
                 Res.string.new_slot_summary_single,
@@ -136,6 +146,7 @@ class NewSlotScreenModel(
         val created = scheduleRepository.createSlot(
             startsAt = state.date.atTime(time).toInstant(zone),
             durationMinutes = state.durationMinutes,
+            capacity = state.capacity,
         )
         when (created) {
             is RequestResult.Error -> postSideEffect(NewSlotSideEffect.ShowFailure(created))
@@ -151,6 +162,7 @@ class NewSlotScreenModel(
                 daysOfWeek = state.weekDays.filter { it.isSelected }.map { it.dayOfWeek }.toSet(),
                 timeOfDay = time,
                 durationMinutes = state.durationMinutes,
+                capacity = state.capacity,
             ),
         )
         when (created) {

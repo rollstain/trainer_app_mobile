@@ -154,6 +154,7 @@ private fun SlotList(slots: List<ClientSlotRow>, onEvent: (ClientScheduleEvent) 
             AppClientSlotCard(
                 time = slot.timeLabel,
                 duration = slot.durationLabel,
+                seats = slot.seatsLabel,
                 availability = when {
                     slot.isBookedByMe -> ClientSlotAvailability.Mine
                     slot.isAvailable -> ClientSlotAvailability.Free

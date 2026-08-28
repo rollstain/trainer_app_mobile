@@ -16,6 +16,10 @@ data class CoachSlotRow(
     val status: SlotStatus,
     val clientDisplayName: String?,
     val hasPendingChangeRequest: Boolean,
+    val isGroup: Boolean,
+    val hasParticipants: Boolean,
+    val seatsLabel: String,
+    val participantNames: String,
 )
 
 data class ScheduleDay(

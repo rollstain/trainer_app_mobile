@@ -66,7 +66,11 @@ class ScheduleRepositoryImpl(
         }
     }
 
-    override suspend fun createSlot(startsAt: Instant, durationMinutes: Int): RequestResult<CoachSlot> {
+    override suspend fun createSlot(
+        startsAt: Instant,
+        durationMinutes: Int,
+        capacity: Int,
+    ): RequestResult<CoachSlot> {
         val created = safeRequest<CoachSlotResponse> {
             client.post("schedule/slots") {
                 contentType(ContentType.Application.Json)
@@ -74,6 +78,7 @@ class ScheduleRepositoryImpl(
                     CreateSlotRequest(
                         startsAt = startsAt.toString(),
                         durationMinutes = durationMinutes,
+                        capacity = capacity,
                     )
                 )
             }
@@ -92,6 +97,7 @@ class ScheduleRepositoryImpl(
                         daysOfWeek = draft.daysOfWeek.map { it.name },
                         timeOfDay = draft.timeOfDay.toString(),
                         durationMinutes = draft.durationMinutes,
+                        capacity = draft.capacity,
                     )
                 )
             }

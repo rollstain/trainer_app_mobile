@@ -9,6 +9,7 @@ import app.trainer.data.schedule.SkippedSlot
 import app.trainer.data.schedule.SlotChangeKind
 import app.trainer.data.schedule.SlotChangeRequest
 import app.trainer.data.schedule.SlotChangeStatus
+import app.trainer.data.schedule.SlotParticipant
 import app.trainer.data.schedule.SlotSeriesResult
 import app.trainer.data.schedule.SlotStatus
 import app.trainer.logger.Logger
@@ -46,6 +47,8 @@ class ScheduleMapper(private val logger: Logger) {
         val startsAt = parseInstant(response.startsAt) ?: return skipped(entity = "CoachSlot", field = "startsAt")
         val duration = response.durationMinutes ?: return skipped(entity = "CoachSlot", field = "durationMinutes")
         val status = parseSlotStatus(response.status) ?: return skipped(entity = "CoachSlot", field = "status")
+        val capacity = response.capacity ?: return skipped(entity = "CoachSlot", field = "capacity")
+        val takenSeats = response.takenSeats ?: return skipped(entity = "CoachSlot", field = "takenSeats")
         return CoachSlot(
             id = id,
             startsAt = startsAt,
@@ -54,7 +57,15 @@ class ScheduleMapper(private val logger: Logger) {
             clientUserId = response.clientUserId,
             clientDisplayName = response.clientDisplayName,
             pendingChangeRequestId = response.pendingChangeRequestId,
+            capacity = capacity,
+            takenSeats = takenSeats,
+            participants = response.participants.orEmpty().mapNotNull(::toParticipant),
         )
+    }
+
+    private fun toParticipant(response: SlotParticipantResponse): SlotParticipant? {
+        val userId = response.userId ?: return skipped(entity = "SlotParticipant", field = "userId")
+        return SlotParticipant(userId = userId, displayName = response.displayName)
     }
 
     fun toClientSlot(response: ClientSlotResponse): ClientSlot? {
@@ -67,6 +78,8 @@ class ScheduleMapper(private val logger: Logger) {
             ?: return skipped(entity = "ClientSlot", field = "canRequestChange")
         val isOnWaitlist = response.isOnWaitlist
             ?: return skipped(entity = "ClientSlot", field = "isOnWaitlist")
+        val capacity = response.capacity ?: return skipped(entity = "ClientSlot", field = "capacity")
+        val takenSeats = response.takenSeats ?: return skipped(entity = "ClientSlot", field = "takenSeats")
         return ClientSlot(
             id = id,
             startsAt = startsAt,
@@ -76,6 +89,8 @@ class ScheduleMapper(private val logger: Logger) {
             pendingChangeRequestId = response.pendingChangeRequestId,
             canRequestChange = canRequestChange,
             isOnWaitlist = isOnWaitlist,
+            capacity = capacity,
+            takenSeats = takenSeats,
         )
     }
 

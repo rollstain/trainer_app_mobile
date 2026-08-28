@@ -21,6 +21,7 @@ data class TodaySessionRow(
     val clientDisplayName: String,
     val isNext: Boolean,
     val startsInLabel: String,
+    val seatsLabel: String,
 )
 
 data class TodayDialogRow(

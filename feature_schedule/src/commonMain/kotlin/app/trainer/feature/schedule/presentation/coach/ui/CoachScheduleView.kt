@@ -49,6 +49,7 @@ import app.trainer.strings.coach_schedule_today_mark
 import app.trainer.strings.slot_cancelled_chip
 import app.trainer.strings.slot_completed_chip
 import app.trainer.strings.slot_free_chip
+import app.trainer.strings.slot_group_empty
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppBottomSheetContainer
@@ -258,10 +259,26 @@ private fun daySummaryOf(day: ScheduleDay): String {
     }
 }
 
-private fun slotTitleOf(slot: CoachSlotRow): String = slot.clientDisplayName.orEmpty()
+@Composable
+private fun slotTitleOf(slot: CoachSlotRow): String = when {
+    !slot.isGroup -> slot.clientDisplayName.orEmpty()
+    slot.participantNames.isNotEmpty() -> slot.participantNames
+    else -> stringResource(Res.string.slot_group_empty)
+}
 
 @Composable
-private fun slotTrailingOf(slot: CoachSlotRow): SlotRowTrailing = when (slot.status) {
+private fun slotTrailingOf(slot: CoachSlotRow): SlotRowTrailing {
+    if (slot.isGroup && slot.status != SlotStatus.CANCELLED) {
+        return SlotRowTrailing.Status(
+            text = slot.seatsLabel,
+            kind = if (slot.status == SlotStatus.FREE) StatusChipKind.Free else StatusChipKind.Booked,
+        )
+    }
+    return personalTrailingOf(slot)
+}
+
+@Composable
+private fun personalTrailingOf(slot: CoachSlotRow): SlotRowTrailing = when (slot.status) {
     SlotStatus.BOOKED ->
         slot.clientDisplayName
             ?.let(SlotRowTrailing::Client)

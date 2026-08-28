@@ -148,12 +148,15 @@
     <string name="new_exercise_saved_message">Упражнение добавлено</string>
     <string name="new_exercise_title">Новое упражнение</string>
     <string name="new_slot_days_title">Дни недели</string>
+    <string name="new_slot_capacity_title">Мест на занятии</string>
+    <string name="new_slot_capacity_personal">Персональное</string>
     <string name="new_slot_duration_title">Длительность</string>
     <string name="new_slot_series_mode">Серия</string>
     <string name="new_slot_single_mode">Один раз</string>
     <string name="new_slot_slot_created_message">Слот создан</string>
     <string name="new_slot_submit_series">Создать серию</string>
     <string name="new_slot_submit_single">Создать слот</string>
+    <string name="new_slot_summary_seats">%1$d мест</string>
     <string name="new_slot_summary_series">%1$d слотов: %2$s в %3$s</string>
     <string name="new_slot_summary_single">%1$s, %2$s, %3$d мин</string>
     <string name="new_slot_summary_title">ИТОГ</string>
@@ -225,6 +228,9 @@
     <string name="series_result_skipped_caption">Пропущено</string>
     <string name="series_result_skipped_title">Пропущены — время уже занято</string>
     <string name="series_result_title">Серия создана</string>
+    <string name="slot_seats_taken">%1$d из %2$d</string>
+    <string name="slot_seats_left">Свободно %1$d из %2$d мест</string>
+    <string name="slot_group_empty">Групповое занятие</string>
     <string name="slot_duration_minutes">%1$d мин</string>
     <string name="tab_booking">Запись</string>
     <string name="tab_calendar">Календарь</string>

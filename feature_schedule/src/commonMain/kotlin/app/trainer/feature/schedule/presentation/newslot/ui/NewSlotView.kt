@@ -15,6 +15,8 @@ import app.trainer.feature.schedule.presentation.newslot.mvi.NewSlotEvent
 import app.trainer.feature.schedule.presentation.newslot.mvi.NewSlotState
 import app.trainer.feature.schedule.presentation.newslot.mvi.SlotMode
 import app.trainer.strings.Res
+import app.trainer.strings.new_slot_capacity_personal
+import app.trainer.strings.new_slot_capacity_title
 import app.trainer.strings.new_slot_days_title
 import app.trainer.strings.new_slot_duration_title
 import app.trainer.strings.new_slot_series_mode
@@ -43,6 +45,8 @@ import org.jetbrains.compose.resources.stringResource
 private const val TIME_PLACEHOLDER = "19:00"
 
 private val DURATION_OPTIONS = listOf(45, 60, 90)
+private const val PERSONAL_CAPACITY = 1
+private val CAPACITY_OPTIONS = listOf(PERSONAL_CAPACITY, 4, 8, 12)
 
 @Composable
 fun NewSlotView(
@@ -96,6 +100,7 @@ fun NewSlotView(
                 placeholder = TIME_PLACEHOLDER,
             )
             DurationRow(state = state, onEvent = onEvent)
+            CapacityRow(state = state, onEvent = onEvent)
             if (state.mode == SlotMode.Series) {
                 SeriesFields(state = state, onEvent = onEvent)
             }
@@ -138,6 +143,31 @@ private fun DurationRow(state: NewSlotState, onEvent: (NewSlotEvent) -> Unit) {
                     } else {
                         ButtonTone.Secondary
                     },
+                    size = ButtonSize.Small,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CapacityRow(state: NewSlotState, onEvent: (NewSlotEvent) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
+        AppText(
+            text = stringResource(Res.string.new_slot_capacity_title),
+            style = AppTheme.typography.label,
+            color = AppTheme.colors.textSecondary,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
+            CAPACITY_OPTIONS.forEach { seats ->
+                AppButton(
+                    text = if (seats == PERSONAL_CAPACITY) {
+                        stringResource(Res.string.new_slot_capacity_personal)
+                    } else {
+                        "$seats"
+                    },
+                    onClick = { onEvent(NewSlotEvent.OnCapacityChanged(seats)) },
+                    tone = if (state.capacity == seats) ButtonTone.Primary else ButtonTone.Secondary,
                     size = ButtonSize.Small,
                 )
             }

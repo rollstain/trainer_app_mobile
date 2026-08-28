@@ -27,6 +27,7 @@ import app.trainer.feature.home.presentation.startsInLabelOf
 import app.trainer.strings.Res
 import app.trainer.strings.home_date
 import app.trainer.strings.slot_duration_minutes
+import app.trainer.strings.slot_seats_taken
 import app.trainer.strings.today_free_slots_summary
 import app.trainer.strings.today_tomorrow_summary
 import kotlin.time.Clock
@@ -42,6 +43,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 private const val UNREAD_PREVIEW_COUNT = 3
+private const val NAME_SEPARATOR = ", "
 private const val DIARY_HISTORY_DAYS = 90
 
 private data class TodaySources(
@@ -161,21 +163,21 @@ class TodayScreenModel(
         val now = Clock.System.now()
         val todaySlots = slots.filter { weeks.dateOf(it.startsAt, zone) == today }
         val upcomingBooked = slots
-            .filter { it.status == SlotStatus.BOOKED && it.startsAt >= now }
+            .filter { it.takenSeats > 0 && it.status != SlotStatus.CANCELLED && it.startsAt >= now }
             .sortedBy { it.startsAt }
         val nextTodaySlotId = upcomingBooked
             .firstOrNull { weeks.dateOf(it.startsAt, zone) == today }
             ?.id
 
         val sessions = todaySlots
-            .filter { it.status == SlotStatus.BOOKED }
+            .filter { it.takenSeats > 0 && it.status != SlotStatus.CANCELLED }
             .sortedBy { it.startsAt }
             .map { slot -> sessionRowOf(slot = slot, zone = zone, isNext = slot.id == nextTodaySlotId, now = now) }
 
         val unreadDialogs = sources.dialogs.filter { it.unreadCount > 0 }.sortedByDescending { it.lastMessageAt }
         val tomorrowSlots = slots
             .filter { weeks.dateOf(it.startsAt, zone) == today.plus(DatePeriod(days = 1)) }
-            .filter { it.status == SlotStatus.BOOKED }
+            .filter { it.takenSeats > 0 && it.status != SlotStatus.CANCELLED }
             .sortedBy { it.startsAt }
         val freeSlots = slots.filter { it.status == SlotStatus.FREE && it.startsAt >= now }
 
@@ -271,10 +273,20 @@ class TodayScreenModel(
         clientUserId = slot.clientUserId.orEmpty(),
         timeLabel = timeOfDayOf(slot.startsAt.toLocalDateTime(zone)),
         durationLabel = getString(Res.string.slot_duration_minutes, slot.durationMinutes),
-        clientDisplayName = slot.clientDisplayName.orEmpty(),
+        clientDisplayName = participantsLabelOf(slot),
         isNext = isNext,
         startsInLabel = if (isNext) startsInLabelOf(startsAt = slot.startsAt, now = now) else "",
+        seatsLabel = if (slot.isGroup) {
+            getString(Res.string.slot_seats_taken, slot.takenSeats, slot.capacity)
+        } else {
+            ""
+        },
     )
+
+    private fun participantsLabelOf(slot: CoachSlot): String {
+        if (!slot.isGroup) return slot.clientDisplayName.orEmpty()
+        return slot.participants.mapNotNull { it.displayName }.joinToString(NAME_SEPARATOR)
+    }
 
     private fun dialogRowOf(dialog: Dialog): TodayDialogRow = TodayDialogRow(
         dialogId = dialog.id,
@@ -297,7 +309,7 @@ class TodayScreenModel(
                 dayMonthOf(date),
             ),
             timeLabel = timeOfDayOf(slot.startsAt.toLocalDateTime(zone)),
-            clientDisplayName = slot.clientDisplayName.orEmpty(),
+            clientDisplayName = participantsLabelOf(slot),
             startsInLabel = startsInLabelOf(startsAt = slot.startsAt, now = now),
         )
     }

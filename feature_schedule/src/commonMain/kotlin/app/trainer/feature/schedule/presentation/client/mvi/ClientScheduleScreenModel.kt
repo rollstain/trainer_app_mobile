@@ -16,6 +16,7 @@ import app.trainer.feature.schedule.presentation.formatScheduleWeekTitle
 import app.trainer.strings.Res
 import app.trainer.strings.client_schedule_cancellation_note
 import app.trainer.strings.slot_duration_minutes
+import app.trainer.strings.slot_seats_left
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
@@ -257,7 +258,13 @@ class ClientScheduleScreenModel(
             canRequestChange = slot.canRequestChange,
             isOnWaitlist = slot.isOnWaitlist,
             note = changeWindowNote(slot = slot, cancellationWindowHours = cancellationWindowHours),
+            seatsLabel = seatsLabelOf(slot),
         )
+
+    private suspend fun seatsLabelOf(slot: ClientSlot): String {
+        if (!slot.isGroup) return ""
+        return getString(Res.string.slot_seats_left, slot.freeSeats, slot.capacity)
+    }
 
     private suspend fun changeWindowNote(slot: ClientSlot, cancellationWindowHours: Int): String {
         if (!slot.isBookedByMe || slot.canRequestChange) return ""

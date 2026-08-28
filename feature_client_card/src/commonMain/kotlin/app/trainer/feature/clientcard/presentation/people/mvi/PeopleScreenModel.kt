@@ -170,8 +170,8 @@ class PeopleScreenModel(
         if (schedule !is RequestResult.Success) return emptyMap()
         return schedule.data.slots
             .asSequence()
-            .filter { it.status == SlotStatus.BOOKED && it.startsAt >= now }
-            .mapNotNull { slot -> slot.clientUserId?.let { it to slot } }
+            .filter { it.status != SlotStatus.CANCELLED && it.startsAt >= now }
+            .flatMap { slot -> slot.participants.map { it.userId to slot } }
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, slots) ->
                 val earliest = slots.minBy { it.startsAt }

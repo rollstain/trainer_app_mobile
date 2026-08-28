@@ -20,6 +20,7 @@ data class NewSlotState(
     val dateLabel: String,
     val timeText: String,
     val durationMinutes: Int,
+    val capacity: Int,
     val weeksCount: Int,
     val weekDays: ImmutableList<WeekDayToggle>,
     val summaryLabel: String,
@@ -41,6 +42,7 @@ data class NewSlotState(
             dateLabel = "",
             timeText = "",
             durationMinutes = DEFAULT_DURATION_MINUTES,
+            capacity = PERSONAL_CAPACITY,
             weeksCount = DEFAULT_WEEKS,
             weekDays = persistentListOf(),
             summaryLabel = "",
@@ -49,6 +51,7 @@ data class NewSlotState(
 
         private const val DEFAULT_DURATION_MINUTES = 60
         private const val DEFAULT_WEEKS = 4
+        private const val PERSONAL_CAPACITY = 1
     }
 }
 
@@ -61,6 +64,8 @@ sealed interface NewSlotEvent {
     data class OnTimeChanged(val text: String) : NewSlotEvent
 
     data class OnDurationChanged(val minutes: Int) : NewSlotEvent
+
+    data class OnCapacityChanged(val capacity: Int) : NewSlotEvent
 
     data class OnWeeksCountChanged(val weeks: Int) : NewSlotEvent
 

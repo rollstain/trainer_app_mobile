@@ -10,6 +10,11 @@ enum class SlotChangeStatus { PENDING, APPROVED, REJECTED }
 
 enum class SkipReason { OVERLAPS_EXISTING_SLOT }
 
+data class SlotParticipant(
+    val userId: String,
+    val displayName: String?,
+)
+
 data class CoachSlot(
     val id: String,
     val startsAt: Instant,
@@ -18,7 +23,13 @@ data class CoachSlot(
     val clientUserId: String?,
     val clientDisplayName: String?,
     val pendingChangeRequestId: String?,
-)
+    val capacity: Int,
+    val takenSeats: Int,
+    val participants: List<SlotParticipant>,
+) {
+
+    val isGroup: Boolean get() = capacity > 1
+}
 
 data class ClientSlot(
     val id: String,
@@ -29,7 +40,14 @@ data class ClientSlot(
     val pendingChangeRequestId: String?,
     val canRequestChange: Boolean,
     val isOnWaitlist: Boolean,
-)
+    val capacity: Int,
+    val takenSeats: Int,
+) {
+
+    val isGroup: Boolean get() = capacity > 1
+
+    val freeSeats: Int get() = (capacity - takenSeats).coerceAtLeast(0)
+}
 
 data class CoachSchedule(
     val coachId: String,

@@ -21,6 +21,7 @@ data class ClientSlotRow(
     val canRequestChange: Boolean,
     val isOnWaitlist: Boolean,
     val note: String,
+    val seatsLabel: String,
 )
 
 data class ClientScheduleDay(

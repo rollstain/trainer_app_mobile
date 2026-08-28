@@ -51,6 +51,11 @@ import app.trainer.feature.progress.presentation.progress.mvi.HabitRow
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressPhotoRow
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressState
 import app.trainer.feature.progress.presentation.progress.ui.ProgressView
+import app.trainer.feature.schedule.presentation.client.mvi.ClientScheduleDay
+import app.trainer.feature.schedule.presentation.client.mvi.ClientScheduleState
+import app.trainer.feature.schedule.presentation.client.mvi.ClientSlotRow
+import app.trainer.feature.schedule.presentation.client.mvi.CoachOption
+import app.trainer.feature.schedule.presentation.client.ui.ClientScheduleView
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleState
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachSlotRow
 import app.trainer.feature.schedule.presentation.coach.mvi.ScheduleDay
@@ -88,6 +93,9 @@ private const val REMINDER_HOUR = 10
 private const val REMINDERS_TITLE = "Client reminders"
 private const val COMPARE_BEFORE = "Before"
 private const val COMPARE_AFTER = "After"
+private const val GROUP_SEATS_LABEL = "3 of 8"
+private const val GROUP_PARTICIPANTS = "Анна, Мария, Пётр"
+private const val GROUP_FREE_SEATS = "5 of 8 seats free"
 private const val CLIENT_WEIGHT_LATEST = "82,4 kg"
 private const val CLIENT_WEIGHT_DELTA = "−1,6 kg"
 private const val COMPARE_EMPTY_TITLE = "Nothing to compare yet"
@@ -123,6 +131,31 @@ class ScreenRenderTest {
             }
         }
         compose.waitForIdle()
+    }
+
+    @Test
+    fun `a group session shows who is coming and how full it is`() {
+        compose.setContent {
+            TestTheme {
+                CoachScheduleView(state = coachScheduleWithGroupSession(), onEvent = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(GROUP_SEATS_LABEL).assertIsDisplayed()
+        compose.onNodeWithText(GROUP_PARTICIPANTS).assertIsDisplayed()
+    }
+
+    @Test
+    fun `a client sees how many seats are left`() {
+        compose.setContent {
+            TestTheme {
+                ClientScheduleView(state = clientScheduleWithGroupSession(), onEvent = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(GROUP_FREE_SEATS).assertIsDisplayed()
     }
 
     @Test
@@ -516,6 +549,61 @@ private fun coachProfile(): ProfileState = ProfileState.initial().copy(
     isLoading = false,
 )
 
+private fun coachScheduleWithGroupSession(): CoachScheduleState = CoachScheduleState.initial().copy(
+    weekStart = MONDAY,
+    weekTitle = "24—30 августа",
+    days = persistentListOf(
+        ScheduleDay(
+            date = MONDAY,
+            weekdayLabel = "ПН",
+            dayNumberLabel = MONDAY.day.toString(),
+            isToday = true,
+            isWeekend = false,
+            slots = persistentListOf(
+                slotAt(
+                    hour = 19,
+                    index = 0,
+                    status = SlotStatus.FREE,
+                    client = null,
+                    seats = SlotSeats.Group(label = GROUP_SEATS_LABEL, names = GROUP_PARTICIPANTS),
+                ),
+            ),
+        ),
+    ),
+    isLoading = false,
+)
+
+private fun clientScheduleWithGroupSession(): ClientScheduleState = ClientScheduleState.initial().copy(
+    coaches = persistentListOf(CoachOption(coachId = "coach-1", displayName = "Тренер")),
+    selectedCoachId = "coach-1",
+    weekStart = MONDAY,
+    selectedDate = MONDAY,
+    days = persistentListOf(
+        ClientScheduleDay(
+            date = MONDAY,
+            weekdayLabel = "ПН",
+            dayNumberLabel = MONDAY.day.toString(),
+            isToday = true,
+            isWeekend = false,
+            slots = persistentListOf(
+                ClientSlotRow(
+                    slotId = "slot-group",
+                    timeLabel = "19:00",
+                    durationLabel = "60 мин",
+                    isBookedByMe = false,
+                    isAvailable = true,
+                    hasPendingChangeRequest = false,
+                    canRequestChange = false,
+                    isOnWaitlist = false,
+                    note = "",
+                    seatsLabel = GROUP_FREE_SEATS,
+                ),
+            ),
+        ),
+    ),
+    isLoading = false,
+)
+
 private fun coachScheduleWithSlots(): CoachScheduleState {
     val days = (0 until 7).map { offset ->
         val date = LocalDate(MONDAY.year, MONDAY.month, MONDAY.day + offset)
@@ -540,7 +628,13 @@ private fun coachScheduleWithSlots(): CoachScheduleState {
     )
 }
 
-private fun slotAt(hour: Int, index: Int, status: SlotStatus, client: String?): CoachSlotRow =
+private fun slotAt(
+    hour: Int,
+    index: Int,
+    status: SlotStatus,
+    client: String?,
+    seats: SlotSeats = SlotSeats.Personal,
+): CoachSlotRow =
     CoachSlotRow(
         slotId = "slot-$hour-$index",
         startMinutesOfDay = hour * MINUTES_IN_HOUR,
@@ -550,7 +644,18 @@ private fun slotAt(hour: Int, index: Int, status: SlotStatus, client: String?): 
         status = status,
         clientDisplayName = client,
         hasPendingChangeRequest = false,
+        isGroup = seats is SlotSeats.Group,
+        hasParticipants = client != null || seats is SlotSeats.Group,
+        seatsLabel = (seats as? SlotSeats.Group)?.label.orEmpty(),
+        participantNames = (seats as? SlotSeats.Group)?.names.orEmpty(),
     )
+
+private sealed interface SlotSeats {
+
+    data object Personal : SlotSeats
+
+    data class Group(val label: String, val names: String) : SlotSeats
+}
 
 private fun clientCardWithDynamics(): ClientCardState = ClientCardState.initial(clientUserId = "client-1").copy(
     checkIns = persistentListOf(
@@ -644,6 +749,7 @@ private fun todayWithBlocks(): TodayState = TodayState.initial().copy(
             clientDisplayName = "Анна",
             isNext = true,
             startsInLabel = "через 40 мин",
+            seatsLabel = "",
         ),
     ),
     unread = persistentListOf(

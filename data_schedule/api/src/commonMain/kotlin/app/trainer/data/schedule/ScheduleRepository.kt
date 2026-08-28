@@ -12,6 +12,7 @@ data class SlotSeriesDraft(
     val daysOfWeek: Set<DayOfWeek>,
     val timeOfDay: LocalTime,
     val durationMinutes: Int,
+    val capacity: Int,
 )
 
 interface ScheduleRepository {
@@ -20,7 +21,7 @@ interface ScheduleRepository {
 
     suspend fun clientSchedule(coachId: String, from: Instant, to: Instant): RequestResult<ClientSchedule>
 
-    suspend fun createSlot(startsAt: Instant, durationMinutes: Int): RequestResult<CoachSlot>
+    suspend fun createSlot(startsAt: Instant, durationMinutes: Int, capacity: Int): RequestResult<CoachSlot>
 
     suspend fun createSlotSeries(draft: SlotSeriesDraft): RequestResult<SlotSeriesResult>
 

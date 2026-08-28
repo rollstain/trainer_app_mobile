@@ -9,6 +9,8 @@ data class CreateSlotRequest(
     val startsAt: String,
     @SerialName("durationMinutes")
     val durationMinutes: Int,
+    @SerialName("capacity")
+    val capacity: Int,
 )
 
 @Serializable
@@ -23,6 +25,8 @@ data class CreateSlotSeriesRequest(
     val timeOfDay: String,
     @SerialName("durationMinutes")
     val durationMinutes: Int,
+    @SerialName("capacity")
+    val capacity: Int,
 )
 
 @Serializable
@@ -61,6 +65,20 @@ data class CoachSlotResponse(
     val clientDisplayName: String?,
     @SerialName("pendingChangeRequestId")
     val pendingChangeRequestId: String?,
+    @SerialName("capacity")
+    val capacity: Int?,
+    @SerialName("takenSeats")
+    val takenSeats: Int?,
+    @SerialName("participants")
+    val participants: List<SlotParticipantResponse>?,
+)
+
+@Serializable
+data class SlotParticipantResponse(
+    @SerialName("userId")
+    val userId: String?,
+    @SerialName("displayName")
+    val displayName: String?,
 )
 
 @Serializable
@@ -81,6 +99,10 @@ data class ClientSlotResponse(
     val canRequestChange: Boolean?,
     @SerialName("isOnWaitlist")
     val isOnWaitlist: Boolean?,
+    @SerialName("capacity")
+    val capacity: Int?,
+    @SerialName("takenSeats")
+    val takenSeats: Int?,
 )
 
 @Serializable
