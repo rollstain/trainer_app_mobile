@@ -14,6 +14,9 @@ import app.trainer.feature.account.profile.ui.ProfileView
 import app.trainer.feature.clientcard.presentation.mvi.CheckInReview
 import app.trainer.feature.clientcard.presentation.mvi.CheckInRow
 import app.trainer.feature.clientcard.presentation.mvi.ClientCardState
+import app.trainer.feature.clientcard.presentation.people.mvi.PeopleState
+import app.trainer.feature.clientcard.presentation.people.mvi.PersonRow
+import app.trainer.feature.clientcard.presentation.people.ui.PeopleView
 import app.trainer.feature.clientcard.presentation.ui.ClientCardView
 import app.trainer.feature.home.presentation.next.mvi.FillKind
 import app.trainer.feature.home.presentation.next.mvi.FillRow
@@ -94,6 +97,7 @@ private const val REMINDER_HOUR = 10
 private const val REMINDERS_TITLE = "Client reminders"
 private const val COMPARE_BEFORE = "Before"
 private const val COMPARE_AFTER = "After"
+private const val ATTENTION_REASON = "no diary entries for 12 days"
 private const val GROUP_SEATS_LABEL = "3 of 8"
 private const val GROUP_CAPACITY = 8
 private const val PERSONAL_SEATS = 1
@@ -134,6 +138,18 @@ class ScreenRenderTest {
             }
         }
         compose.waitForIdle()
+    }
+
+    @Test
+    fun `a client who stopped logging is marked with the reason`() {
+        compose.setContent {
+            TestTheme {
+                PeopleView(state = peopleWithAttention(), onEvent = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(ATTENTION_REASON).assertIsDisplayed()
     }
 
     @Test
@@ -550,6 +566,22 @@ private fun coachProfile(): ProfileState = ProfileState.initial().copy(
     ),
     isCoach = true,
     isLoading = false,
+)
+
+private fun peopleWithAttention(): PeopleState = PeopleState.initial().withFirstPage(
+    booked = listOf(),
+    others = listOf(
+        PersonRow(
+            userId = "client-1",
+            displayName = "Сергей Панов",
+            hasMedicalNotes = false,
+            nextSessionLabel = null,
+            hasPendingChangeRequest = false,
+            unreadCount = 0,
+            attentionReason = ATTENTION_REASON,
+        ),
+    ),
+    nextCursor = null,
 )
 
 private fun coachScheduleWithGroupSession(): CoachScheduleState = CoachScheduleState.initial().copy(

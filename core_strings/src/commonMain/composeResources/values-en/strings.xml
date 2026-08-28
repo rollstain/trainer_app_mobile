@@ -211,6 +211,8 @@
     <string name="people_empty_title">No clients yet</string>
     <string name="people_invite_action">Create an invite</string>
     <string name="people_invite_code_message">Invite code: %1$s</string>
+    <string name="people_attention_diary">no diary entries for %1$d days</string>
+    <string name="people_attention_never">never logged a workout</string>
     <string name="people_title">People</string>
     <string name="profile_add_contact_action">Add a contact</string>
     <string name="profile_cancellation_description">How many hours before a session a client may ask to cancel or reschedule.</string>
@@ -348,7 +350,7 @@
     <string name="today_requests_title">Requests</string>
     <string name="today_sessions_title">Sessions today</string>
     <string name="today_unread_title">Unread</string>
-    <string name="today_lapsed_title">Not logging</string>
+    <string name="today_lapsed_title">No diary entries · 7-day threshold</string>
     <string name="today_tomorrow_title">Tomorrow</string>
     <string name="today_tomorrow_summary">%1$d sessions · %2$s</string>
     <string name="today_more_dialogs">%1$d more chats</string>

@@ -32,6 +32,7 @@ class ClientCardFeatureModule {
                 scheduleRepository = get(),
                 chatRepository = get(),
                 profileRepository = get(),
+                trainingLogRepository = get(),
             )
         }
         viewModel { (clientUserId: String) ->

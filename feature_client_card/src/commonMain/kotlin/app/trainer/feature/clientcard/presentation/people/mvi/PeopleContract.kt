@@ -12,6 +12,7 @@ data class PersonRow(
     val nextSessionLabel: String?,
     val hasPendingChangeRequest: Boolean,
     val unreadCount: Long,
+    val attentionReason: String?,
 )
 
 data class PeopleState(

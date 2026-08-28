@@ -72,5 +72,6 @@ class PeopleSectionsTest {
         nextSessionLabel = NEXT_SESSION.takeIf { booked },
         hasPendingChangeRequest = false,
         unreadCount = 0,
+        attentionReason = null,
     )
 }

@@ -211,6 +211,8 @@
     <string name="people_empty_title">Подопечных пока нет</string>
     <string name="people_invite_action">Создать приглашение</string>
     <string name="people_invite_code_message">Код приглашения: %1$s</string>
+    <string name="people_attention_diary">не заполняет дневник %1$d дней</string>
+    <string name="people_attention_never">ни одной записи в дневнике</string>
     <string name="people_title">Люди</string>
     <string name="profile_add_contact_action">Добавить контакт</string>
     <string name="profile_cancellation_description">За сколько часов до тренировки подопечный может попросить отмену или перенос.</string>
@@ -348,7 +350,7 @@
     <string name="today_requests_title">Заявки</string>
     <string name="today_sessions_title">Тренировки сегодня</string>
     <string name="today_unread_title">Непрочитанные</string>
-    <string name="today_lapsed_title">Не заполняют дневник</string>
+    <string name="today_lapsed_title">Не заполняют дневник · порог 7 дней</string>
     <string name="today_tomorrow_title">Завтра</string>
     <string name="today_tomorrow_summary">%1$d тренировки · %2$s</string>
     <string name="today_more_dialogs">Ещё %1$d диалогов</string>

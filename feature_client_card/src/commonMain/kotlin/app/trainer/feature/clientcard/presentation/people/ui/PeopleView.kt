@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +37,7 @@ import app.trainer.strings.people_others_title
 import app.trainer.strings.people_request_mark
 import app.trainer.strings.people_title
 import app.trainer.uikit.AppTheme
+import app.trainer.uikit.leadingStripe
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppAvatar
 import app.trainer.uikit.widgets.AppBadge
@@ -150,6 +153,16 @@ private fun PersonCell(modifier: Modifier = Modifier, person: PersonRow, onClick
             modifier = Modifier
                 .fillMaxWidth()
                 .defaultMinSize(minHeight = AppTheme.sizing.personRowMinHeight)
+                .then(
+                    if (person.attentionReason == null) {
+                        Modifier
+                    } else {
+                        Modifier.leadingStripe(
+                            color = AppTheme.colors.warning,
+                            width = AppTheme.borders.medicalStripe,
+                        )
+                    }
+                )
                 .clickable(onClick = onClick)
                 .padding(horizontal = AppTheme.spacing.dp16, vertical = AppTheme.spacing.dp12),
             horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
@@ -177,6 +190,9 @@ private fun PersonCell(modifier: Modifier = Modifier, person: PersonRow, onClick
                     }
                 }
                 NextSessionLine(person = person)
+                person.attentionReason?.let { reason ->
+                    AttentionLine(reason = reason)
+                }
             }
             if (person.unreadCount > 0) {
                 AppBadge(value = BadgeValue.Count(person.unreadCount))
@@ -187,6 +203,27 @@ private fun PersonCell(modifier: Modifier = Modifier, person: PersonRow, onClick
                 .fillMaxWidth()
                 .height(AppTheme.borders.hairline)
                 .background(AppTheme.colors.border),
+        )
+    }
+}
+
+@Composable
+private fun AttentionLine(reason: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(AppTheme.sizing.attentionDotSize)
+                .background(color = AppTheme.colors.warning, shape = CircleShape),
+        )
+        AppText(
+            text = reason,
+            style = AppTheme.typography.caption,
+            color = AppTheme.colors.warning,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }

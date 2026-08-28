@@ -4,6 +4,8 @@ import app.trainer.base.BaseScreenModel
 import app.trainer.base.date.dayMonthOf
 import app.trainer.base.date.timeOfDayOf
 import app.trainer.base.date.weekdayShortOf
+import app.trainer.base.diary.DiaryLapse
+import app.trainer.base.diary.diaryLapseOf
 import app.trainer.data.auth.AuthRepository
 import app.trainer.data.chat.ChatRepository
 import app.trainer.data.clients.CoachClient
@@ -11,20 +13,27 @@ import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.schedule.SlotStatus
+import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.entities.RequestResult
 import app.trainer.strings.Res
+import app.trainer.strings.people_attention_diary
+import app.trainer.strings.people_attention_never
 import app.trainer.strings.people_next_session
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.getString
 
 private const val SESSION_LOOKAHEAD_DAYS = 14
+private const val DIARY_HISTORY_DAYS = 90
 private const val PAGE_SIZE = 30
 
 class PeopleScreenModel(
@@ -33,6 +42,7 @@ class PeopleScreenModel(
     private val scheduleRepository: ScheduleRepository,
     private val chatRepository: ChatRepository,
     private val profileRepository: ProfileRepository,
+    private val trainingLogRepository: TrainingLogRepository,
 ) : BaseScreenModel<PeopleState, PeopleSideEffect, PeopleEvent>(
     initialState = PeopleState.initial(),
 ) {
@@ -74,7 +84,8 @@ class PeopleScreenModel(
     private suspend fun loadPeople() {
         updateState { it.copy(isLoading = true, failure = null) }
         val sessions = nextSessionsByClient()
-        val booked = bookedRowsOf(sessions)
+        val lapses = diaryLapsesByClient()
+        val booked = bookedRowsOf(sessions = sessions, lapses = lapses)
         if (booked == null) return
 
         when (val page = participantsRepository.clientsOfCoach(limit = PAGE_SIZE, after = null)) {
@@ -86,7 +97,7 @@ class PeopleScreenModel(
                 val bookedIds = booked.mapTo(mutableSetOf(), PersonRow::userId)
                 val others = page.data.items
                     .filterNot { it.userId in bookedIds }
-                    .map { client -> toRow(client = client, sessions = sessions) }
+                    .map { client -> toRow(client = client, sessions = sessions, lapses = lapses) }
                 updateState {
                     it.withFirstPage(booked = booked, others = others, nextCursor = page.data.nextCursor)
                 }
@@ -94,7 +105,10 @@ class PeopleScreenModel(
         }
     }
 
-    private suspend fun bookedRowsOf(sessions: Map<String, NextSession>): List<PersonRow>? {
+    private suspend fun bookedRowsOf(
+        sessions: Map<String, NextSession>,
+        lapses: Map<String, String>,
+    ): List<PersonRow>? {
         if (sessions.isEmpty()) return emptyList()
         return when (val loaded = participantsRepository.clientsByIds(sessions.keys.toList())) {
             is RequestResult.Error -> {
@@ -104,7 +118,7 @@ class PeopleScreenModel(
             }
             is RequestResult.Success ->
                 loaded.data
-                    .map { client -> toRow(client = client, sessions = sessions) }
+                    .map { client -> toRow(client = client, sessions = sessions, lapses = lapses) }
                     .sortedBy { it.displayName }
         }
     }
@@ -115,13 +129,16 @@ class PeopleScreenModel(
             if (state.isLoadingMore) return@screenModelScope
             updateState { it.copy(isLoadingMore = true) }
             val sessions = nextSessionsByClient()
+            val lapses = diaryLapsesByClient()
             when (val page = participantsRepository.clientsOfCoach(limit = PAGE_SIZE, after = cursor)) {
                 is RequestResult.Error -> {
                     updateState { it.copy(isLoadingMore = false) }
                     postSideEffect(PeopleSideEffect.ShowFailure(page))
                 }
                 is RequestResult.Success -> {
-                    val rows = page.data.items.map { client -> toRow(client = client, sessions = sessions) }
+                    val rows = page.data.items.map { client ->
+                        toRow(client = client, sessions = sessions, lapses = lapses)
+                    }
                     updateState { it.withNextPage(rows = rows, nextCursor = page.data.nextCursor) }
                 }
             }
@@ -148,7 +165,11 @@ class PeopleScreenModel(
         }
     }
 
-    private fun toRow(client: CoachClient, sessions: Map<String, NextSession>): PersonRow {
+    private fun toRow(
+        client: CoachClient,
+        sessions: Map<String, NextSession>,
+        lapses: Map<String, String>,
+    ): PersonRow {
         val session = sessions[client.userId]
         return PersonRow(
             userId = client.userId,
@@ -157,7 +178,33 @@ class PeopleScreenModel(
             nextSessionLabel = session?.label,
             hasPendingChangeRequest = session?.hasPendingChangeRequest == true,
             unreadCount = 0,
+            attentionReason = lapses[client.userId],
         )
+    }
+
+    private suspend fun diaryLapsesByClient(): Map<String, String> {
+        val zone = TimeZone.currentSystemDefault()
+        val today = Clock.System.todayIn(zone)
+        val summary = trainingLogRepository.coachDiarySummary(
+            from = today.minus(DatePeriod(days = DIARY_HISTORY_DAYS)),
+            to = today,
+        )
+        if (summary !is RequestResult.Success) return emptyMap()
+        return summary.data.mapNotNull { client ->
+            val lapse = diaryLapseOf(
+                today = today,
+                lastEntryDate = client.lastEntryDate,
+                linkedDate = client.linkedAt?.toLocalDateTime(zone)?.date,
+            )
+            when (lapse) {
+                is DiaryLapse.Lapsed -> client.clientUserId to getString(
+                    Res.string.people_attention_diary,
+                    lapse.days,
+                )
+                DiaryLapse.NeverLogged -> client.clientUserId to getString(Res.string.people_attention_never)
+                DiaryLapse.Logging, DiaryLapse.NotStartedYet -> null
+            }
+        }.toMap()
     }
 
     private suspend fun nextSessionsByClient(): Map<String, NextSession> {
