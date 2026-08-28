@@ -1,8 +1,10 @@
 package app.trainer.data.traininglog.impl
 
 import app.trainer.data.traininglog.ClientDiarySummary
+import app.trainer.data.traininglog.Equipment
 import app.trainer.data.traininglog.Exercise
 import app.trainer.data.traininglog.ExerciseKind
+import app.trainer.data.traininglog.MuscleGroup
 import app.trainer.data.traininglog.SaveOutcome
 import app.trainer.data.traininglog.TrainingLogDraft
 import app.trainer.data.traininglog.TrainingLogEntry
@@ -132,18 +134,20 @@ class TrainingLogRepositoryImpl(
 
     override suspend fun createExercise(
         name: String,
-        muscleGroup: String?,
+        primaryMuscle: MuscleGroup,
+        equipment: Equipment,
         kind: ExerciseKind,
         description: String?,
         videoUrl: String?,
     ): RequestResult<Exercise> {
         val created = safeRequest<ExerciseResponse> {
-            client.post("coach/exercises") {
+            client.post("exercises") {
                 contentType(ContentType.Application.Json)
                 setBody(
                     CreateExerciseRequest(
                         name = name,
-                        muscleGroup = muscleGroup,
+                        primaryMuscle = primaryMuscle.name,
+                        equipment = equipment.name,
                         kind = kind.name,
                         description = description,
                         videoUrl = videoUrl,

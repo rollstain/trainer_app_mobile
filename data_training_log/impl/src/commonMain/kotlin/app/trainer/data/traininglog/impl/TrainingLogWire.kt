@@ -7,8 +7,10 @@ import kotlinx.serialization.Serializable
 data class CreateExerciseRequest(
     @SerialName("name")
     val name: String,
-    @SerialName("muscleGroup")
-    val muscleGroup: String?,
+    @SerialName("primaryMuscle")
+    val primaryMuscle: String,
+    @SerialName("equipment")
+    val equipment: String,
     @SerialName("kind")
     val kind: String,
     @SerialName("description")
@@ -47,8 +49,10 @@ data class ExerciseResponse(
     val id: String?,
     @SerialName("name")
     val name: String?,
-    @SerialName("muscleGroup")
-    val muscleGroup: String?,
+    @SerialName("primaryMuscle")
+    val primaryMuscle: String?,
+    @SerialName("equipment")
+    val equipment: String?,
     @SerialName("kind")
     val kind: String?,
     @SerialName("description")
@@ -57,8 +61,10 @@ data class ExerciseResponse(
     val videoUrl: String?,
     @SerialName("video")
     val video: ExerciseVideoResponse?,
-    @SerialName("isOwnedByCoach")
-    val isOwnedByCoach: Boolean?,
+    @SerialName("ownerKind")
+    val ownerKind: String?,
+    @SerialName("ownerDisplayName")
+    val ownerDisplayName: String?,
     @SerialName("lastRepetitions")
     val lastRepetitions: Int?,
     @SerialName("lastWeightGrams")

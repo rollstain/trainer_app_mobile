@@ -3,8 +3,10 @@ package app.trainer.feature.traininglog.presentation.library.mvi
 import app.trainer.base.BaseScreenModel
 import app.trainer.data.traininglog.Exercise
 import app.trainer.data.traininglog.ExerciseKind
+import app.trainer.data.traininglog.ExerciseOwnerKind
 import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.entities.RequestResult
+import app.trainer.feature.traininglog.presentation.label
 import app.trainer.media.PickedMedia
 import app.trainer.strings.Res
 import app.trainer.strings.exercise_library_bodyweight_label
@@ -119,18 +121,19 @@ class ExerciseLibraryScreenModel(
             ExerciseKind.CARDIO -> getString(Res.string.exercise_library_cardio_label)
             ExerciseKind.BODYWEIGHT -> getString(Res.string.exercise_library_bodyweight_label)
         }
-        val muscleGroup = exercise.muscleGroup
+        val details = listOfNotNull(
+            exercise.primaryMuscle?.let { getString(it.label()) },
+            exercise.equipment?.let { getString(it.label()) },
+            kindLabel,
+        )
         return ExerciseRow(
             exerciseId = exercise.id,
             name = exercise.name,
-            details = if (muscleGroup.isNullOrEmpty()) {
-                kindLabel
-            } else {
-                "$muscleGroup$DETAILS_SEPARATOR$kindLabel"
-            },
+            details = details.joinToString(DETAILS_SEPARATOR),
+            author = exercise.ownerDisplayName,
             description = exercise.description,
             video = videoOf(exercise),
-            isOwnedByCoach = exercise.isOwnedByCoach,
+            isOwnedByCoach = exercise.ownerKind == ExerciseOwnerKind.COACH,
             isUploadingVideo = false,
         )
     }

@@ -34,6 +34,7 @@ import app.trainer.navigation.Screens
 import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
 import app.trainer.strings.Res
+import app.trainer.strings.exercise_library_client_author
 import app.trainer.strings.exercise_library_create_action
 import app.trainer.strings.exercise_library_empty_description
 import app.trainer.strings.exercise_library_empty_title
@@ -175,6 +176,13 @@ private fun ExerciseCard(
                 style = AppTheme.typography.caption,
                 color = AppTheme.colors.textSecondary,
             )
+            exercise.author?.let { author ->
+                AppText(
+                    text = stringResource(Res.string.exercise_library_client_author, author),
+                    style = AppTheme.typography.caption,
+                    color = AppTheme.colors.accent,
+                )
+            }
             exercise.description?.let { description ->
                 AppText(
                     modifier = Modifier.padding(top = AppTheme.spacing.dp4),

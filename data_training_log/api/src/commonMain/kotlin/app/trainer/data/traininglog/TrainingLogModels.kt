@@ -12,12 +12,25 @@ data class LastPerformed(
     val distanceMeters: Int?,
 )
 
+enum class MuscleGroup {
+    CHEST, LATS, MIDDLE_BACK, LOWER_BACK, TRAPS, SHOULDERS, BICEPS, TRICEPS, FOREARMS,
+    ABDOMINALS, QUADRICEPS, HAMSTRINGS, GLUTES, CALVES, ADDUCTORS, ABDUCTORS, NECK,
+}
+
+enum class Equipment {
+    BARBELL, DUMBBELL, EZ_BAR, KETTLEBELL, MACHINE, CABLE, BODYWEIGHT, BANDS, BALL, OTHER,
+}
+
+enum class ExerciseOwnerKind { SHARED, COACH, CLIENT }
+
 data class Exercise(
     val id: String,
     val name: String,
-    val muscleGroup: String?,
+    val primaryMuscle: MuscleGroup?,
+    val equipment: Equipment?,
     val kind: ExerciseKind,
-    val isOwnedByCoach: Boolean,
+    val ownerKind: ExerciseOwnerKind,
+    val ownerDisplayName: String?,
     val description: String?,
     val videoUrl: String?,
     val videoFileUrl: String?,

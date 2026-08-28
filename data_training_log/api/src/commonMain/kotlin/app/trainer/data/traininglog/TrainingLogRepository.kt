@@ -28,7 +28,8 @@ interface TrainingLogRepository : LocalDataCleaner {
 
     suspend fun createExercise(
         name: String,
-        muscleGroup: String?,
+        primaryMuscle: MuscleGroup,
+        equipment: Equipment,
         kind: ExerciseKind,
         description: String?,
         videoUrl: String?,

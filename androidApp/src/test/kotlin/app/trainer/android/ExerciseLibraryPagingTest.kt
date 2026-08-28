@@ -61,6 +61,7 @@ class ExerciseLibraryPagingTest {
         ExerciseRow(
             exerciseId = "exercise-$number",
             name = "Упражнение $number",
+            author = null,
             details = "Ноги · Сила",
             description = null,
             video = ExerciseVideo.None,

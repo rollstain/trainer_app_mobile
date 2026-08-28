@@ -24,6 +24,7 @@ import app.trainer.entities.RequestResult
 import app.trainer.feature.traininglog.domain.DurationInput
 import app.trainer.feature.traininglog.domain.RestCountdown
 import app.trainer.feature.traininglog.domain.RestTimer
+import app.trainer.feature.traininglog.presentation.label
 import app.trainer.strings.Res
 import app.trainer.strings.training_log_planned_summary
 import app.trainer.strings.training_log_set_values_invalid
@@ -193,7 +194,7 @@ class TrainingLogEditorScreenModel(
             ExerciseOption(
                 exerciseId = exercise.id,
                 name = exercise.name,
-                muscleGroup = exercise.muscleGroup,
+                muscleGroup = exercise.primaryMuscle?.let { getString(it.label()) },
                 kind = exercise.kind,
                 lastResult = toHints(exercise.lastPerformed),
             )

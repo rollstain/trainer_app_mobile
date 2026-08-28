@@ -2,9 +2,12 @@ package app.trainer.data.traininglog.impl
 
 import app.trainer.data.traininglog.ClientDiarySummary
 import app.trainer.data.traininglog.DiaryDay
+import app.trainer.data.traininglog.Equipment
 import app.trainer.data.traininglog.Exercise
 import app.trainer.data.traininglog.ExerciseKind
+import app.trainer.data.traininglog.ExerciseOwnerKind
 import app.trainer.data.traininglog.LastPerformed
+import app.trainer.data.traininglog.MuscleGroup
 import app.trainer.data.traininglog.TrainingLogEntry
 import app.trainer.data.traininglog.TrainingSet
 import app.trainer.logger.Logger
@@ -19,14 +22,19 @@ class TrainingLogMapper(private val logger: Logger) {
         val id = response.id ?: return skipped(entity = "Exercise", field = "id")
         val name = response.name ?: return skipped(entity = "Exercise", field = "name")
         val kind = parseKind(response.kind) ?: return skipped(entity = "Exercise", field = "kind")
-        val isOwnedByCoach = response.isOwnedByCoach
-            ?: return skipped(entity = "Exercise", field = "isOwnedByCoach")
+        val ownerKind = response.ownerKind
+            ?.let { name -> ExerciseOwnerKind.entries.firstOrNull { it.name == name } }
+            ?: return skipped(entity = "Exercise", field = "ownerKind")
         return Exercise(
             id = id,
             name = name,
-            muscleGroup = response.muscleGroup,
+            primaryMuscle = response.primaryMuscle
+                ?.let { muscle -> MuscleGroup.entries.firstOrNull { it.name == muscle } },
+            equipment = response.equipment
+                ?.let { item -> Equipment.entries.firstOrNull { it.name == item } },
             kind = kind,
-            isOwnedByCoach = isOwnedByCoach,
+            ownerKind = ownerKind,
+            ownerDisplayName = response.ownerDisplayName,
             description = response.description,
             videoUrl = response.videoUrl,
             videoFileUrl = response.video?.downloadUrl,

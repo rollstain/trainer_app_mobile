@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,9 +17,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import app.trainer.base.BaseScreenModel
 import app.trainer.base.failure.toastMessage
+import app.trainer.data.traininglog.Equipment
 import app.trainer.data.traininglog.ExerciseKind
+import app.trainer.data.traininglog.MuscleGroup
 import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.entities.RequestResult
+import app.trainer.feature.traininglog.presentation.label
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.Navigator
 import app.trainer.navigation.Screen
@@ -33,6 +37,7 @@ import app.trainer.strings.exercise_kind_bodyweight
 import app.trainer.strings.exercise_kind_cardio
 import app.trainer.strings.exercise_kind_strength
 import app.trainer.strings.new_exercise_description_label
+import app.trainer.strings.new_exercise_equipment_label
 import app.trainer.strings.new_exercise_kind_hint
 import app.trainer.strings.new_exercise_muscle_label
 import app.trainer.strings.new_exercise_name_label
@@ -59,7 +64,8 @@ import org.jetbrains.compose.resources.stringResource
 
 data class NewExerciseState(
     val name: String,
-    val muscleGroup: String,
+    val primaryMuscle: MuscleGroup?,
+    val equipment: Equipment?,
     val kind: ExerciseKind,
     val description: String,
     val videoUrl: String,
@@ -67,7 +73,7 @@ data class NewExerciseState(
 ) {
 
     val isSaveEnabled: Boolean
-        get() = name.isNotBlank() && !isSaving
+        get() = name.isNotBlank() && primaryMuscle != null && equipment != null && !isSaving
 
     companion object {
 
@@ -75,7 +81,8 @@ data class NewExerciseState(
             description = "",
             videoUrl = "",
             name = "",
-            muscleGroup = "",
+            primaryMuscle = null,
+            equipment = null,
             kind = ExerciseKind.STRENGTH,
             isSaving = false,
         )
@@ -88,7 +95,9 @@ sealed interface NewExerciseEvent {
 
     data class OnNameChanged(val name: String) : NewExerciseEvent
 
-    data class OnMuscleGroupChanged(val muscleGroup: String) : NewExerciseEvent
+    data class OnMuscleChanged(val muscle: MuscleGroup) : NewExerciseEvent
+
+    data class OnEquipmentChanged(val equipment: Equipment) : NewExerciseEvent
 
     data class OnKindChanged(val kind: ExerciseKind) : NewExerciseEvent
 
@@ -116,9 +125,8 @@ class NewExerciseScreenModel(
         when (event) {
             NewExerciseEvent.OnSaveClicked -> save()
             is NewExerciseEvent.OnNameChanged -> updateState { it.copy(name = event.name) }
-            is NewExerciseEvent.OnMuscleGroupChanged -> updateState {
-                it.copy(muscleGroup = event.muscleGroup)
-            }
+            is NewExerciseEvent.OnMuscleChanged -> updateState { it.copy(primaryMuscle = event.muscle) }
+            is NewExerciseEvent.OnEquipmentChanged -> updateState { it.copy(equipment = event.equipment) }
             is NewExerciseEvent.OnKindChanged -> updateState { it.copy(kind = event.kind) }
             is NewExerciseEvent.OnDescriptionChanged -> updateState { it.copy(description = event.text) }
             is NewExerciseEvent.OnVideoUrlChanged -> updateState { it.copy(videoUrl = event.text) }
@@ -129,9 +137,12 @@ class NewExerciseScreenModel(
         screenModelScope { state ->
             if (!state.isSaveEnabled) return@screenModelScope
             updateState { it.copy(isSaving = true) }
+            val muscle = state.primaryMuscle ?: return@screenModelScope
+            val equipment = state.equipment ?: return@screenModelScope
             val created = trainingLogRepository.createExercise(
                 name = state.name.trim(),
-                muscleGroup = state.muscleGroup.trim().ifEmpty { null },
+                primaryMuscle = muscle,
+                equipment = equipment,
                 kind = state.kind,
                 description = state.description.trim().ifEmpty { null },
                 videoUrl = state.videoUrl.trim().ifEmpty { null },
@@ -197,10 +208,19 @@ private fun NewExerciseView(
                 onValueChange = { onEvent(NewExerciseEvent.OnNameChanged(it)) },
                 label = TextFieldLabel.Text(stringResource(Res.string.new_exercise_name_label)),
             )
-            AppTextField(
-                value = state.muscleGroup,
-                onValueChange = { onEvent(NewExerciseEvent.OnMuscleGroupChanged(it)) },
-                label = TextFieldLabel.Text(stringResource(Res.string.new_exercise_muscle_label)),
+            ChoiceRow(
+                title = stringResource(Res.string.new_exercise_muscle_label),
+                options = MuscleGroup.entries,
+                selected = state.primaryMuscle,
+                labelOf = { stringResource(it.label()) },
+                onSelect = { onEvent(NewExerciseEvent.OnMuscleChanged(it)) },
+            )
+            ChoiceRow(
+                title = stringResource(Res.string.new_exercise_equipment_label),
+                options = Equipment.entries,
+                selected = state.equipment,
+                labelOf = { stringResource(it.label()) },
+                onSelect = { onEvent(NewExerciseEvent.OnEquipmentChanged(it)) },
             )
             ExerciseKind.entries.forEach { kind ->
                 KindOption(
@@ -238,6 +258,36 @@ private fun NewExerciseView(
                 else -> ButtonState.Idle
             },
         )
+    }
+}
+
+@Composable
+private fun <T> ChoiceRow(
+    title: String,
+    options: List<T>,
+    selected: T?,
+    labelOf: @Composable (T) -> String,
+    onSelect: (T) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
+        AppText(
+            text = title,
+            style = AppTheme.typography.label,
+            color = AppTheme.colors.textSecondary,
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
+            verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
+        ) {
+            options.forEach { option ->
+                AppButton(
+                    text = labelOf(option),
+                    onClick = { onSelect(option) },
+                    tone = if (option == selected) ButtonTone.Primary else ButtonTone.Secondary,
+                    size = ButtonSize.Small,
+                )
+            }
+        }
     }
 }
 

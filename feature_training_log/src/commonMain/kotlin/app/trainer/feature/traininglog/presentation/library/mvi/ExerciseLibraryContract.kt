@@ -19,6 +19,7 @@ data class ExerciseRow(
     val exerciseId: String,
     val name: String,
     val details: String,
+    val author: String?,
     val description: String?,
     val video: ExerciseVideo,
     val isOwnedByCoach: Boolean,
