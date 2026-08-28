@@ -1,5 +1,7 @@
 package app.trainer.feature.clientcard.presentation.mvi
 
+import app.trainer.base.metrics.MetricChart
+import app.trainer.base.metrics.ProgressMetric
 import app.trainer.data.clients.ClientNoteKind
 import app.trainer.entities.RequestResult
 import kotlinx.collections.immutable.ImmutableList
@@ -100,6 +102,8 @@ data class ClientCardState(
     val clientUserId: String,
     val notes: ImmutableList<NoteRow>,
     val checkIns: ImmutableList<CheckInRow>,
+    val charts: ImmutableList<MetricChart>,
+    val selectedMetric: ProgressMetric?,
     val habits: ImmutableList<ClientHabitRow>,
     val newHabitTitle: String,
     val editor: NoteEditor?,
@@ -115,6 +119,9 @@ data class ClientCardState(
     val isAddHabitEnabled: Boolean
         get() = newHabitTitle.isNotBlank()
 
+    val selectedChart: MetricChart?
+        get() = charts.firstOrNull { it.metric == selectedMetric }
+
     val isEmptyCard: Boolean
         get() = notes.isEmpty() && checkIns.isEmpty() && habits.isEmpty()
 
@@ -124,6 +131,8 @@ data class ClientCardState(
             clientUserId = clientUserId,
             notes = persistentListOf(),
             checkIns = persistentListOf(),
+            charts = persistentListOf(),
+            selectedMetric = null,
             habits = persistentListOf(),
             newHabitTitle = "",
             editor = null,
@@ -163,6 +172,8 @@ sealed interface ClientCardEvent {
     data class OnNewHabitTitleChanged(val title: String) : ClientCardEvent
 
     data object OnHabitAdded : ClientCardEvent
+
+    data class OnMetricSelected(val metric: ProgressMetric) : ClientCardEvent
 
     data class OnReviewClicked(val checkInId: String) : ClientCardEvent
 

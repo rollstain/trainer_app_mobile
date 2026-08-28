@@ -1,21 +1,10 @@
 package app.trainer.feature.progress.presentation.progress.mvi
 
+import app.trainer.base.metrics.MetricChart
+import app.trainer.base.metrics.ProgressMetric
 import app.trainer.entities.RequestResult
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
-
-enum class ProgressMetric { Weight, Waist, Chest, Hips, Wellbeing, Sleep }
-
-data class MetricChart(
-    val metric: ProgressMetric,
-    val title: String,
-    val values: ImmutableList<Float>,
-    val maxLabel: String,
-    val minLabel: String,
-    val rangeLabel: String,
-    val latestLabel: String,
-    val deltaLabel: String,
-)
 
 data class HabitDay(
     val dateIso: String,

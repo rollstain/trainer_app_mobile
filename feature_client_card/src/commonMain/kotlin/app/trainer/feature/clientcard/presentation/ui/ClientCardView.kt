@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import app.trainer.base.failure.AppFailureState
+import app.trainer.base.metrics.MetricDynamicsCard
 import app.trainer.data.clients.ClientNoteKind
 import app.trainer.feature.clientcard.presentation.mvi.CheckInPhotoRow
 import app.trainer.feature.clientcard.presentation.mvi.CheckInReview
@@ -218,6 +219,15 @@ private fun CardContent(state: ClientCardState, onEvent: (ClientCardEvent) -> Un
                 onClick = { onEvent(ClientCardEvent.OnNoteClicked(note.noteId)) },
                 details = note.details?.let(NoteDetails::Text) ?: NoteDetails.None,
             )
+        }
+        state.selectedChart?.let { chart ->
+            item(key = "dynamics") {
+                MetricDynamicsCard(
+                    charts = state.charts,
+                    chart = chart,
+                    onMetricClick = { onEvent(ClientCardEvent.OnMetricSelected(it)) },
+                )
+            }
         }
         item(key = "check-ins-title") { SectionTitle(text = stringResource(Res.string.client_card_check_ins_section)) }
         if (state.checkIns.isEmpty()) {

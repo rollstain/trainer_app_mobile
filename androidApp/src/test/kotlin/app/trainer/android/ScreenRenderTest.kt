@@ -5,10 +5,16 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.text.font.FontFamily
+import app.trainer.base.metrics.MetricChart
+import app.trainer.base.metrics.ProgressMetric
 import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.schedule.SlotStatus
 import app.trainer.feature.account.profile.mvi.ProfileState
 import app.trainer.feature.account.profile.ui.ProfileView
+import app.trainer.feature.clientcard.presentation.mvi.CheckInReview
+import app.trainer.feature.clientcard.presentation.mvi.CheckInRow
+import app.trainer.feature.clientcard.presentation.mvi.ClientCardState
+import app.trainer.feature.clientcard.presentation.ui.ClientCardView
 import app.trainer.feature.home.presentation.next.mvi.FillKind
 import app.trainer.feature.home.presentation.next.mvi.FillRow
 import app.trainer.feature.home.presentation.next.mvi.FillStatus
@@ -42,8 +48,6 @@ import app.trainer.feature.progress.presentation.photos.mvi.PhotoShot
 import app.trainer.feature.progress.presentation.photos.ui.PhotoCompareView
 import app.trainer.feature.progress.presentation.progress.mvi.HabitDay
 import app.trainer.feature.progress.presentation.progress.mvi.HabitRow
-import app.trainer.feature.progress.presentation.progress.mvi.MetricChart
-import app.trainer.feature.progress.presentation.progress.mvi.ProgressMetric
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressPhotoRow
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressState
 import app.trainer.feature.progress.presentation.progress.ui.ProgressView
@@ -84,6 +88,8 @@ private const val REMINDER_HOUR = 10
 private const val REMINDERS_TITLE = "Client reminders"
 private const val COMPARE_BEFORE = "Before"
 private const val COMPARE_AFTER = "After"
+private const val CLIENT_WEIGHT_LATEST = "82,4 kg"
+private const val CLIENT_WEIGHT_DELTA = "−1,6 kg"
 private const val COMPARE_EMPTY_TITLE = "Nothing to compare yet"
 private const val PROGRESS_PHOTOS_SECTION = "Photos"
 private const val PROGRESS_PHOTOS_COMPARE = "Compare"
@@ -394,6 +400,19 @@ class ScreenRenderTest {
     }
 
     @Test
+    fun `the coach sees how the client's weight moved`() {
+        compose.setContent {
+            TestTheme {
+                ClientCardView(state = clientCardWithDynamics(), onEvent = {}, onBackClick = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(CLIENT_WEIGHT_LATEST).assertIsDisplayed()
+        compose.onNodeWithText(CLIENT_WEIGHT_DELTA).assertIsDisplayed()
+    }
+
+    @Test
     fun `progress renders charts and habits`() {
         compose.setContent {
             TestTheme {
@@ -532,6 +551,37 @@ private fun slotAt(hour: Int, index: Int, status: SlotStatus, client: String?): 
         clientDisplayName = client,
         hasPendingChangeRequest = false,
     )
+
+private fun clientCardWithDynamics(): ClientCardState = ClientCardState.initial(clientUserId = "client-1").copy(
+    checkIns = persistentListOf(
+        clientCheckIn(id = "check-in-2", dateLabel = "24 August", measurements = "waist 78 cm"),
+        clientCheckIn(id = "check-in-1", dateLabel = "1 August", measurements = "84 kg"),
+    ),
+    charts = persistentListOf(
+        MetricChart(
+            metric = ProgressMetric.Weight,
+            title = "Weight",
+            values = persistentListOf(84f, 83.2f, 82.4f),
+            maxLabel = "84 kg",
+            minLabel = "82 kg",
+            rangeLabel = "1 August — 24 August",
+            latestLabel = CLIENT_WEIGHT_LATEST,
+            deltaLabel = CLIENT_WEIGHT_DELTA,
+        ),
+    ),
+    selectedMetric = ProgressMetric.Weight,
+    isLoading = false,
+)
+
+private fun clientCheckIn(id: String, dateLabel: String, measurements: String): CheckInRow = CheckInRow(
+    checkInId = id,
+    dateLabel = dateLabel,
+    measurements = measurements,
+    wellbeingLabel = "wellbeing 4",
+    notes = null,
+    review = CheckInReview.Awaiting,
+    photos = persistentListOf(),
+)
 
 private fun progressWithCharts(): ProgressState = ProgressState.initial().copy(
     checkInDateLabel = "24 августа",

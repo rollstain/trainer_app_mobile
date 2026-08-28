@@ -4,6 +4,10 @@ import app.trainer.base.BaseScreenModel
 import app.trainer.base.date.monthGenitiveOf
 import app.trainer.base.date.weekdayShortOf
 import app.trainer.base.input.WeightInput
+import app.trainer.base.metrics.MetricChart
+import app.trainer.base.metrics.MetricSample
+import app.trainer.base.metrics.ProgressMetric
+import app.trainer.base.metrics.metricChartOf
 import app.trainer.data.progress.CheckIn
 import app.trainer.data.progress.CheckInRepository
 import app.trainer.data.progress.Habit
@@ -14,7 +18,6 @@ import app.trainer.strings.progress_chest_title
 import app.trainer.strings.progress_done_count
 import app.trainer.strings.progress_hips_title
 import app.trainer.strings.progress_length_value
-import app.trainer.strings.progress_no_change_label
 import app.trainer.strings.progress_sleep_title
 import app.trainer.strings.progress_summary_chest
 import app.trainer.strings.progress_summary_hips
@@ -38,10 +41,6 @@ private const val PHOTO_STRIP_LIMIT = 6
 private const val HABIT_WEEK_DAYS = 7
 private const val MILLIMETERS_IN_CENTIMETER = 10
 private const val SUMMARY_SEPARATOR = " · "
-private const val CHART_MIN_POINTS = 2
-private const val RANGE_SEPARATOR = " — "
-private const val INCREASE_SIGN = "+"
-private const val DECREASE_SIGN = "−"
 
 class ProgressScreenModel(
     private val checkInRepository: CheckInRepository,
@@ -105,7 +104,7 @@ class ProgressScreenModel(
 
     private suspend fun showLoaded(checkIns: List<CheckIn>, habits: List<Habit>) {
         val latestCheckIn = checkIns.firstOrNull()
-        val charts = chartsOf(checkIns.sortedBy { it.checkInDate })
+        val charts = chartsOf(checkIns)
         val checkInDateLabel = latestCheckIn?.let { formatDate(it.checkInDate) }.orEmpty()
         val checkInSummary = latestCheckIn?.let { formatSummary(it) }.orEmpty()
         val habitRows = habits.map { toRow(it) }
@@ -136,80 +135,48 @@ class ProgressScreenModel(
     }
 
     private suspend fun chartsOf(checkIns: List<CheckIn>): List<MetricChart> = listOfNotNull(
-        chartOf(
+        metricChartOf(
             metric = ProgressMetric.Weight,
             title = getString(Res.string.progress_weight_title),
-            checkIns = checkIns,
-            valueOf = CheckIn::weightGrams,
+            samples = samplesOf(checkIns, CheckIn::weightGrams),
             label = ::formatWeight,
         ),
-        chartOf(
+        metricChartOf(
             metric = ProgressMetric.Waist,
             title = getString(Res.string.progress_waist_title),
-            checkIns = checkIns,
-            valueOf = CheckIn::waistMillimeters,
+            samples = samplesOf(checkIns, CheckIn::waistMillimeters),
             label = ::formatLength,
         ),
-        chartOf(
+        metricChartOf(
             metric = ProgressMetric.Chest,
             title = getString(Res.string.progress_chest_title),
-            checkIns = checkIns,
-            valueOf = CheckIn::chestMillimeters,
+            samples = samplesOf(checkIns, CheckIn::chestMillimeters),
             label = ::formatLength,
         ),
-        chartOf(
+        metricChartOf(
             metric = ProgressMetric.Hips,
             title = getString(Res.string.progress_hips_title),
-            checkIns = checkIns,
-            valueOf = CheckIn::hipsMillimeters,
+            samples = samplesOf(checkIns, CheckIn::hipsMillimeters),
             label = ::formatLength,
         ),
-        chartOf(
+        metricChartOf(
             metric = ProgressMetric.Wellbeing,
             title = getString(Res.string.progress_wellbeing_title),
-            checkIns = checkIns,
-            valueOf = CheckIn::wellbeing,
+            samples = samplesOf(checkIns, CheckIn::wellbeing),
             label = Int::toString,
         ),
-        chartOf(
+        metricChartOf(
             metric = ProgressMetric.Sleep,
             title = getString(Res.string.progress_sleep_title),
-            checkIns = checkIns,
-            valueOf = CheckIn::sleepQuality,
+            samples = samplesOf(checkIns, CheckIn::sleepQuality),
             label = Int::toString,
         ),
     )
 
-    private suspend fun chartOf(
-        metric: ProgressMetric,
-        title: String,
-        checkIns: List<CheckIn>,
-        valueOf: (CheckIn) -> Int?,
-        label: suspend (Int) -> String,
-    ): MetricChart? {
-        val samples = checkIns.mapNotNull { checkIn ->
-            valueOf(checkIn)?.let { value -> checkIn.checkInDate to value }
+    private fun samplesOf(checkIns: List<CheckIn>, valueOf: (CheckIn) -> Int?): List<MetricSample> =
+        checkIns.mapNotNull { checkIn ->
+            valueOf(checkIn)?.let { value -> MetricSample(date = checkIn.checkInDate, value = value) }
         }
-        if (samples.size < CHART_MIN_POINTS) return null
-        val values = samples.map { it.second }
-        val delta = values.last() - values.first()
-        return MetricChart(
-            metric = metric,
-            title = title,
-            values = values.map(Int::toFloat).toImmutableList(),
-            maxLabel = label(values.max()),
-            minLabel = label(values.min()),
-            rangeLabel = formatDate(samples.first().first) +
-                RANGE_SEPARATOR +
-                formatDate(samples.last().first),
-            latestLabel = label(values.last()),
-            deltaLabel = when {
-                delta > 0 -> INCREASE_SIGN + label(delta)
-                delta < 0 -> DECREASE_SIGN + label(-delta)
-                else -> getString(Res.string.progress_no_change_label)
-            },
-        )
-    }
 
     private suspend fun formatWeight(grams: Int): String =
         getString(Res.string.progress_weight_value, weightInput.toKilogramsText(grams))

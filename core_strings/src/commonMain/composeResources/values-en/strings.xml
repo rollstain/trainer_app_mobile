@@ -23,6 +23,8 @@
     <string name="check_in_weight_label">Weight, kg</string>
     <string name="check_in_weight_not_a_number">Check the weight: enter a number, for example 82,4</string>
     <string name="check_in_weight_out_of_range">Check the weight: enter between %1$s and %2$s kg</string>
+    <string name="check_in_girth_not_a_number">Check the measurements: enter whole centimetres, for example 80</string>
+    <string name="check_in_girth_out_of_range">Check the measurements: enter between %1$d and %2$d cm</string>
     <string name="check_in_wellbeing_label">How you feel</string>
     <string name="client_card_add_action">Add a note</string>
     <string name="client_card_add_habit_action">Add</string>

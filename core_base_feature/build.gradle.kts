@@ -30,6 +30,7 @@ kotlin {
             api(compose.runtime)
             api(libs.lifecycle.viewmodel)
             api(libs.kotlinx.datetime)
+            api(libs.kotlinx.collections.immutable)
             implementation(libs.kotlinx.coroutines)
             implementation(libs.koin.core)
             api(project(":core_logger"))

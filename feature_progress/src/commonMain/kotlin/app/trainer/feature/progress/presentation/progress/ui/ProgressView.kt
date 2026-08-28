@@ -24,10 +24,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.trainer.base.failure.AppFailureState
+import app.trainer.base.metrics.MetricDynamicsCard
 import app.trainer.feature.progress.presentation.progress.mvi.CoachReply
 import app.trainer.feature.progress.presentation.progress.mvi.HabitDay
 import app.trainer.feature.progress.presentation.progress.mvi.HabitRow
-import app.trainer.feature.progress.presentation.progress.mvi.MetricChart
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressEvent
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressPhotoRow
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressState
@@ -43,7 +43,6 @@ import app.trainer.strings.progress_coach_reply_title
 import app.trainer.strings.progress_day_done_description
 import app.trainer.strings.progress_day_future_description
 import app.trainer.strings.progress_day_not_done_description
-import app.trainer.strings.progress_dynamics_title
 import app.trainer.strings.progress_form_checks_action
 import app.trainer.strings.progress_habits_empty
 import app.trainer.strings.progress_habits_title
@@ -57,7 +56,6 @@ import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCard
 import app.trainer.uikit.widgets.AppCardShimmerList
-import app.trainer.uikit.widgets.AppLineChart
 import app.trainer.uikit.widgets.AppPhotoThumb
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTextField
@@ -110,7 +108,11 @@ private fun ProgressContent(state: ProgressState, onEvent: (ProgressEvent) -> Un
         }
         state.selectedChart?.let { chart ->
             item(key = "dynamics") {
-                DynamicsCard(charts = state.charts, chart = chart, onEvent = onEvent)
+                MetricDynamicsCard(
+                    charts = state.charts,
+                    chart = chart,
+                    onMetricClick = { onEvent(ProgressEvent.OnMetricSelected(it)) },
+                )
             }
         }
         item(key = "photos") {
@@ -209,64 +211,6 @@ private fun CheckInCard(state: ProgressState, onEvent: (ProgressEvent) -> Unit) 
                 onClick = { onEvent(ProgressEvent.OnCheckInClicked) },
                 tone = ButtonTone.Primary,
                 size = ButtonSize.Medium,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DynamicsCard(
-    charts: List<MetricChart>,
-    chart: MetricChart,
-    onEvent: (ProgressEvent) -> Unit,
-) {
-    AppCard {
-        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                AppText(
-                    text = stringResource(Res.string.progress_dynamics_title),
-                    style = AppTheme.typography.bodyStrong,
-                    color = AppTheme.colors.textPrimary,
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    AppText(
-                        text = chart.latestLabel,
-                        style = AppTheme.typography.numeric,
-                        color = AppTheme.colors.textPrimary,
-                    )
-                    AppText(
-                        text = chart.deltaLabel,
-                        style = AppTheme.typography.caption,
-                        color = AppTheme.colors.textSecondary,
-                    )
-                }
-            }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
-                items(items = charts, key = { it.metric.name }) { item ->
-                    AppButton(
-                        text = item.title,
-                        onClick = { onEvent(ProgressEvent.OnMetricSelected(item.metric)) },
-                        tone = if (item.metric == chart.metric) {
-                            ButtonTone.Primary
-                        } else {
-                            ButtonTone.Secondary
-                        },
-                        size = ButtonSize.Small,
-                    )
-                }
-            }
-            AppLineChart(
-                values = chart.values,
-                maxLabel = chart.maxLabel,
-                minLabel = chart.minLabel,
-                rangeLabel = chart.rangeLabel,
             )
         }
     }

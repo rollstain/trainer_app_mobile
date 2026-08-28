@@ -10,6 +10,8 @@ import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.media.PickedMedia
 import app.trainer.strings.Res
+import app.trainer.strings.check_in_girth_not_a_number
+import app.trainer.strings.check_in_girth_out_of_range
 import app.trainer.strings.check_in_weight_not_a_number
 import app.trainer.strings.check_in_weight_out_of_range
 import kotlinx.collections.immutable.toImmutableList
@@ -19,6 +21,8 @@ import org.jetbrains.compose.resources.getString
 private const val MILLIMETERS_IN_CENTIMETER = 10
 private const val MIN_BODY_WEIGHT_GRAMS = 20_000
 private const val MAX_BODY_WEIGHT_GRAMS = 400_000
+private const val MIN_BODY_GIRTH_MILLIMETERS = 200
+private const val MAX_BODY_GIRTH_MILLIMETERS = 3_000
 
 class CheckInScreenModel(
     dateIso: String,
@@ -97,12 +101,16 @@ class CheckInScreenModel(
         screenModelScope { state ->
             if (!state.isSaveEnabled) return@screenModelScope
             val weightGrams = weightInput.toGrams(state.weightText)
-            if (state.weightText.isNotBlank()) {
-                val rejection = rejectWeight(text = state.weightText, grams = weightGrams)
-                if (rejection != null) {
-                    postSideEffect(CheckInSideEffect.ShowFailure(rejection))
-                    return@screenModelScope
-                }
+            val waistMillimeters = toMillimeters(state.waistText)
+            val chestMillimeters = toMillimeters(state.chestText)
+            val hipsMillimeters = toMillimeters(state.hipsText)
+            val rejection = rejectWeight(text = state.weightText, grams = weightGrams)
+                ?: rejectGirth(text = state.waistText, millimeters = waistMillimeters)
+                ?: rejectGirth(text = state.chestText, millimeters = chestMillimeters)
+                ?: rejectGirth(text = state.hipsText, millimeters = hipsMillimeters)
+            if (rejection != null) {
+                postSideEffect(CheckInSideEffect.ShowFailure(rejection))
+                return@screenModelScope
             }
 
             updateState { it.copy(isSaving = true) }
@@ -110,9 +118,9 @@ class CheckInScreenModel(
                 checkInDate = checkInDate,
                 draft = CheckInDraft(
                     weightGrams = weightGrams,
-                    waistMillimeters = toMillimeters(state.waistText),
-                    chestMillimeters = toMillimeters(state.chestText),
-                    hipsMillimeters = toMillimeters(state.hipsText),
+                    waistMillimeters = waistMillimeters,
+                    chestMillimeters = chestMillimeters,
+                    hipsMillimeters = hipsMillimeters,
                     wellbeing = state.wellbeing,
                     sleepQuality = state.sleepQuality,
                     adherence = state.adherence,
@@ -179,6 +187,7 @@ class CheckInScreenModel(
     }
 
     private suspend fun rejectWeight(text: String, grams: Int?): RequestResult.Error? {
+        if (text.isBlank()) return null
         if (grams == null) {
             return RequestResult.Error(
                 kind = RequestFailure.Validation,
@@ -195,6 +204,31 @@ class CheckInScreenModel(
                 statusCode = null,
                 userMessage = getString(Res.string.check_in_weight_out_of_range, minKilograms, maxKilograms),
                 devMessage = "Вес вне допустимого диапазона: $grams г",
+            )
+        }
+        return null
+    }
+
+    private suspend fun rejectGirth(text: String, millimeters: Int?): RequestResult.Error? {
+        if (text.isBlank()) return null
+        if (millimeters == null) {
+            return RequestResult.Error(
+                kind = RequestFailure.Validation,
+                statusCode = null,
+                userMessage = getString(Res.string.check_in_girth_not_a_number),
+                devMessage = "Не разобран обхват $text",
+            )
+        }
+        if (millimeters < MIN_BODY_GIRTH_MILLIMETERS || millimeters > MAX_BODY_GIRTH_MILLIMETERS) {
+            return RequestResult.Error(
+                kind = RequestFailure.Validation,
+                statusCode = null,
+                userMessage = getString(
+                    Res.string.check_in_girth_out_of_range,
+                    MIN_BODY_GIRTH_MILLIMETERS / MILLIMETERS_IN_CENTIMETER,
+                    MAX_BODY_GIRTH_MILLIMETERS / MILLIMETERS_IN_CENTIMETER,
+                ),
+                devMessage = "Обхват вне допустимого диапазона: $millimeters мм",
             )
         }
         return null

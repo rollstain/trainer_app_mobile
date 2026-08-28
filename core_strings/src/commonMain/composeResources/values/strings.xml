@@ -23,6 +23,8 @@
     <string name="check_in_weight_label">Вес, кг</string>
     <string name="check_in_weight_not_a_number">Проверьте вес: нужно число, например 82,4</string>
     <string name="check_in_weight_out_of_range">Проверьте вес: укажите от %1$s до %2$s кг</string>
+    <string name="check_in_girth_not_a_number">Проверьте обхваты: нужно целое число сантиметров, например 80</string>
+    <string name="check_in_girth_out_of_range">Проверьте обхваты: укажите от %1$d до %2$d см</string>
     <string name="check_in_wellbeing_label">Самочувствие</string>
     <string name="client_card_add_action">Добавить пометку</string>
     <string name="client_card_add_habit_action">Добавить</string>

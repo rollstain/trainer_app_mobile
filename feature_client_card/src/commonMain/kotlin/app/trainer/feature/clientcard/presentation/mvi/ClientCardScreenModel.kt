@@ -4,6 +4,10 @@ import app.trainer.base.BaseScreenModel
 import app.trainer.base.date.dayMonthOf
 import app.trainer.base.date.monthGenitiveOf
 import app.trainer.base.input.WeightInput
+import app.trainer.base.metrics.MetricChart
+import app.trainer.base.metrics.MetricSample
+import app.trainer.base.metrics.ProgressMetric
+import app.trainer.base.metrics.metricChartOf
 import app.trainer.data.clients.ClientNote
 import app.trainer.data.clients.ClientNoteDraft
 import app.trainer.data.clients.ClientNotesRepository
@@ -29,6 +33,14 @@ import app.trainer.strings.client_card_waist
 import app.trainer.strings.client_card_weight
 import app.trainer.strings.client_card_wellbeing
 import app.trainer.strings.programs_summary
+import app.trainer.strings.progress_chest_title
+import app.trainer.strings.progress_hips_title
+import app.trainer.strings.progress_length_value
+import app.trainer.strings.progress_sleep_title
+import app.trainer.strings.progress_waist_title
+import app.trainer.strings.progress_weight_title
+import app.trainer.strings.progress_weight_value
+import app.trainer.strings.progress_wellbeing_title
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.collections.immutable.persistentListOf
@@ -92,6 +104,7 @@ class ClientCardScreenModel(
             is ClientCardEvent.OnEditorKindChanged -> updateEditor { it.copy(kind = event.kind) }
             is ClientCardEvent.OnNewHabitTitleChanged -> updateState { it.copy(newHabitTitle = event.title) }
             ClientCardEvent.OnHabitAdded -> addHabit()
+            is ClientCardEvent.OnMetricSelected -> updateState { it.copy(selectedMetric = event.metric) }
             is ClientCardEvent.OnReviewClicked -> openReview(event.checkInId)
             ClientCardEvent.OnComparePhotosClicked -> screenModelScope {
                 postSideEffect(ClientCardSideEffect.OpenPhotoCompare(clientUserId = clientUserId))
@@ -150,11 +163,18 @@ class ClientCardScreenModel(
             postSideEffect(ClientCardSideEffect.ShowFailure(habits))
             return
         }
-        val checkInRows = (checkIns as RequestResult.Success).data.map { toCheckInRow(it) }
+        val loadedCheckIns = (checkIns as RequestResult.Success).data
+        val checkInRows = loadedCheckIns.map { toCheckInRow(it) }
+        val charts = chartsOf(loadedCheckIns)
         val habitRows = (habits as RequestResult.Success).data.map { toHabitRow(it) }
         updateState { current ->
             current.copy(
                 checkIns = checkInRows.toImmutableList(),
+                charts = charts.toImmutableList(),
+                selectedMetric = charts
+                    .map { it.metric }
+                    .firstOrNull { it == current.selectedMetric }
+                    ?: charts.firstOrNull()?.metric,
                 habits = habitRows.toImmutableList(),
             )
         }
@@ -174,6 +194,53 @@ class ClientCardScreenModel(
             }
         }
     }
+
+    private suspend fun chartsOf(checkIns: List<CheckIn>): List<MetricChart> = listOfNotNull(
+        metricChartOf(
+            metric = ProgressMetric.Weight,
+            title = getString(Res.string.progress_weight_title),
+            samples = samplesOf(checkIns, CheckIn::weightGrams),
+            label = { getString(Res.string.progress_weight_value, weightInput.toKilogramsText(it)) },
+        ),
+        metricChartOf(
+            metric = ProgressMetric.Waist,
+            title = getString(Res.string.progress_waist_title),
+            samples = samplesOf(checkIns, CheckIn::waistMillimeters),
+            label = ::formatLength,
+        ),
+        metricChartOf(
+            metric = ProgressMetric.Chest,
+            title = getString(Res.string.progress_chest_title),
+            samples = samplesOf(checkIns, CheckIn::chestMillimeters),
+            label = ::formatLength,
+        ),
+        metricChartOf(
+            metric = ProgressMetric.Hips,
+            title = getString(Res.string.progress_hips_title),
+            samples = samplesOf(checkIns, CheckIn::hipsMillimeters),
+            label = ::formatLength,
+        ),
+        metricChartOf(
+            metric = ProgressMetric.Wellbeing,
+            title = getString(Res.string.progress_wellbeing_title),
+            samples = samplesOf(checkIns, CheckIn::wellbeing),
+            label = Int::toString,
+        ),
+        metricChartOf(
+            metric = ProgressMetric.Sleep,
+            title = getString(Res.string.progress_sleep_title),
+            samples = samplesOf(checkIns, CheckIn::sleepQuality),
+            label = Int::toString,
+        ),
+    )
+
+    private fun samplesOf(checkIns: List<CheckIn>, valueOf: (CheckIn) -> Int?): List<MetricSample> =
+        checkIns.mapNotNull { checkIn ->
+            valueOf(checkIn)?.let { value -> MetricSample(date = checkIn.checkInDate, value = value) }
+        }
+
+    private suspend fun formatLength(millimeters: Int): String =
+        getString(Res.string.progress_length_value, millimeters / MILLIMETERS_IN_CENTIMETER)
 
     private suspend fun toCheckInRow(checkIn: CheckIn): CheckInRow {
         val measurements = listOfNotNull(
