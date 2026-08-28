@@ -20,6 +20,7 @@ class HomeFeatureModule {
                 trainingLogRepository = get(),
                 profileRepository = get(),
                 checkInRepository = get(),
+                formCheckRepository = get(),
                 weeks = get(),
             )
         }

@@ -429,4 +429,19 @@
     <string name="exercise_library_video_upload">Upload a video</string>
     <string name="exercise_library_video_replace">Replace the video</string>
     <string name="exercise_library_video_uploaded">Video uploaded</string>
+    <string name="form_checks_title">Form check</string>
+    <string name="form_checks_send_action">Send a video</string>
+    <string name="form_checks_awaiting">Your coach has not replied yet</string>
+    <string name="form_checks_answer_approved">Your coach watched it — nothing to fix</string>
+    <string name="form_checks_empty_title">Nothing sent yet</string>
+    <string name="form_checks_empty_description">Film a set and your coach will look at your form and reply.</string>
+    <string name="form_checks_sent">The video went to your coach</string>
+    <string name="progress_form_checks_action">Form check</string>
+    <string name="today_form_checks_title">Videos to review</string>
+    <string name="form_checks_coach_title">Form checks</string>
+    <string name="form_checks_coach_empty_title">All reviewed</string>
+    <string name="form_checks_coach_empty_description">New videos from your clients will show up here.</string>
+    <string name="form_checks_reply_hint">What to fix</string>
+    <string name="form_checks_reply_action">Reply</string>
+    <string name="form_checks_replied">Reply sent</string>
 </resources>

@@ -87,6 +87,9 @@ class ProgressScreenModel(
             ProgressEvent.OnComparePhotosClicked -> screenModelScope {
                 postSideEffect(ProgressSideEffect.OpenPhotoCompare)
             }
+            ProgressEvent.OnFormChecksClicked -> screenModelScope {
+                postSideEffect(ProgressSideEffect.OpenFormChecks)
+            }
             is ProgressEvent.OnMetricSelected -> updateState { it.copy(selectedMetric = event.metric) }
             ProgressEvent.OnHabitAdded -> addHabit()
             is ProgressEvent.OnNewHabitTitleChanged -> updateState { it.copy(newHabitTitle = event.title) }

@@ -2,6 +2,10 @@ package app.trainer.feature.progress.di
 
 import app.trainer.feature.progress.presentation.checkin.mvi.CheckInScreenModel
 import app.trainer.feature.progress.presentation.checkin.ui.CheckInScreen
+import app.trainer.feature.progress.presentation.formcheck.mvi.CoachFormChecksScreenModel
+import app.trainer.feature.progress.presentation.formcheck.mvi.FormChecksScreenModel
+import app.trainer.feature.progress.presentation.formcheck.ui.CoachFormChecksScreen
+import app.trainer.feature.progress.presentation.formcheck.ui.FormChecksScreen
 import app.trainer.feature.progress.presentation.photos.mvi.PhotoCompareScreenModel
 import app.trainer.feature.progress.presentation.photos.mvi.PhotoOwner
 import app.trainer.feature.progress.presentation.photos.ui.PhotoCompareScreen
@@ -22,6 +26,10 @@ class ProgressFeatureModule {
                 owner = key.clientUserId?.let(PhotoOwner::Client) ?: PhotoOwner.Own,
             )
         }
+        screen<Screens.FormChecks> { FormChecksScreen() }
+        screen<Screens.CoachFormChecks> { CoachFormChecksScreen() }
+        viewModel { FormChecksScreenModel(formCheckRepository = get()) }
+        viewModel { CoachFormChecksScreenModel(formCheckRepository = get()) }
         viewModel {
             ProgressScreenModel(
                 checkInRepository = get(),

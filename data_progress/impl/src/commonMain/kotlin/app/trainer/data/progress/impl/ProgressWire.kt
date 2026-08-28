@@ -128,3 +128,61 @@ data class HabitResponse(
     @SerialName("doneDates")
     val doneDates: List<String>?,
 )
+
+@Serializable
+data class PrepareFormCheckUploadRequest(
+    @SerialName("fileName")
+    val fileName: String,
+    @SerialName("contentType")
+    val contentType: String,
+    @SerialName("sizeBytes")
+    val sizeBytes: Long,
+)
+
+@Serializable
+data class PrepareFormCheckUploadResponse(
+    @SerialName("mediaFileId")
+    val mediaFileId: String?,
+    @SerialName("uploadUrl")
+    val uploadUrl: String?,
+)
+
+@Serializable
+data class CreateFormCheckRequest(
+    @SerialName("mediaFileId")
+    val mediaFileId: String,
+    @SerialName("exerciseId")
+    val exerciseId: String?,
+    @SerialName("note")
+    val note: String?,
+)
+
+@Serializable
+data class ReviewFormCheckRequest(
+    @SerialName("comment")
+    val comment: String?,
+)
+
+@Serializable
+data class FormCheckResponse(
+    @SerialName("id")
+    val id: String?,
+    @SerialName("clientUserId")
+    val clientUserId: String?,
+    @SerialName("clientDisplayName")
+    val clientDisplayName: String?,
+    @SerialName("exerciseId")
+    val exerciseId: String?,
+    @SerialName("exerciseName")
+    val exerciseName: String?,
+    @SerialName("video")
+    val video: MediaFileResponse?,
+    @SerialName("note")
+    val note: String?,
+    @SerialName("coachComment")
+    val coachComment: String?,
+    @SerialName("isReviewed")
+    val isReviewed: Boolean?,
+    @SerialName("createdAt")
+    val createdAt: String?,
+)

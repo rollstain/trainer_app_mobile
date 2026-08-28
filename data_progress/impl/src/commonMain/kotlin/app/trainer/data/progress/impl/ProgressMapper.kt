@@ -3,8 +3,10 @@ package app.trainer.data.progress.impl
 import app.trainer.data.progress.AwaitingCheckIn
 import app.trainer.data.progress.CheckIn
 import app.trainer.data.progress.CheckInPhoto
+import app.trainer.data.progress.FormCheck
 import app.trainer.data.progress.Habit
 import app.trainer.logger.Logger
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 
 private const val LOG_TAG = "progress-mapper"
@@ -67,6 +69,27 @@ class ProgressMapper(private val logger: Logger) {
             title = title,
             isSetByCoach = isSetByCoach,
             doneDates = response.doneDates.orEmpty().mapNotNull(::parseDate),
+        )
+    }
+
+    fun toFormCheck(response: FormCheckResponse): FormCheck? {
+        val id = response.id ?: return skipped(entity = "FormCheck", field = "id")
+        val clientUserId = response.clientUserId ?: return skipped(entity = "FormCheck", field = "clientUserId")
+        val isReviewed = response.isReviewed ?: return skipped(entity = "FormCheck", field = "isReviewed")
+        val createdAt = response.createdAt
+            ?.let { raw -> runCatching { Instant.parse(raw) }.getOrNull() }
+            ?: return skipped(entity = "FormCheck", field = "createdAt")
+        return FormCheck(
+            id = id,
+            clientUserId = clientUserId,
+            clientDisplayName = response.clientDisplayName.orEmpty(),
+            exerciseId = response.exerciseId,
+            exerciseName = response.exerciseName,
+            videoUrl = response.video?.downloadUrl,
+            note = response.note,
+            coachComment = response.coachComment,
+            isReviewed = isReviewed,
+            createdAt = createdAt,
         )
     }
 

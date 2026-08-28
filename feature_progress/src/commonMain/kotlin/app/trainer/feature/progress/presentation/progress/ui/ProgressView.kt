@@ -44,6 +44,7 @@ import app.trainer.strings.progress_day_done_description
 import app.trainer.strings.progress_day_future_description
 import app.trainer.strings.progress_day_not_done_description
 import app.trainer.strings.progress_dynamics_title
+import app.trainer.strings.progress_form_checks_action
 import app.trainer.strings.progress_habits_empty
 import app.trainer.strings.progress_habits_title
 import app.trainer.strings.progress_new_habit_label
@@ -64,6 +65,7 @@ import app.trainer.uikit.widgets.AppTopBar
 import app.trainer.uikit.widgets.ButtonSize
 import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
+import app.trainer.uikit.widgets.CardAction
 import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
 import kotlinx.collections.immutable.ImmutableList
@@ -113,6 +115,15 @@ private fun ProgressContent(state: ProgressState, onEvent: (ProgressEvent) -> Un
         }
         item(key = "photos") {
             PhotosCard(photos = state.photos, onEvent = onEvent)
+        }
+        item(key = "form-checks") {
+            AppCard(action = CardAction.Click { onEvent(ProgressEvent.OnFormChecksClicked) }) {
+                AppText(
+                    text = stringResource(Res.string.progress_form_checks_action),
+                    style = AppTheme.typography.body,
+                    color = AppTheme.colors.textPrimary,
+                )
+            }
         }
         item(key = "habits-title") {
             AppText(

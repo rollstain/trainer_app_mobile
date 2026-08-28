@@ -1,5 +1,6 @@
 package app.trainer.data.progress
 
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 
 data class CheckInPhoto(
@@ -56,4 +57,17 @@ data class Habit(
     val title: String,
     val isSetByCoach: Boolean,
     val doneDates: List<LocalDate>,
+)
+
+data class FormCheck(
+    val id: String,
+    val clientUserId: String,
+    val clientDisplayName: String,
+    val exerciseId: String?,
+    val exerciseName: String?,
+    val videoUrl: String?,
+    val note: String?,
+    val coachComment: String?,
+    val isReviewed: Boolean,
+    val createdAt: Instant,
 )

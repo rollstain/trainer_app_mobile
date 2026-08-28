@@ -81,5 +81,11 @@ sealed interface Screens : NavKey {
     data class PhotoCompare(val clientUserId: String?) : Screens
 
     @Serializable
+    data object FormChecks : Screens
+
+    @Serializable
+    data object CoachFormChecks : Screens
+
+    @Serializable
     data object Profile : Screens
 }

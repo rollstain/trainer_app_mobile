@@ -429,4 +429,19 @@
     <string name="exercise_library_video_upload">Загрузить видео</string>
     <string name="exercise_library_video_replace">Заменить видео</string>
     <string name="exercise_library_video_uploaded">Видео загружено</string>
+    <string name="form_checks_title">Разбор техники</string>
+    <string name="form_checks_send_action">Отправить видео</string>
+    <string name="form_checks_awaiting">Тренер ещё не ответил</string>
+    <string name="form_checks_answer_approved">Тренер посмотрел — замечаний нет</string>
+    <string name="form_checks_empty_title">Пока ничего не отправляли</string>
+    <string name="form_checks_empty_description">Снимите подход на видео — тренер посмотрит технику и ответит.</string>
+    <string name="form_checks_sent">Видео отправлено тренеру</string>
+    <string name="progress_form_checks_action">Разбор техники</string>
+    <string name="today_form_checks_title">Видео на разбор</string>
+    <string name="form_checks_coach_title">Разборы техники</string>
+    <string name="form_checks_coach_empty_title">Всё разобрано</string>
+    <string name="form_checks_coach_empty_description">Новые видео от подопечных появятся здесь.</string>
+    <string name="form_checks_reply_hint">Что поправить</string>
+    <string name="form_checks_reply_action">Ответить</string>
+    <string name="form_checks_replied">Ответ отправлен</string>
 </resources>

@@ -13,6 +13,8 @@ import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.progress.AwaitingCheckIn
 import app.trainer.data.progress.CheckInRepository
+import app.trainer.data.progress.FormCheck
+import app.trainer.data.progress.FormCheckRepository
 import app.trainer.data.schedule.CoachSlot
 import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.schedule.SlotChangeRequest
@@ -51,6 +53,7 @@ private data class TodaySources(
     val dialogs: List<Dialog>,
     val lapsed: List<TodayLapsedRow>,
     val awaiting: List<AwaitingCheckIn>,
+    val awaitingFormChecks: List<FormCheck>,
     val hasClients: Boolean,
 )
 
@@ -61,6 +64,7 @@ class TodayScreenModel(
     private val trainingLogRepository: TrainingLogRepository,
     private val profileRepository: ProfileRepository,
     private val checkInRepository: CheckInRepository,
+    private val formCheckRepository: FormCheckRepository,
     private val weeks: ScheduleWeeks,
 ) : BaseScreenModel<TodayState, TodaySideEffect, TodayEvent>(
     initialState = TodayState.initial(),
@@ -85,6 +89,7 @@ class TodayScreenModel(
             is TodayEvent.OnDialogClicked -> post(TodaySideEffect.OpenDialog(event.dialogId))
             is TodayEvent.OnLapsedClicked -> post(TodaySideEffect.OpenDiary(event.userId))
             is TodayEvent.OnCheckInClicked -> post(TodaySideEffect.OpenClientCard(event.clientUserId))
+            TodayEvent.OnFormChecksClicked -> post(TodaySideEffect.OpenFormChecks)
             is TodayEvent.OnRequestResolved -> resolveRequest(
                 requestId = event.requestId,
                 approve = event.approve,
@@ -143,6 +148,7 @@ class TodayScreenModel(
                 dialogs = dialogs,
                 lapsed = lapsedRowsOf(today = today, zone = zone),
                 awaiting = awaitingCheckInsOf(),
+                awaitingFormChecks = awaitingFormChecksOf(),
                 hasClients = roster.isNotEmpty(),
             )
         )
@@ -175,6 +181,7 @@ class TodayScreenModel(
 
         val requestRows = requestRowsOf(requests = sources.requests, zone = zone)
         val awaitingRows = awaitingRowsOf(sources.awaiting)
+        val formCheckRows = formCheckRowsOf(sources.awaitingFormChecks)
         val dateLabel = getString(
             Res.string.home_date,
             weekdayShortOf(today).lowercase(),
@@ -194,6 +201,7 @@ class TodayScreenModel(
                 moreUnreadCount = (unreadDialogs.size - UNREAD_PREVIEW_COUNT).coerceAtLeast(0),
                 lapsed = sources.lapsed.toImmutableList(),
                 awaitingCheckIns = awaitingRows.toImmutableList(),
+                awaitingFormChecks = formCheckRows.toImmutableList(),
                 tomorrow = tomorrow,
                 nextSession = nextSession,
                 freeSlots = freeSlotsOffer,
@@ -214,6 +222,15 @@ class TodayScreenModel(
                 kind = request.kind,
             )
         }
+
+    private fun formCheckRowsOf(awaiting: List<FormCheck>): List<TodayFormCheckRow> = awaiting.map { formCheck ->
+        TodayFormCheckRow(
+            formCheckId = formCheck.id,
+            clientUserId = formCheck.clientUserId,
+            displayName = formCheck.clientDisplayName,
+            dateLabel = dayMonthOf(formCheck.createdAt.toLocalDateTime(TimeZone.currentSystemDefault()).date),
+        )
+    }
 
     private fun awaitingRowsOf(awaiting: List<AwaitingCheckIn>): List<TodayCheckInRow> = awaiting.map { checkIn ->
         TodayCheckInRow(
@@ -283,6 +300,13 @@ class TodayScreenModel(
             clientDisplayName = slot.clientDisplayName.orEmpty(),
             startsInLabel = startsInLabelOf(startsAt = slot.startsAt, now = now),
         )
+    }
+
+    private suspend fun awaitingFormChecksOf(): List<FormCheck> {
+        return when (val awaiting = formCheckRepository.awaitingReview()) {
+            is RequestResult.Success -> awaiting.data
+            is RequestResult.Error -> emptyList()
+        }
     }
 
     private suspend fun awaitingCheckInsOf(): List<AwaitingCheckIn> {

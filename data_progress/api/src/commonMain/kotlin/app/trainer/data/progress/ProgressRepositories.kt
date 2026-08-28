@@ -56,3 +56,20 @@ interface HabitsRepository {
 
     suspend fun mark(habitId: String, date: LocalDate, isDone: Boolean): RequestResult<Unit>
 }
+
+interface FormCheckRepository {
+
+    suspend fun ownFormChecks(): RequestResult<List<FormCheck>>
+
+    suspend fun awaitingReview(): RequestResult<List<FormCheck>>
+
+    suspend fun submit(
+        fileName: String,
+        contentType: String,
+        bytes: ByteArray,
+        exerciseId: String?,
+        note: String?,
+    ): RequestResult<FormCheck>
+
+    suspend fun review(formCheckId: String, comment: String?): RequestResult<FormCheck>
+}

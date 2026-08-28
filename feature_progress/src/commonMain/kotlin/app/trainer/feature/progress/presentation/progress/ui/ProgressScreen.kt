@@ -39,6 +39,7 @@ class ProgressScreen : Screen {
                 is ProgressSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
                 is ProgressSideEffect.OpenCheckIn -> navigator.push(Screens.CheckIn(dateIso = effect.dateIso))
                 ProgressSideEffect.OpenPhotoCompare -> navigator.push(Screens.PhotoCompare(clientUserId = null))
+                ProgressSideEffect.OpenFormChecks -> navigator.push(Screens.FormChecks)
             }
         }
     }

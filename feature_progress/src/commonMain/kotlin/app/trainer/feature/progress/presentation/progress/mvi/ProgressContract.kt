@@ -91,6 +91,8 @@ sealed interface ProgressEvent {
 
     data object OnComparePhotosClicked : ProgressEvent
 
+    data object OnFormChecksClicked : ProgressEvent
+
     data class OnMetricSelected(val metric: ProgressMetric) : ProgressEvent
 
     data object OnHabitAdded : ProgressEvent
@@ -109,4 +111,6 @@ sealed interface ProgressSideEffect {
     data class OpenCheckIn(val dateIso: String) : ProgressSideEffect
 
     data object OpenPhotoCompare : ProgressSideEffect
+
+    data object OpenFormChecks : ProgressSideEffect
 }

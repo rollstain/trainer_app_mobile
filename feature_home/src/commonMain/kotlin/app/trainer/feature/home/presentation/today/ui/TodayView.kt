@@ -19,6 +19,7 @@ import app.trainer.feature.home.presentation.today.mvi.LapsedSince
 import app.trainer.feature.home.presentation.today.mvi.TodayCheckInRow
 import app.trainer.feature.home.presentation.today.mvi.TodayDialogRow
 import app.trainer.feature.home.presentation.today.mvi.TodayEvent
+import app.trainer.feature.home.presentation.today.mvi.TodayFormCheckRow
 import app.trainer.feature.home.presentation.today.mvi.TodayFreeSlots
 import app.trainer.feature.home.presentation.today.mvi.TodayLapsedRow
 import app.trainer.feature.home.presentation.today.mvi.TodayNextSession
@@ -32,6 +33,7 @@ import app.trainer.strings.home_never_logged
 import app.trainer.strings.home_profile_action
 import app.trainer.strings.today_add_slot_action
 import app.trainer.strings.today_check_ins_title
+import app.trainer.strings.today_form_checks_title
 import app.trainer.strings.today_lapsed_title
 import app.trainer.strings.today_more_dialogs
 import app.trainer.strings.today_next_session_title
@@ -133,6 +135,7 @@ private fun TodayContent(state: TodayState, onEvent: (TodayEvent) -> Unit) {
             sessionsBlock(sessions = state.sessions, onEvent = onEvent)
             unreadBlock(state = state, onEvent = onEvent)
             checkInsBlock(rows = state.awaitingCheckIns, onEvent = onEvent)
+            formChecksBlock(rows = state.awaitingFormChecks, onEvent = onEvent)
             lapsedBlock(lapsed = state.lapsed, onEvent = onEvent)
             tomorrowBlock(tomorrow = state.tomorrow, onEvent = onEvent)
         }
@@ -253,6 +256,27 @@ private fun LazyListScope.checkInsBlock(
         AppListCell(
             title = row.displayName,
             onClick = { onEvent(TodayEvent.OnCheckInClicked(row.clientUserId)) },
+            size = ListCellSize.Small,
+            trailing = ListCellTrailing.Time(value = row.dateLabel),
+        )
+    }
+}
+
+private fun LazyListScope.formChecksBlock(
+    rows: List<TodayFormCheckRow>,
+    onEvent: (TodayEvent) -> Unit,
+) {
+    if (rows.isEmpty()) return
+    item(key = "form-checks-title") {
+        AppSectionHeader(
+            title = stringResource(Res.string.today_form_checks_title),
+            count = SectionCount.Value(rows.size),
+        )
+    }
+    items(items = rows, key = { "form-check-${it.formCheckId}" }) { row ->
+        AppListCell(
+            title = row.displayName,
+            onClick = { onEvent(TodayEvent.OnFormChecksClicked) },
             size = ListCellSize.Small,
             trailing = ListCellTrailing.Time(value = row.dateLabel),
         )

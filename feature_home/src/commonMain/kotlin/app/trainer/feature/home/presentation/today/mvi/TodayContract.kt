@@ -50,6 +50,13 @@ data class TodayCheckInRow(
     val dateLabel: String,
 )
 
+data class TodayFormCheckRow(
+    val formCheckId: String,
+    val clientUserId: String,
+    val displayName: String,
+    val dateLabel: String,
+)
+
 sealed interface TodayTomorrow {
 
     data object None : TodayTomorrow
@@ -85,6 +92,7 @@ data class TodayState(
     val moreUnreadCount: Int,
     val lapsed: ImmutableList<TodayLapsedRow>,
     val awaitingCheckIns: ImmutableList<TodayCheckInRow>,
+    val awaitingFormChecks: ImmutableList<TodayFormCheckRow>,
     val tomorrow: TodayTomorrow,
     val nextSession: TodayNextSession,
     val freeSlots: TodayFreeSlots,
@@ -98,7 +106,8 @@ data class TodayState(
             sessions.isEmpty() &&
             unread.isEmpty() &&
             lapsed.isEmpty() &&
-            awaitingCheckIns.isEmpty()
+            awaitingCheckIns.isEmpty() &&
+            awaitingFormChecks.isEmpty()
 
     companion object {
 
@@ -111,6 +120,7 @@ data class TodayState(
             moreUnreadCount = 0,
             lapsed = persistentListOf(),
             awaitingCheckIns = persistentListOf(),
+            awaitingFormChecks = persistentListOf(),
             tomorrow = TodayTomorrow.None,
             nextSession = TodayNextSession.NoneThisWeek,
             freeSlots = TodayFreeSlots.None,
@@ -142,6 +152,8 @@ sealed interface TodayEvent {
     data class OnLapsedClicked(val userId: String) : TodayEvent
 
     data class OnCheckInClicked(val clientUserId: String) : TodayEvent
+
+    data object OnFormChecksClicked : TodayEvent
 }
 
 sealed interface TodaySideEffect {
@@ -155,6 +167,8 @@ sealed interface TodaySideEffect {
     data object OpenSlotCreation : TodaySideEffect
 
     data class OpenClientCard(val clientUserId: String) : TodaySideEffect
+
+    data object OpenFormChecks : TodaySideEffect
 
     data class OpenDialog(val dialogId: String) : TodaySideEffect
 

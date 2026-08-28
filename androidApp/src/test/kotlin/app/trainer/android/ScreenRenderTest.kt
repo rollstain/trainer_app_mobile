@@ -29,6 +29,13 @@ import app.trainer.feature.home.presentation.today.mvi.TodaySessionRow
 import app.trainer.feature.home.presentation.today.mvi.TodayState
 import app.trainer.feature.home.presentation.today.mvi.TodayTomorrow
 import app.trainer.feature.home.presentation.today.ui.TodayView
+import app.trainer.feature.progress.presentation.formcheck.mvi.AwaitingFormCheck
+import app.trainer.feature.progress.presentation.formcheck.mvi.CoachAnswer
+import app.trainer.feature.progress.presentation.formcheck.mvi.CoachFormChecksState
+import app.trainer.feature.progress.presentation.formcheck.mvi.FormCheckRow
+import app.trainer.feature.progress.presentation.formcheck.mvi.FormChecksState
+import app.trainer.feature.progress.presentation.formcheck.ui.CoachFormChecksView
+import app.trainer.feature.progress.presentation.formcheck.ui.FormChecksView
 import app.trainer.feature.progress.presentation.photos.mvi.CompareSide
 import app.trainer.feature.progress.presentation.photos.mvi.PhotoCompareState
 import app.trainer.feature.progress.presentation.photos.mvi.PhotoShot
@@ -80,6 +87,11 @@ private const val COMPARE_AFTER = "After"
 private const val COMPARE_EMPTY_TITLE = "Nothing to compare yet"
 private const val PROGRESS_PHOTOS_SECTION = "Photos"
 private const val PROGRESS_PHOTOS_COMPARE = "Compare"
+private const val FORM_CHECK_AWAITING = "Your coach has not replied yet"
+private const val FORM_CHECK_APPROVED = "Your coach watched it — nothing to fix"
+private const val FORM_CHECK_SEND = "Send a video"
+private const val FORM_CHECK_REPLY = "Reply"
+private const val FORM_CHECK_CLIENT_NAME = "Anna"
 private const val PROGRESS_PHOTOS_EMPTY = "Attach a photo to a check-in and it will show up here"
 private const val FIRST_SHOT_DATE = "3 June"
 private const val LAST_SHOT_DATE = "28 August"
@@ -291,6 +303,33 @@ class ScreenRenderTest {
     }
 
     @Test
+    fun `a client sees whether the coach answered each video`() {
+        compose.setContent {
+            TestTheme {
+                FormChecksView(state = formChecks(), onEvent = {}, onSendClick = {}, onBackClick = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(FORM_CHECK_AWAITING).assertIsDisplayed()
+        compose.onNodeWithText(FORM_CHECK_APPROVED).assertIsDisplayed()
+        compose.onNodeWithText(FORM_CHECK_SEND).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the coach queue offers a reply for every waiting video`() {
+        compose.setContent {
+            TestTheme {
+                CoachFormChecksView(state = coachFormChecks(), onEvent = {}, onBackClick = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(FORM_CHECK_CLIENT_NAME).assertIsDisplayed()
+        compose.onNodeWithText(FORM_CHECK_REPLY).assertIsDisplayed()
+    }
+
+    @Test
     fun `progress offers to compare the photos it shows`() {
         compose.setContent {
             TestTheme {
@@ -405,6 +444,42 @@ private fun shot(index: Int): PhotoShot = PhotoShot(
     url = "https://example.invalid/photo-$index.jpg",
     dateIso = if (index == 0) "2026-06-03" else "2026-08-28",
     dateLabel = if (index == 0) FIRST_SHOT_DATE else LAST_SHOT_DATE,
+)
+
+private fun formChecks(): FormChecksState = FormChecksState.initial().copy(
+    checks = persistentListOf(
+        FormCheckRow(
+            formCheckId = "check-1",
+            dateLabel = "28.08",
+            note = "Правильно ли держу спину?",
+            videoUrl = null,
+            answer = CoachAnswer.Awaiting,
+        ),
+        FormCheckRow(
+            formCheckId = "check-2",
+            dateLabel = "20.08",
+            note = null,
+            videoUrl = null,
+            answer = CoachAnswer.Approved,
+        ),
+    ),
+    isLoading = false,
+)
+
+private fun coachFormChecks(): CoachFormChecksState = CoachFormChecksState.initial().copy(
+    checks = persistentListOf(
+        AwaitingFormCheck(
+            formCheckId = "check-1",
+            clientDisplayName = FORM_CHECK_CLIENT_NAME,
+            dateLabel = "28.08",
+            exerciseName = "Squat",
+            note = "Правильно ли держу спину?",
+            videoUrl = null,
+            draft = "",
+            isSending = false,
+        ),
+    ),
+    isLoading = false,
 )
 
 private fun coachProfile(): ProfileState = ProfileState.initial().copy(
