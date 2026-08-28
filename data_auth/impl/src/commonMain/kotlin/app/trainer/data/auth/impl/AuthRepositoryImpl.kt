@@ -4,6 +4,7 @@ import app.trainer.data.auth.AuthProvider
 import app.trainer.data.auth.AuthRepository
 import app.trainer.data.auth.DeviceSession
 import app.trainer.data.auth.InviteCode
+import app.trainer.data.auth.InvitePreview
 import app.trainer.data.auth.LinkedIdentity
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
@@ -31,6 +32,16 @@ class AuthRepositoryImpl(
 ) : AuthRepository {
 
     override suspend fun isAuthorized(): Boolean = tokenStorage.read() != null
+
+    override suspend fun previewInvite(code: String): RequestResult<InvitePreview> {
+        val loaded = safeRequest<InvitePreviewResponse> {
+            httpClientProvider.client.get("auth/invites/${code.trim().uppercase()}")
+        }
+        return when (loaded) {
+            is RequestResult.Error -> loaded
+            is RequestResult.Success -> previewOf(loaded.data)
+        }
+    }
 
     override suspend fun redeemInvite(
         code: String,
@@ -148,6 +159,23 @@ class AuthRepositoryImpl(
             return null
         }
         return LinkedIdentity(provider = provider, linkedAtIso = linkedAt)
+    }
+
+    private fun previewOf(response: InvitePreviewResponse): RequestResult<InvitePreview> {
+        val coachDisplayName = response.coachDisplayName
+        val needsDisplayName = response.needsDisplayName
+        if (coachDisplayName == null || needsDisplayName == null) {
+            logger.error(tag = LOG_TAG, message = "приглашение без тренера или без признака имени")
+            return RequestResult.Error(
+                kind = RequestFailure.Parsing,
+                statusCode = null,
+                userMessage = "",
+                devMessage = "invite preview is incomplete",
+            )
+        }
+        return RequestResult.Success(
+            InvitePreview(coachDisplayName = coachDisplayName, needsDisplayName = needsDisplayName)
+        )
     }
 
     private fun toSession(response: DeviceSessionResponse): DeviceSession? {

@@ -11,7 +11,7 @@ import app.trainer.data.chat.ChatRepository
 import app.trainer.data.clients.CoachClient
 import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
-import app.trainer.data.schedule.ScheduleRepository
+import app.trainer.data.schedule.CoachScheduleRepository
 import app.trainer.data.schedule.SlotStatus
 import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.entities.RequestResult
@@ -23,6 +23,8 @@ import app.trainer.strings.people_next_session
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
@@ -37,11 +39,12 @@ private const val SESSION_LOOKAHEAD_DAYS = 14
 private const val DIARY_HISTORY_DAYS = 90
 private const val MISSED_SESSIONS_THRESHOLD = 2
 private const val PAGE_SIZE = 30
+private const val SEARCH_DEBOUNCE_MILLIS = 300L
 
 class PeopleScreenModel(
     private val participantsRepository: ParticipantsRepository,
     private val authRepository: AuthRepository,
-    private val scheduleRepository: ScheduleRepository,
+    private val scheduleRepository: CoachScheduleRepository,
     private val chatRepository: ChatRepository,
     private val profileRepository: ProfileRepository,
     private val trainingLogRepository: TrainingLogRepository,
@@ -79,18 +82,30 @@ class PeopleScreenModel(
             PeopleEvent.OnRetryClicked -> onFetchData()
             PeopleEvent.OnEndReached -> loadMore()
             PeopleEvent.OnCreateInviteClicked -> createInvite()
+            is PeopleEvent.OnSearchChanged -> searchChanged(event.query)
             is PeopleEvent.OnPersonClicked -> openPerson(event.userId)
+        }
+    }
+
+    private fun searchChanged(query: String) {
+        searchJob?.cancel()
+        updateState { it.copy(search = query) }
+        searchJob = screenModelScope {
+            delay(SEARCH_DEBOUNCE_MILLIS)
+            loadPeople()
         }
     }
 
     private suspend fun loadPeople() {
         updateState { it.copy(isLoading = true, failure = null) }
+        val query = state.search.trim().takeIf { it.isNotEmpty() }
         val sessions = nextSessionsByClient()
         val lapses = attentionByClient()
-        val booked = bookedRowsOf(sessions = sessions, lapses = lapses)
+        val booked = if (query == null) bookedRowsOf(sessions = sessions, lapses = lapses) else emptyList()
         if (booked == null) return
 
-        when (val page = participantsRepository.clientsOfCoach(limit = PAGE_SIZE, after = null)) {
+        val loaded = participantsRepository.clientsOfCoach(limit = PAGE_SIZE, after = null, query = query)
+        when (val page = loaded) {
             is RequestResult.Error -> {
                 updateState { it.copy(isLoading = false, failure = page) }
                 postSideEffect(PeopleSideEffect.ShowFailure(page))
@@ -132,7 +147,12 @@ class PeopleScreenModel(
             updateState { it.copy(isLoadingMore = true) }
             val sessions = nextSessionsByClient()
             val lapses = attentionByClient()
-            when (val page = participantsRepository.clientsOfCoach(limit = PAGE_SIZE, after = cursor)) {
+            val loaded = participantsRepository.clientsOfCoach(
+                limit = PAGE_SIZE,
+                after = cursor,
+                query = state.search.trim().takeIf { it.isNotEmpty() },
+            )
+            when (val page = loaded) {
                 is RequestResult.Error -> {
                     updateState { it.copy(isLoadingMore = false) }
                     postSideEffect(PeopleSideEffect.ShowFailure(page))
@@ -146,6 +166,8 @@ class PeopleScreenModel(
             }
         }
     }
+
+    private var searchJob: Job? = null
 
     private fun createInvite() {
         screenModelScope {

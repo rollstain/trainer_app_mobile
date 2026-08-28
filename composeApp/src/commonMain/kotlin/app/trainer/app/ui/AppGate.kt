@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -34,22 +35,31 @@ fun AppGate() {
         AppToastHost {
             when (val current = status) {
                 SessionStatus.Loading -> AppFullScreenProgress()
-                SessionStatus.SignedOut -> OnboardingRoot()
+                is SessionStatus.SignedOut -> OnboardingRoot(afterSessionExpiry = current.afterSessionExpiry)
                 is SessionStatus.ProfileUnavailable -> ProfileUnavailable(
                     failure = current.failure,
                     onRetry = sessionController::retry,
                 )
-                is SessionStatus.SignedIn -> AppRoot(isCoach = current.isCoach)
+                is SessionStatus.SignedIn -> SignedInRoot(isCoach = current.isCoach)
             }
         }
     }
 }
 
 @Composable
-private fun OnboardingRoot() {
+private fun SignedInRoot(isCoach: Boolean) {
+    val pendingInvite: PendingInvite = koinInject()
+    LaunchedEffect(Unit) { pendingInvite.consume() }
+    AppRoot(isCoach = isCoach)
+}
+
+@Composable
+private fun OnboardingRoot(afterSessionExpiry: Boolean) {
     val pendingInvite: PendingInvite = koinInject()
     val invitedCode by pendingInvite.code.collectAsState()
-    val navigator = rememberNavigator(startKey = Screens.Invite(code = invitedCode))
+    val startKey = invitedCode?.let { Screens.InviteLink(code = it) }
+        ?: Screens.Invite(afterSessionExpiry = afterSessionExpiry)
+    val navigator = rememberNavigator(startKey = startKey)
     CompositionLocalProvider(LocalNavigator provides navigator) {
         Box(modifier = Modifier.fillMaxSize().screenBackground()) {
             NavContainer(

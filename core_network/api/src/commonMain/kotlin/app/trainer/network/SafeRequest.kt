@@ -20,6 +20,7 @@ private const val STATUS_UNAUTHORIZED = 401
 private const val STATUS_FORBIDDEN = 403
 private const val STATUS_NOT_FOUND = 404
 private const val STATUS_CONFLICT = 409
+private const val STATUS_GONE = 410
 private const val STATUS_UNPROCESSABLE_ENTITY = 422
 private const val STATUS_SERVER_ERROR_FROM = 500
 
@@ -42,6 +43,7 @@ internal fun failureOf(statusCode: Int): RequestFailure = when {
     statusCode == STATUS_FORBIDDEN -> RequestFailure.Forbidden
     statusCode == STATUS_NOT_FOUND -> RequestFailure.NotFound
     statusCode == STATUS_CONFLICT -> RequestFailure.Conflict
+    statusCode == STATUS_GONE -> RequestFailure.Gone
     statusCode == STATUS_BAD_REQUEST -> RequestFailure.Validation
     statusCode == STATUS_UNPROCESSABLE_ENTITY -> RequestFailure.Validation
     statusCode >= STATUS_SERVER_ERROR_FROM -> RequestFailure.Server

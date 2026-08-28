@@ -5,6 +5,8 @@ import app.trainer.feature.schedule.presentation.client.mvi.ClientScheduleScreen
 import app.trainer.feature.schedule.presentation.client.ui.ClientScheduleScreen
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleScreenModel
 import app.trainer.feature.schedule.presentation.coach.ui.CoachScheduleScreen
+import app.trainer.feature.schedule.presentation.groupsession.mvi.GroupSessionScreenModel
+import app.trainer.feature.schedule.presentation.groupsession.ui.GroupSessionScreen
 import app.trainer.feature.schedule.presentation.newslot.mvi.NewSlotScreenModel
 import app.trainer.feature.schedule.presentation.newslot.ui.NewSlotScreen
 import app.trainer.feature.schedule.presentation.seriesresult.SeriesResultScreen
@@ -43,6 +45,16 @@ class ScheduleFeatureModule {
         }
         screen<Screens.SlotSeriesResult> { SeriesResultScreen(batchId = it.batchId) }
         screen<Screens.CoachCalendar> { CoachScheduleScreen() }
+        screen<Screens.GroupSession> { GroupSessionScreen(slotId = it.slotId) }
+        viewModel { (slotId: String) ->
+            GroupSessionScreenModel(
+                slotId = slotId,
+                scheduleRepository = get(),
+                participantsRepository = get(),
+                profileRepository = get(),
+                weeks = get(),
+            )
+        }
         screen<Screens.ClientBooking> { ClientScheduleScreen() }
         viewModel {
             CoachScheduleScreenModel(

@@ -35,6 +35,7 @@ kotlin {
             implementation(libs.kotlinx.datetime)
             implementation(libs.sqldelight.coroutines)
             implementation(libs.koin.core)
+            implementation(libs.multiplatform.settings)
         }
     }
 }

@@ -35,6 +35,12 @@ import app.trainer.strings.people_medical_badge
 import app.trainer.strings.people_not_booked
 import app.trainer.strings.people_others_title
 import app.trainer.strings.people_request_mark
+import app.trainer.strings.people_search_clear
+import app.trainer.strings.people_search_empty_description
+import app.trainer.strings.people_search_empty_title
+import app.trainer.strings.people_search_found
+import app.trainer.strings.people_search_placeholder
+import app.trainer.strings.people_search_reset
 import app.trainer.strings.people_title
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.leadingStripe
@@ -43,6 +49,7 @@ import app.trainer.uikit.widgets.AppAvatar
 import app.trainer.uikit.widgets.AppBadge
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCellShimmerList
+import app.trainer.uikit.widgets.AppSearchField
 import app.trainer.uikit.widgets.AppSectionHeader
 import app.trainer.uikit.widgets.AppStatePlaceholder
 import app.trainer.uikit.widgets.AppText
@@ -69,12 +76,33 @@ fun PeopleView(
 ) {
     Column(modifier = modifier.fillMaxSize().screenBackground()) {
         AppTopBar(title = stringResource(Res.string.people_title))
+        if (state.isSearchable) {
+            AppSearchField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppTheme.spacing.dp16, vertical = AppTheme.spacing.dp8),
+                value = state.search,
+                placeholder = stringResource(Res.string.people_search_placeholder),
+                onValueChange = { onEvent(PeopleEvent.OnSearchChanged(it)) },
+                onClear = { onEvent(PeopleEvent.OnSearchChanged("")) },
+                clearDescription = stringResource(Res.string.people_search_clear),
+            )
+        }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             when {
                 state.isLoading -> AppCellShimmerList(count = SHIMMER_ROWS)
                 state.failure != null -> AppFailureState(
                     failure = state.failure,
                     onRetry = { onEvent(PeopleEvent.OnRetryClicked) },
+                )
+                state.isEmpty && state.isSearching -> AppStatePlaceholder(
+                    kind = PlaceholderKind.Empty,
+                    title = stringResource(Res.string.people_search_empty_title),
+                    description = stringResource(Res.string.people_search_empty_description),
+                    action = PlaceholderAction.Button(
+                        text = stringResource(Res.string.people_search_reset),
+                        onClick = { onEvent(PeopleEvent.OnSearchChanged("")) },
+                    ),
                 )
                 state.isEmpty -> AppStatePlaceholder(
                     kind = PlaceholderKind.Empty,
@@ -88,7 +116,7 @@ fun PeopleView(
                 else -> PeopleList(state = state, onEvent = onEvent)
             }
         }
-        if (!state.isEmpty) {
+        if (!state.isEmpty && !state.isSearching) {
             AppButton(
                 modifier = Modifier.fillMaxWidth().padding(AppTheme.spacing.dp16),
                 text = stringResource(Res.string.people_invite_action),
@@ -104,6 +132,13 @@ fun PeopleView(
 @Composable
 private fun PeopleList(state: PeopleState, onEvent: (PeopleEvent) -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
+        if (state.isSearching) {
+            item(key = "found") {
+                AppSectionHeader(
+                    title = stringResource(Res.string.people_search_found, state.others.size),
+                )
+            }
+        }
         if (state.booked.isNotEmpty()) {
             item(key = "booked-title") {
                 AppSectionHeader(
@@ -120,14 +155,16 @@ private fun PeopleList(state: PeopleState, onEvent: (PeopleEvent) -> Unit) {
             }
         }
         if (state.others.isNotEmpty()) {
-            item(key = "others-title") {
-                AppSectionHeader(
-                    title = when {
-                        state.booked.isEmpty() -> stringResource(Res.string.people_everyone_title)
-                        else -> stringResource(Res.string.people_others_title)
-                    },
-                    count = if (state.hasMore) SectionCount.None else SectionCount.Value(state.others.size),
-                )
+            if (!state.isSearching) {
+                item(key = "others-title") {
+                    AppSectionHeader(
+                        title = when {
+                            state.booked.isEmpty() -> stringResource(Res.string.people_everyone_title)
+                            else -> stringResource(Res.string.people_others_title)
+                        },
+                        count = if (state.hasMore) SectionCount.None else SectionCount.Value(state.others.size),
+                    )
+                }
             }
             items(items = state.others, key = { "other-${it.userId}" }) { person ->
                 PersonCell(

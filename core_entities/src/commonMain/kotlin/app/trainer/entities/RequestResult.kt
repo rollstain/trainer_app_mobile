@@ -6,6 +6,7 @@ enum class RequestFailure {
     Forbidden,
     NotFound,
     Conflict,
+    Gone,
     Validation,
     Server,
     Parsing,

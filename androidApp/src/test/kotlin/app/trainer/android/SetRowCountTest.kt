@@ -62,6 +62,7 @@ class SetRowCountTest {
         durationText = "",
         distanceText = "",
         lastResult = hints,
+        plannedRestSeconds = null,
         isPersonalRecord = false,
         isCounted = false,
     )

@@ -3,7 +3,9 @@ package app.trainer.feature.home.presentation.today.mvi
 import app.trainer.data.schedule.SlotChangeKind
 import app.trainer.entities.RequestResult
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 
 data class TodayRequestRow(
     val requestId: String,
@@ -84,6 +86,8 @@ sealed interface TodayFreeSlots {
     data class Available(val summary: String) : TodayFreeSlots
 }
 
+enum class TodayBlock { CheckIns, FormChecks, Lapsed }
+
 data class TodayState(
     val dateLabel: String,
     val coachDisplayName: String,
@@ -97,13 +101,15 @@ data class TodayState(
     val tomorrow: TodayTomorrow,
     val nextSession: TodayNextSession,
     val freeSlots: TodayFreeSlots,
+    val failedBlocks: ImmutableSet<TodayBlock>,
     val hasClients: Boolean,
     val isLoading: Boolean,
     val failure: RequestResult.Error?,
 ) {
 
     val isQuiet: Boolean
-        get() = requests.isEmpty() &&
+        get() = failedBlocks.isEmpty() &&
+            requests.isEmpty() &&
             sessions.isEmpty() &&
             unread.isEmpty() &&
             lapsed.isEmpty() &&
@@ -125,6 +131,7 @@ data class TodayState(
             tomorrow = TodayTomorrow.None,
             nextSession = TodayNextSession.NoneThisWeek,
             freeSlots = TodayFreeSlots.None,
+            failedBlocks = persistentSetOf(),
             hasClients = true,
             isLoading = true,
             failure = null,
@@ -135,6 +142,8 @@ data class TodayState(
 sealed interface TodayEvent {
 
     data object OnRetryClicked : TodayEvent
+
+    data class OnBlockRetryClicked(val block: TodayBlock) : TodayEvent
 
     data object OnProfileClicked : TodayEvent
 

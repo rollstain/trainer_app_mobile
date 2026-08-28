@@ -30,7 +30,7 @@ class TrainingLogDataModule {
             TrainingInputStoreImpl(database = get(), logger = get(), ioDispatcher = get())
         } bind LocalDataCleaner::class
         single<RestIntervalStore> {
-            RestIntervalStoreImpl(database = get(), ioDispatcher = get())
+            RestIntervalStoreImpl(database = get(), settings = get(), ioDispatcher = get())
         } bind LocalDataCleaner::class
     }
 }

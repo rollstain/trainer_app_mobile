@@ -44,6 +44,8 @@ private suspend fun handleSideEffect(
 ) {
     when (effect) {
         is CoachScheduleSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
+        is CoachScheduleSideEffect.OpenGroupSession ->
+            navigator.push(Screens.GroupSession(slotId = effect.slotId))
         is CoachScheduleSideEffect.OpenSlotCreation -> navigator.push(
             Screens.NewSlot(dateIso = effect.dateIso)
         )

@@ -7,8 +7,8 @@ import app.trainer.base.date.weekdayShortOf
 import app.trainer.data.clients.CoachSummary
 import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.schedule.ClientSchedule
+import app.trainer.data.schedule.ClientScheduleRepository
 import app.trainer.data.schedule.ClientSlot
-import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.schedule.SlotChangeKind
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
@@ -27,7 +27,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 class ClientScheduleScreenModel(
-    private val scheduleRepository: ScheduleRepository,
+    private val scheduleRepository: ClientScheduleRepository,
     private val participantsRepository: ParticipantsRepository,
     private val weeks: ScheduleWeeks,
 ) : BaseScreenModel<ClientScheduleState, ClientScheduleSideEffect, ClientScheduleEvent>(

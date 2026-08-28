@@ -26,6 +26,7 @@ kotlin {
             api(project(":data_auth:api"))
             api(project(":data_profile:api"))
             api(project(":data_clients:api"))
+            api(project(":data_training_log:api"))
             api(project(":core_base_feature"))
             api(project(":navigation"))
             api(project(":uikit"))

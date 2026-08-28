@@ -7,8 +7,8 @@ import app.trainer.base.date.weekdayShortOf
 import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.schedule.CoachSchedule
+import app.trainer.data.schedule.CoachScheduleRepository
 import app.trainer.data.schedule.CoachSlot
-import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.schedule.SlotChangeRequest
 import app.trainer.data.schedule.SlotStatus
 import app.trainer.entities.RequestFailure
@@ -27,11 +27,12 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 private const val MINUTES_IN_HOUR = 60
+private const val GROUP_SESSION_SCREEN_FROM_SEATS = 5
 private const val SLOT_TITLE_SEPARATOR = " · "
 private const val NAME_SEPARATOR = ", "
 
 class CoachScheduleScreenModel(
-    private val scheduleRepository: ScheduleRepository,
+    private val scheduleRepository: CoachScheduleRepository,
     private val clientsRepository: ParticipantsRepository,
     private val profileRepository: ProfileRepository,
     private val weeks: ScheduleWeeks,
@@ -96,6 +97,10 @@ class CoachScheduleScreenModel(
             val slot = state.days.firstNotNullOfOrNull { day ->
                 day.slots.firstOrNull { it.slotId == slotId }
             } ?: return@screenModelScope
+            if (slot.capacity >= GROUP_SESSION_SCREEN_FROM_SEATS) {
+                postSideEffect(CoachScheduleSideEffect.OpenGroupSession(slotId = slot.slotId))
+                return@screenModelScope
+            }
             val kind = when (slot.status) {
                 SlotStatus.BOOKED -> SlotActionsKind.Booked
                 SlotStatus.FREE -> if (slot.hasParticipants) SlotActionsKind.Booked else SlotActionsKind.Free

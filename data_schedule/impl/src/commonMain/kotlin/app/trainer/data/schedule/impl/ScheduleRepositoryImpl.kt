@@ -1,10 +1,11 @@
 package app.trainer.data.schedule.impl
 
 import app.trainer.data.schedule.ClientSchedule
+import app.trainer.data.schedule.ClientScheduleRepository
 import app.trainer.data.schedule.ClientSlot
 import app.trainer.data.schedule.CoachSchedule
+import app.trainer.data.schedule.CoachScheduleRepository
 import app.trainer.data.schedule.CoachSlot
-import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.schedule.SlotChangeKind
 import app.trainer.data.schedule.SlotChangeRequest
 import app.trainer.data.schedule.SlotSeriesDraft
@@ -26,7 +27,7 @@ import kotlin.time.Instant
 class ScheduleRepositoryImpl(
     private val httpClientProvider: HttpClientProvider,
     private val mapper: ScheduleMapper,
-) : ScheduleRepository {
+) : CoachScheduleRepository, ClientScheduleRepository {
 
     private val client get() = httpClientProvider.client
 
@@ -106,6 +107,11 @@ class ScheduleRepositoryImpl(
             is RequestResult.Error -> created
             is RequestResult.Success -> RequestResult.Success(mapper.toSeriesResult(created.data))
         }
+    }
+
+    override suspend fun coachSlot(slotId: String): RequestResult<CoachSlot> {
+        val loaded = safeRequest<CoachSlotResponse> { client.get("schedule/slots/$slotId") }
+        return coachSlotOrError(loaded)
     }
 
     override suspend fun assignSlot(slotId: String, clientUserId: String): RequestResult<CoachSlot> {

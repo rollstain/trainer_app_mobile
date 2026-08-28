@@ -6,6 +6,7 @@ import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.profile.UserProfile
+import app.trainer.data.traininglog.RestIntervalStore
 import app.trainer.entities.RequestResult
 import app.trainer.strings.Res
 import app.trainer.strings.profile_client_role
@@ -16,6 +17,7 @@ class ProfileScreenModel(
     private val profileRepository: ProfileRepository,
     private val participantsRepository: ParticipantsRepository,
     private val authRepository: AuthRepository,
+    private val restIntervalStore: RestIntervalStore,
 ) : BaseScreenModel<ProfileState, ProfileSideEffect, ProfileEvent>(
     initialState = ProfileState.initial(),
 ) {
@@ -34,6 +36,8 @@ class ProfileScreenModel(
                 }
                 is RequestResult.Success -> showProfile(loaded.data)
             }
+            val restSeconds = restIntervalStore.defaultSeconds()
+            updateState { it.copy(restSeconds = restSeconds) }
         }
     }
 
@@ -44,6 +48,9 @@ class ProfileScreenModel(
             ProfileEvent.OnProgramsClicked -> screenModelScope {
                 postSideEffect(ProfileSideEffect.OpenPrograms)
             }
+            ProfileEvent.OnDevicesClicked -> screenModelScope {
+                postSideEffect(ProfileSideEffect.OpenDevices)
+            }
             ProfileEvent.OnExerciseLibraryClicked -> screenModelScope {
                 postSideEffect(ProfileSideEffect.OpenExerciseLibrary)
             }
@@ -52,6 +59,10 @@ class ProfileScreenModel(
             }
             is ProfileEvent.OnReminderHourSelected -> changePolicy { policy ->
                 policy.copy(reminderHour = event.hour)
+            }
+            is ProfileEvent.OnRestSecondsSelected -> screenModelScope {
+                restIntervalStore.rememberDefault(event.seconds)
+                updateState { it.copy(restSeconds = event.seconds) }
             }
             is ProfileEvent.OnSessionRemindersToggled -> changePolicy { policy ->
                 policy.copy(sessionRemindersEnabled = event.enabled)

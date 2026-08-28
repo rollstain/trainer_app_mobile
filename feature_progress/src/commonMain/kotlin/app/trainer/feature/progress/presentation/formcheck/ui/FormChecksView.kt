@@ -17,6 +17,7 @@ import app.trainer.feature.progress.presentation.formcheck.mvi.CoachAnswer
 import app.trainer.feature.progress.presentation.formcheck.mvi.FormCheckRow
 import app.trainer.feature.progress.presentation.formcheck.mvi.FormChecksEvent
 import app.trainer.feature.progress.presentation.formcheck.mvi.FormChecksState
+import app.trainer.feature.progress.presentation.formcheck.mvi.TooLargeVideo
 import app.trainer.media.VideoPlayer
 import app.trainer.strings.Res
 import app.trainer.strings.form_checks_answer_approved
@@ -24,12 +25,17 @@ import app.trainer.strings.form_checks_awaiting
 import app.trainer.strings.form_checks_empty_description
 import app.trainer.strings.form_checks_empty_title
 import app.trainer.strings.form_checks_send_action
+import app.trainer.strings.form_checks_sending_hint
 import app.trainer.strings.form_checks_title
+import app.trainer.strings.form_checks_too_large_confirm
+import app.trainer.strings.form_checks_too_large_description
+import app.trainer.strings.form_checks_too_large_title
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCard
 import app.trainer.uikit.widgets.AppCardShimmerList
+import app.trainer.uikit.widgets.AppConfirmDialog
 import app.trainer.uikit.widgets.AppStatePlaceholder
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTopBar
@@ -89,7 +95,34 @@ fun FormChecksView(
             size = ButtonSize.Large,
             state = if (state.isSending) ButtonState.Loading else ButtonState.Idle,
         )
+        if (state.isSending) {
+            AppText(
+                modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16, vertical = AppTheme.spacing.dp8),
+                text = stringResource(Res.string.form_checks_sending_hint),
+                style = AppTheme.typography.caption,
+                color = AppTheme.colors.textSecondary,
+            )
+        }
     }
+    val tooLarge = state.tooLargeVideo
+    if (tooLarge != null) {
+        TooLargeVideoDialog(video = tooLarge, onEvent = onEvent)
+    }
+}
+
+@Composable
+private fun TooLargeVideoDialog(video: TooLargeVideo, onEvent: (FormChecksEvent) -> Unit) {
+    AppConfirmDialog(
+        title = stringResource(Res.string.form_checks_too_large_title),
+        description = stringResource(
+            Res.string.form_checks_too_large_description,
+            video.megabytes,
+            video.limitMegabytes,
+        ),
+        confirmText = stringResource(Res.string.form_checks_too_large_confirm),
+        onConfirm = { onEvent(FormChecksEvent.OnTooLargeVideoDismissed) },
+        onDismissRequest = { onEvent(FormChecksEvent.OnTooLargeVideoDismissed) },
+    )
 }
 
 @Composable

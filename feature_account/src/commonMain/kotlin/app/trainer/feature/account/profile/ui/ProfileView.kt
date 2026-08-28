@@ -23,6 +23,7 @@ import app.trainer.strings.profile_add_contact_action
 import app.trainer.strings.profile_cancellation_description
 import app.trainer.strings.profile_cancellation_hours
 import app.trainer.strings.profile_cancellation_title
+import app.trainer.strings.profile_devices_action
 import app.trainer.strings.profile_exercise_library_action
 import app.trainer.strings.profile_no_contact_description
 import app.trainer.strings.profile_no_contact_title
@@ -35,6 +36,8 @@ import app.trainer.strings.profile_reminders_hour_description
 import app.trainer.strings.profile_reminders_hour_title
 import app.trainer.strings.profile_reminders_session
 import app.trainer.strings.profile_reminders_title
+import app.trainer.strings.profile_rest_description
+import app.trainer.strings.profile_rest_title
 import app.trainer.strings.profile_sign_out_action
 import app.trainer.strings.profile_sign_out_cancel
 import app.trainer.strings.profile_sign_out_confirm
@@ -65,6 +68,9 @@ private const val SHIMMER_CARDS = 3
 private const val SHIMMER_CARD_LINES = 2
 private val CANCELLATION_PRESETS = listOf(2, 6, 12, 24, 48)
 private val REMINDER_HOUR_PRESETS = listOf(7, 8, 9, 10, 12, 18, 20)
+private val REST_PRESETS_SECONDS = listOf(60, 90, 120, 150, 180, 240)
+private const val SECONDS_IN_MINUTE = 60
+private const val SECONDS_DIGITS = 2
 
 @Composable
 fun ProfileView(
@@ -178,15 +184,28 @@ private fun ProfileContent(state: ProfileState, onEvent: (ProfileEvent) -> Unit)
                     color = AppTheme.colors.textPrimary,
                 )
             }
-            AppCard(
-                action = CardAction.Click { onEvent(ProfileEvent.OnExerciseLibraryClicked) },
-            ) {
-                AppText(
-                    text = stringResource(Res.string.profile_exercise_library_action),
-                    style = AppTheme.typography.body,
-                    color = AppTheme.colors.textPrimary,
-                )
-            }
+        }
+        AppCard(
+            action = CardAction.Click { onEvent(ProfileEvent.OnExerciseLibraryClicked) },
+        ) {
+            AppText(
+                text = stringResource(Res.string.profile_exercise_library_action),
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.textPrimary,
+            )
+        }
+        if (!state.isCoach) {
+            RestSection(
+                selectedSeconds = state.restSeconds,
+                onSelect = { seconds -> onEvent(ProfileEvent.OnRestSecondsSelected(seconds)) },
+            )
+        }
+        AppCard(action = CardAction.Click { onEvent(ProfileEvent.OnDevicesClicked) }) {
+            AppText(
+                text = stringResource(Res.string.profile_devices_action),
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.textPrimary,
+            )
         }
         AppCard(action = CardAction.Click { onEvent(ProfileEvent.OnSignOutClicked) }) {
             AppText(
@@ -294,4 +313,38 @@ private fun ReminderToggle(title: String, checked: Boolean, onCheckedChange: (Bo
         )
         AppSwitch(checked = checked, onCheckedChange = onCheckedChange)
     }
+}
+
+@Composable
+private fun RestSection(selectedSeconds: Int, onSelect: (Int) -> Unit) {
+    AppCard {
+        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
+            AppText(
+                text = stringResource(Res.string.profile_rest_title),
+                style = AppTheme.typography.bodyStrong,
+                color = AppTheme.colors.textPrimary,
+            )
+            AppText(
+                text = stringResource(Res.string.profile_rest_description),
+                style = AppTheme.typography.caption,
+                color = AppTheme.colors.textSecondary,
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
+                items(items = REST_PRESETS_SECONDS, key = { it }) { seconds ->
+                    AppButton(
+                        text = restLabelOf(seconds),
+                        onClick = { onSelect(seconds) },
+                        tone = if (seconds == selectedSeconds) ButtonTone.Primary else ButtonTone.Secondary,
+                        size = ButtonSize.Small,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun restLabelOf(seconds: Int): String {
+    val minutes = seconds / SECONDS_IN_MINUTE
+    val rest = seconds % SECONDS_IN_MINUTE
+    return "$minutes:${rest.toString().padStart(SECONDS_DIGITS, '0')}"
 }

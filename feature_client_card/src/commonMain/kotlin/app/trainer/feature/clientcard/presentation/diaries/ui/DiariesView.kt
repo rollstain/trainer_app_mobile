@@ -35,11 +35,17 @@ import app.trainer.strings.diaries_not_started_yet
 import app.trainer.strings.diaries_others_title
 import app.trainer.strings.diaries_threshold
 import app.trainer.strings.diaries_title
+import app.trainer.strings.people_search_clear
+import app.trainer.strings.people_search_empty_description
+import app.trainer.strings.people_search_empty_title
+import app.trainer.strings.people_search_placeholder
+import app.trainer.strings.people_search_reset
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppAvatar
 import app.trainer.uikit.widgets.AppCellShimmerList
 import app.trainer.uikit.widgets.AppComplianceStrip
+import app.trainer.uikit.widgets.AppSearchField
 import app.trainer.uikit.widgets.AppSectionHeader
 import app.trainer.uikit.widgets.AppStatePlaceholder
 import app.trainer.uikit.widgets.AppText
@@ -61,12 +67,33 @@ fun DiariesView(
 ) {
     Column(modifier = modifier.fillMaxSize().screenBackground()) {
         AppTopBar(title = stringResource(Res.string.diaries_title))
+        if (state.isSearchable) {
+            AppSearchField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = AppTheme.spacing.dp16, vertical = AppTheme.spacing.dp8),
+                value = state.search,
+                placeholder = stringResource(Res.string.people_search_placeholder),
+                onValueChange = { onEvent(DiariesEvent.OnSearchChanged(it)) },
+                onClear = { onEvent(DiariesEvent.OnSearchChanged("")) },
+                clearDescription = stringResource(Res.string.people_search_clear),
+            )
+        }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             when {
                 state.isLoading -> AppCellShimmerList(count = SHIMMER_ROWS)
                 state.failure != null -> AppFailureState(
                     failure = state.failure,
                     onRetry = { onEvent(DiariesEvent.OnRetryClicked) },
+                )
+                state.isEmpty && state.isSearching -> AppStatePlaceholder(
+                    kind = PlaceholderKind.Empty,
+                    title = stringResource(Res.string.people_search_empty_title),
+                    description = stringResource(Res.string.people_search_empty_description),
+                    action = PlaceholderAction.Button(
+                        text = stringResource(Res.string.people_search_reset),
+                        onClick = { onEvent(DiariesEvent.OnSearchChanged("")) },
+                    ),
                 )
                 state.isEmpty -> AppStatePlaceholder(
                     kind = PlaceholderKind.Empty,

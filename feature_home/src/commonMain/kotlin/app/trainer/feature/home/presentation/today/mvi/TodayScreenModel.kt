@@ -15,8 +15,8 @@ import app.trainer.data.progress.AwaitingCheckIn
 import app.trainer.data.progress.CheckInRepository
 import app.trainer.data.progress.FormCheck
 import app.trainer.data.progress.FormCheckRepository
+import app.trainer.data.schedule.CoachScheduleRepository
 import app.trainer.data.schedule.CoachSlot
-import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.schedule.SlotChangeRequest
 import app.trainer.data.schedule.SlotStatus
 import app.trainer.data.traininglog.ClientDiarySummary
@@ -33,6 +33,7 @@ import app.trainer.strings.today_tomorrow_summary
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -53,14 +54,14 @@ private data class TodaySources(
     val slots: List<CoachSlot>,
     val requests: List<SlotChangeRequest>,
     val dialogs: List<Dialog>,
-    val lapsed: List<TodayLapsedRow>,
-    val awaiting: List<AwaitingCheckIn>,
-    val awaitingFormChecks: List<FormCheck>,
+    val lapsed: RequestResult<List<TodayLapsedRow>>,
+    val awaiting: RequestResult<List<AwaitingCheckIn>>,
+    val awaitingFormChecks: RequestResult<List<FormCheck>>,
     val hasClients: Boolean,
 )
 
 class TodayScreenModel(
-    private val scheduleRepository: ScheduleRepository,
+    private val scheduleRepository: CoachScheduleRepository,
     private val chatRepository: ChatRepository,
     private val participantsRepository: ParticipantsRepository,
     private val trainingLogRepository: TrainingLogRepository,
@@ -83,6 +84,7 @@ class TodayScreenModel(
     override fun dispatch(event: TodayEvent) {
         when (event) {
             TodayEvent.OnRetryClicked -> onFetchData()
+            is TodayEvent.OnBlockRetryClicked -> screenModelScope { load(showsShimmer = false) }
             TodayEvent.OnProfileClicked -> post(TodaySideEffect.OpenProfile)
             TodayEvent.OnCalendarClicked -> post(TodaySideEffect.OpenCalendar)
             TodayEvent.OnAllDialogsClicked -> post(TodaySideEffect.OpenChats)
@@ -112,8 +114,8 @@ class TodayScreenModel(
         }
     }
 
-    private suspend fun load() {
-        updateState { it.copy(isLoading = true, failure = null) }
+    private suspend fun load(showsShimmer: Boolean = true) {
+        updateState { it.copy(isLoading = showsShimmer, failure = null) }
 
         val profile = profileRepository.me()
         if (profile is RequestResult.Error) return showFailure(profile)
@@ -149,8 +151,8 @@ class TodayScreenModel(
                 requests = (requests as RequestResult.Success).data,
                 dialogs = dialogs,
                 lapsed = lapsedRowsOf(today = today, zone = zone),
-                awaiting = awaitingCheckInsOf(),
-                awaitingFormChecks = awaitingFormChecksOf(),
+                awaiting = checkInRepository.awaitingReview(),
+                awaitingFormChecks = formCheckRepository.awaitingReview(),
                 hasClients = roster.isNotEmpty(),
             )
         )
@@ -182,8 +184,13 @@ class TodayScreenModel(
         val freeSlots = slots.filter { it.status == SlotStatus.FREE && it.startsAt >= now }
 
         val requestRows = requestRowsOf(requests = sources.requests, zone = zone)
-        val awaitingRows = awaitingRowsOf(sources.awaiting)
-        val formCheckRows = formCheckRowsOf(sources.awaitingFormChecks)
+        val awaitingRows = awaitingRowsOf(sources.awaiting.itemsOrEmpty())
+        val formCheckRows = formCheckRowsOf(sources.awaitingFormChecks.itemsOrEmpty())
+        val failedBlocks = buildSet {
+            if (sources.awaiting is RequestResult.Error) add(TodayBlock.CheckIns)
+            if (sources.awaitingFormChecks is RequestResult.Error) add(TodayBlock.FormChecks)
+            if (sources.lapsed is RequestResult.Error) add(TodayBlock.Lapsed)
+        }
         val dateLabel = getString(
             Res.string.home_date,
             weekdayShortOf(today).lowercase(),
@@ -201,12 +208,13 @@ class TodayScreenModel(
                 sessions = sessions.toImmutableList(),
                 unread = unreadDialogs.take(UNREAD_PREVIEW_COUNT).map(::dialogRowOf).toImmutableList(),
                 moreUnreadCount = (unreadDialogs.size - UNREAD_PREVIEW_COUNT).coerceAtLeast(0),
-                lapsed = sources.lapsed.toImmutableList(),
+                lapsed = sources.lapsed.itemsOrEmpty().toImmutableList(),
                 awaitingCheckIns = awaitingRows.toImmutableList(),
                 awaitingFormChecks = formCheckRows.toImmutableList(),
                 tomorrow = tomorrow,
                 nextSession = nextSession,
                 freeSlots = freeSlotsOffer,
+                failedBlocks = failedBlocks.toImmutableSet(),
                 hasClients = sources.hasClients,
                 isLoading = false,
                 failure = null,
@@ -314,31 +322,20 @@ class TodayScreenModel(
         )
     }
 
-    private suspend fun awaitingFormChecksOf(): List<FormCheck> {
-        return when (val awaiting = formCheckRepository.awaitingReview()) {
-            is RequestResult.Success -> awaiting.data
-            is RequestResult.Error -> emptyList()
-        }
-    }
-
-    private suspend fun awaitingCheckInsOf(): List<AwaitingCheckIn> {
-        return when (val awaiting = checkInRepository.awaitingReview()) {
-            is RequestResult.Success -> awaiting.data
-            is RequestResult.Error -> emptyList()
-        }
-    }
-
     private fun lapsedRow(client: ClientDiarySummary, since: LapsedSince): TodayLapsedRow = TodayLapsedRow(
         userId = client.clientUserId,
         displayName = client.displayName,
         since = since,
     )
 
-    private suspend fun lapsedRowsOf(today: LocalDate, zone: TimeZone): List<TodayLapsedRow> {
+    private suspend fun lapsedRowsOf(
+        today: LocalDate,
+        zone: TimeZone,
+    ): RequestResult<List<TodayLapsedRow>> {
         val historyStart = today.minus(DatePeriod(days = DIARY_HISTORY_DAYS - 1))
         val summary = trainingLogRepository.coachDiarySummary(from = historyStart, to = today)
-        if (summary is RequestResult.Error) return emptyList()
-        return (summary as RequestResult.Success).data
+        if (summary is RequestResult.Error) return summary
+        val rows = (summary as RequestResult.Success).data
             .mapNotNull { client ->
                 val lapse = diaryLapseOf(
                     today = today,
@@ -352,6 +349,7 @@ class TodayScreenModel(
                 }
             }
             .sortedByDescending { daysOf(it.since) }
+        return RequestResult.Success(rows)
     }
 
     private fun daysOf(since: LapsedSince): Int = when (since) {
@@ -370,4 +368,9 @@ class TodayScreenModel(
         userMessage = "",
         devMessage = "У пользователя нет часового пояса тренера: zoneId=$zoneId",
     )
+}
+
+private fun <T> RequestResult<List<T>>.itemsOrEmpty(): List<T> = when (this) {
+    is RequestResult.Success -> data
+    is RequestResult.Error -> emptyList()
 }

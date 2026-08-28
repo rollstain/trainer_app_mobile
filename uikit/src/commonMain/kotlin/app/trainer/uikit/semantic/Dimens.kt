@@ -46,6 +46,7 @@ data class AppSizing(
     val avatarSmall: Dp = 32.dp,
     val avatarMedium: Dp = 40.dp,
     val avatarLarge: Dp = 48.dp,
+    val avatarHero: Dp = 80.dp,
     val topBarHeight: Dp = 56.dp,
     val bottomBarHeight: Dp = 64.dp,
     val minTouchTarget: Dp = 48.dp,

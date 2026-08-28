@@ -16,12 +16,10 @@ import androidx.compose.ui.Modifier
 import app.trainer.base.failure.AppFailureState
 import app.trainer.data.schedule.SlotChangeKind
 import app.trainer.feature.home.presentation.today.mvi.LapsedSince
-import app.trainer.feature.home.presentation.today.mvi.TodayCheckInRow
+import app.trainer.feature.home.presentation.today.mvi.TodayBlock
 import app.trainer.feature.home.presentation.today.mvi.TodayDialogRow
 import app.trainer.feature.home.presentation.today.mvi.TodayEvent
-import app.trainer.feature.home.presentation.today.mvi.TodayFormCheckRow
 import app.trainer.feature.home.presentation.today.mvi.TodayFreeSlots
-import app.trainer.feature.home.presentation.today.mvi.TodayLapsedRow
 import app.trainer.feature.home.presentation.today.mvi.TodayNextSession
 import app.trainer.feature.home.presentation.today.mvi.TodayRequestRow
 import app.trainer.feature.home.presentation.today.mvi.TodaySessionRow
@@ -32,6 +30,8 @@ import app.trainer.strings.home_days_short
 import app.trainer.strings.home_never_logged
 import app.trainer.strings.home_profile_action
 import app.trainer.strings.today_add_slot_action
+import app.trainer.strings.today_block_failed
+import app.trainer.strings.today_block_retry
 import app.trainer.strings.today_check_ins_title
 import app.trainer.strings.today_form_checks_title
 import app.trainer.strings.today_lapsed_title
@@ -53,6 +53,7 @@ import app.trainer.strings.today_unread_title
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppAvatar
+import app.trainer.uikit.widgets.AppBlockFallback
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCard
 import app.trainer.uikit.widgets.AppCoachSlotCard
@@ -135,9 +136,9 @@ private fun TodayContent(state: TodayState, onEvent: (TodayEvent) -> Unit) {
             requestsBlock(requests = state.requests, onEvent = onEvent)
             sessionsBlock(sessions = state.sessions, onEvent = onEvent)
             unreadBlock(state = state, onEvent = onEvent)
-            checkInsBlock(rows = state.awaitingCheckIns, onEvent = onEvent)
-            formChecksBlock(rows = state.awaitingFormChecks, onEvent = onEvent)
-            lapsedBlock(lapsed = state.lapsed, onEvent = onEvent)
+            checkInsBlock(state = state, onEvent = onEvent)
+            formChecksBlock(state = state, onEvent = onEvent)
+            lapsedBlock(state = state, onEvent = onEvent)
             tomorrowBlock(tomorrow = state.tomorrow, onEvent = onEvent)
         }
     }
@@ -247,15 +248,21 @@ private fun DialogCell(dialog: TodayDialogRow, onEvent: (TodayEvent) -> Unit) {
 }
 
 private fun LazyListScope.checkInsBlock(
-    rows: List<TodayCheckInRow>,
+    state: TodayState,
     onEvent: (TodayEvent) -> Unit,
 ) {
-    if (rows.isEmpty()) return
+    val rows = state.awaitingCheckIns
+    val hasFailed = state.failedBlocks.contains(TodayBlock.CheckIns)
+    if (rows.isEmpty() && !hasFailed) return
     item(key = "check-ins-title") {
         AppSectionHeader(
             title = stringResource(Res.string.today_check_ins_title),
-            count = SectionCount.Value(rows.size),
+            count = if (hasFailed) SectionCount.None else SectionCount.Value(rows.size),
         )
+    }
+    if (hasFailed) {
+        blockFallback(key = "check-ins-fallback", block = TodayBlock.CheckIns, onEvent = onEvent)
+        return
     }
     items(items = rows, key = { "check-in-${it.checkInId}" }) { row ->
         AppListCell(
@@ -268,15 +275,21 @@ private fun LazyListScope.checkInsBlock(
 }
 
 private fun LazyListScope.formChecksBlock(
-    rows: List<TodayFormCheckRow>,
+    state: TodayState,
     onEvent: (TodayEvent) -> Unit,
 ) {
-    if (rows.isEmpty()) return
+    val rows = state.awaitingFormChecks
+    val hasFailed = state.failedBlocks.contains(TodayBlock.FormChecks)
+    if (rows.isEmpty() && !hasFailed) return
     item(key = "form-checks-title") {
         AppSectionHeader(
             title = stringResource(Res.string.today_form_checks_title),
-            count = SectionCount.Value(rows.size),
+            count = if (hasFailed) SectionCount.None else SectionCount.Value(rows.size),
         )
+    }
+    if (hasFailed) {
+        blockFallback(key = "form-checks-fallback", block = TodayBlock.FormChecks, onEvent = onEvent)
+        return
     }
     items(items = rows, key = { "form-check-${it.formCheckId}" }) { row ->
         AppListCell(
@@ -288,13 +301,19 @@ private fun LazyListScope.formChecksBlock(
     }
 }
 
-private fun LazyListScope.lapsedBlock(lapsed: List<TodayLapsedRow>, onEvent: (TodayEvent) -> Unit) {
-    if (lapsed.isEmpty()) return
+private fun LazyListScope.lapsedBlock(state: TodayState, onEvent: (TodayEvent) -> Unit) {
+    val lapsed = state.lapsed
+    val hasFailed = state.failedBlocks.contains(TodayBlock.Lapsed)
+    if (lapsed.isEmpty() && !hasFailed) return
     item(key = "lapsed-title") {
         AppSectionHeader(
             title = stringResource(Res.string.today_lapsed_title),
-            count = SectionCount.Value(lapsed.size),
+            count = if (hasFailed) SectionCount.None else SectionCount.Value(lapsed.size),
         )
+    }
+    if (hasFailed) {
+        blockFallback(key = "lapsed-fallback", block = TodayBlock.Lapsed, onEvent = onEvent)
+        return
     }
     items(items = lapsed, key = { "lapsed-${it.userId}" }) { row ->
         AppListCell(
@@ -456,5 +475,21 @@ private fun QuietLine(text: String) {
             style = AppTheme.typography.body,
             color = AppTheme.colors.textSecondary,
         )
+    }
+}
+
+private fun LazyListScope.blockFallback(
+    key: String,
+    block: TodayBlock,
+    onEvent: (TodayEvent) -> Unit,
+) {
+    item(key = key) {
+        Box(modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16)) {
+            AppBlockFallback(
+                message = stringResource(Res.string.today_block_failed),
+                retryText = stringResource(Res.string.today_block_retry),
+                onRetry = { onEvent(TodayEvent.OnBlockRetryClicked(block)) },
+            )
+        }
     }
 }

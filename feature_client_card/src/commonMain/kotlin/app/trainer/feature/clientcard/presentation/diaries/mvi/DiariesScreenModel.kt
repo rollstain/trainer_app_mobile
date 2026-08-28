@@ -48,6 +48,7 @@ class DiariesScreenModel(
     override fun dispatch(event: DiariesEvent) {
         when (event) {
             DiariesEvent.OnRetryClicked -> onFetchData()
+            is DiariesEvent.OnSearchChanged -> updateState { it.copy(search = event.query) }
             is DiariesEvent.OnPersonClicked -> openDiary(event.userId)
         }
     }
@@ -80,11 +81,9 @@ class DiariesScreenModel(
             dayMonthOf(windowStart),
             dayMonthOf(today),
         )
-        val byName = rows.sortedBy { it.displayName }
         updateState { current ->
             current.copy(
-                lapsed = byName.filter { it.lapse.isLapsed() }.toImmutableList(),
-                others = byName.filterNot { it.lapse.isLapsed() }.toImmutableList(),
+                rows = rows.sortedBy { it.displayName }.toImmutableList(),
                 windowLabel = windowLabel,
                 thresholdDays = DIARY_LAPSE_THRESHOLD_DAYS,
                 isLoading = false,
@@ -144,11 +143,6 @@ class DiariesScreenModel(
         days.size,
         volumeFormat.toTons(days.sumOf { it.volumeGrams }),
     )
-}
-
-private fun DiaryLapse.isLapsed(): Boolean = when (this) {
-    is DiaryLapse.Lapsed, DiaryLapse.NeverLogged -> true
-    DiaryLapse.Logging, DiaryLapse.NotStartedYet -> false
 }
 
 private fun Instant.toLocalDate(zone: TimeZone): LocalDate = toLocalDateTime(zone).date

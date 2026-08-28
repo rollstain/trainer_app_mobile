@@ -16,8 +16,8 @@ import app.trainer.data.progress.CheckIn
 import app.trainer.data.progress.CheckInRepository
 import app.trainer.data.progress.Habit
 import app.trainer.data.progress.HabitsRepository
+import app.trainer.data.schedule.ClientScheduleRepository
 import app.trainer.data.schedule.ClientSlot
-import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.entities.RequestResult
 import app.trainer.feature.home.presentation.startsInLabelOf
@@ -60,7 +60,7 @@ private const val DECREASE_SIGN = "−"
 class NextScreenModel(
     private val participantsRepository: ParticipantsRepository,
     private val profileRepository: ProfileRepository,
-    private val scheduleRepository: ScheduleRepository,
+    private val scheduleRepository: ClientScheduleRepository,
     private val trainingLogRepository: TrainingLogRepository,
     private val checkInRepository: CheckInRepository,
     private val habitsRepository: HabitsRepository,

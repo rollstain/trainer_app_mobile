@@ -131,4 +131,6 @@ sealed interface CoachScheduleSideEffect {
     data class ShowFailure(val failure: RequestResult.Error) : CoachScheduleSideEffect
 
     data class OpenSlotCreation(val dateIso: String?) : CoachScheduleSideEffect
+
+    data class OpenGroupSession(val slotId: String) : CoachScheduleSideEffect
 }

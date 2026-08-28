@@ -10,6 +10,7 @@ interface ParticipantsRepository {
     suspend fun clientsOfCoach(
         limit: Int? = null,
         after: String? = null,
+        query: String? = null,
     ): RequestResult<Paged<List<CoachClient>>>
 
     suspend fun clientsByIds(userIds: List<String>): RequestResult<List<CoachClient>>

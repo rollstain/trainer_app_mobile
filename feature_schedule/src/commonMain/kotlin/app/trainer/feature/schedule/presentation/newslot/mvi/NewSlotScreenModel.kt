@@ -4,7 +4,7 @@ import app.trainer.base.BaseScreenModel
 import app.trainer.base.date.ScheduleWeeks
 import app.trainer.base.date.weekdayShortOf
 import app.trainer.data.profile.ProfileRepository
-import app.trainer.data.schedule.ScheduleRepository
+import app.trainer.data.schedule.CoachScheduleRepository
 import app.trainer.data.schedule.SlotSeriesDraft
 import app.trainer.entities.RequestResult
 import app.trainer.feature.schedule.domain.SlotSeriesResults
@@ -35,7 +35,7 @@ private const val TIME_PARTS = 2
 @OptIn(ExperimentalUuidApi::class)
 class NewSlotScreenModel(
     initialDateIso: String,
-    private val scheduleRepository: ScheduleRepository,
+    private val scheduleRepository: CoachScheduleRepository,
     private val profileRepository: ProfileRepository,
     private val weeks: ScheduleWeeks,
     private val seriesResults: SlotSeriesResults,

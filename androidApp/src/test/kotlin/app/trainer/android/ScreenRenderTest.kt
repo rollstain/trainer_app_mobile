@@ -9,6 +9,15 @@ import app.trainer.base.metrics.MetricChart
 import app.trainer.base.metrics.ProgressMetric
 import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.schedule.SlotStatus
+import app.trainer.feature.account.devices.mvi.DeviceRow
+import app.trainer.feature.account.devices.mvi.DevicesState
+import app.trainer.feature.account.devices.ui.DevicesView
+import app.trainer.feature.account.invite.mvi.InviteState
+import app.trainer.feature.account.invite.ui.InviteView
+import app.trainer.feature.account.invitelink.mvi.InviteLinkContent
+import app.trainer.feature.account.invitelink.mvi.InviteLinkProblem
+import app.trainer.feature.account.invitelink.mvi.InviteLinkState
+import app.trainer.feature.account.invitelink.ui.InviteLinkView
 import app.trainer.feature.account.profile.mvi.ProfileState
 import app.trainer.feature.account.profile.ui.ProfileView
 import app.trainer.feature.clientcard.presentation.mvi.CheckInReview
@@ -30,6 +39,7 @@ import app.trainer.feature.home.presentation.next.mvi.PlannedExerciseRow
 import app.trainer.feature.home.presentation.next.mvi.PlannedToday
 import app.trainer.feature.home.presentation.next.ui.NextView
 import app.trainer.feature.home.presentation.today.mvi.LapsedSince
+import app.trainer.feature.home.presentation.today.mvi.TodayBlock
 import app.trainer.feature.home.presentation.today.mvi.TodayCheckInRow
 import app.trainer.feature.home.presentation.today.mvi.TodayDialogRow
 import app.trainer.feature.home.presentation.today.mvi.TodayFreeSlots
@@ -65,6 +75,10 @@ import app.trainer.feature.schedule.presentation.coach.mvi.CoachSlotRow
 import app.trainer.feature.schedule.presentation.coach.mvi.ScheduleDay
 import app.trainer.feature.schedule.presentation.coach.mvi.SlotParticipantRow
 import app.trainer.feature.schedule.presentation.coach.ui.CoachScheduleView
+import app.trainer.feature.schedule.presentation.groupsession.mvi.GroupParticipantRow
+import app.trainer.feature.schedule.presentation.groupsession.mvi.GroupSessionState
+import app.trainer.feature.schedule.presentation.groupsession.mvi.GroupWaitingRow
+import app.trainer.feature.schedule.presentation.groupsession.ui.GroupSessionView
 import app.trainer.feature.traininglog.presentation.editor.mvi.PlannedForDay
 import app.trainer.feature.traininglog.presentation.editor.mvi.TrainingLogEditorState
 import app.trainer.feature.traininglog.presentation.editor.ui.TrainingLogEditorView
@@ -83,6 +97,7 @@ import app.trainer.feature.traininglog.presentation.programs.ui.ProgramsView
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.widgets.HabitWeekDay
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.datetime.LocalDate
 import org.junit.Rule
 import org.junit.Test
@@ -96,6 +111,23 @@ private val MONDAY = LocalDate(2026, 8, 24)
 private const val CANCELLATION_WINDOW_HOURS = 12
 private const val REMINDER_HOUR = 10
 private const val REMINDERS_TITLE = "Client reminders"
+private const val DEVICE_CURRENT = "THIS DEVICE"
+private const val BLOCK_FAILED = "Could not load this"
+private const val GROUP_BOOKED = "booked"
+private const val GROUP_FREE = "free"
+private const val GROUP_WAITING = "waiting"
+private const val GROUP_COMPLETE = "Mark as done"
+private const val CHECK_INS_TITLE = "Check-ins without a reply"
+private const val CODE_CASE_HINT = "Case does not matter"
+private const val CODE_NOT_FOUND = "No such code. Check the message - 0 and O are easy to mix up."
+private const val SESSION_EXPIRED_TITLE = "Sign in again"
+private const val INVITE_LINK_TITLE = "An invitation from your coach"
+private const val INVITE_LINK_JOIN = "Join"
+private const val INVITE_LINK_EXPIRED = "The link has expired"
+private const val INVITE_LINK_CODE_ACTION = "I have a code"
+private const val DEVICE_REVOKE_OTHERS = "Sign out everywhere"
+private const val DEVICE_RECOVERY_HINT =
+    "Lost access to your account? Ask your coach for a new invite link: it brings back your diary and schedule."
 private const val COMPARE_BEFORE = "Before"
 private const val COMPARE_AFTER = "After"
 private const val ATTENTION_REASON = "no diary entries for 12 days"
@@ -362,6 +394,107 @@ class ScreenRenderTest {
     }
 
     @Test
+    fun `a group session counts seats, the waitlist and offers to close it`() {
+        compose.setContent {
+            TestTheme {
+                GroupSessionView(state = groupSession(), onEvent = {}, onBackClick = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(GROUP_BOOKED).assertIsDisplayed()
+        compose.onNodeWithText(GROUP_FREE).assertIsDisplayed()
+        compose.onNodeWithText(GROUP_WAITING).assertIsDisplayed()
+        compose.onNodeWithText(GROUP_COMPLETE).assertIsDisplayed()
+    }
+
+    @Test
+    fun `a block that did not answer keeps its title and offers its own retry`() {
+        compose.setContent {
+            TestTheme {
+                TodayView(state = todayWithFailedCheckIns(), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(CHECK_INS_TITLE).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(BLOCK_FAILED).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `the code screen keeps the typed code when the code is unknown`() {
+        compose.setContent {
+            TestTheme {
+                InviteView(state = codeNotFound(), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(CODE_NOT_FOUND).assertIsDisplayed()
+        compose.onNodeWithText(CODE_CASE_HINT).assertDoesNotExist()
+    }
+
+    @Test
+    fun `an expired session asks to sign in again instead of showing an error`() {
+        compose.setContent {
+            TestTheme {
+                InviteView(state = InviteState.initial(afterSessionExpiry = true), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(SESSION_EXPIRED_TITLE).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the invite link shows the coach and what the coach will see`() {
+        compose.setContent {
+            TestTheme {
+                InviteLinkView(state = inviteLink(), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(INVITE_LINK_TITLE).assertIsDisplayed()
+        compose.onNodeWithText(COACH_NAME).assertIsDisplayed()
+        compose.onNodeWithText(INVITE_LINK_JOIN).assertIsDisplayed()
+    }
+
+    @Test
+    fun `an expired link offers the code instead of a retry`() {
+        compose.setContent {
+            TestTheme {
+                InviteLinkView(state = expiredLink(), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(INVITE_LINK_EXPIRED).assertIsDisplayed()
+        compose.onNodeWithText(INVITE_LINK_CODE_ACTION).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the devices screen marks the current device and offers to sign the others out`() {
+        compose.setContent {
+            TestTheme {
+                DevicesView(state = devices(), onEvent = {}, onBackClick = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(DEVICE_CURRENT).assertIsDisplayed()
+        compose.onNodeWithText(DEVICE_REVOKE_OTHERS).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(DEVICE_RECOVERY_HINT).performScrollTo().assertExists()
+    }
+
+    @Test
     fun `a client sees whether the coach answered each video`() {
         compose.setContent {
             TestTheme {
@@ -567,6 +700,77 @@ private fun coachProfile(): ProfileState = ProfileState.initial().copy(
     ),
     isCoach = true,
     isLoading = false,
+)
+
+private const val COACH_NAME = "Dmitry Rogov"
+
+private fun groupSession(): GroupSessionState = GroupSessionState.initial().copy(
+    isLoading = false,
+    title = "Group session",
+    whenLabel = "tue 25.08 · 12:00—13:30",
+    takenSeats = 2,
+    freeSeats = 6,
+    participants = persistentListOf(
+        GroupParticipantRow(
+            clientUserId = "client-1",
+            displayName = "Sergey Panov",
+            bookedAtLabel = "booked on 22.08",
+            hasMedicalNotes = true,
+        ),
+        GroupParticipantRow(
+            clientUserId = "client-2",
+            displayName = "Elena Litvinova",
+            bookedAtLabel = "booked on 22.08",
+            hasMedicalNotes = false,
+        ),
+    ),
+    waiting = persistentListOf(
+        GroupWaitingRow(
+            clientUserId = "client-3",
+            displayName = "Pavel Kim",
+            joinedAtLabel = "booked on 25.08",
+        ),
+    ),
+)
+
+private fun todayWithFailedCheckIns(): TodayState = TodayState.initial().copy(
+    isLoading = false,
+    dateLabel = "tuesday, 26 august",
+    coachDisplayName = "Dmitry",
+    failedBlocks = persistentSetOf(TodayBlock.CheckIns),
+)
+
+private fun codeNotFound(): InviteState = InviteState.initial(afterSessionExpiry = false).copy(
+    code = "K7M3Q9",
+    codeError = CODE_NOT_FOUND,
+)
+
+private fun inviteLink(): InviteLinkState = InviteLinkState.initial().copy(
+    content = InviteLinkContent.Coach(displayName = COACH_NAME, needsDisplayName = true),
+)
+
+private fun expiredLink(): InviteLinkState = InviteLinkState.initial().copy(
+    content = InviteLinkContent.Problem(InviteLinkProblem.Expired),
+)
+
+private fun devices(): DevicesState = DevicesState.initial().copy(
+    isLoading = false,
+    devices = persistentListOf(
+        DeviceRow(
+            sessionId = "session-1",
+            deviceInfo = "Pixel 7a",
+            lastSeenLabel = "28.08 09:12",
+            isLongUnused = false,
+            isCurrent = true,
+        ),
+        DeviceRow(
+            sessionId = "session-2",
+            deviceInfo = "iPhone 13",
+            lastSeenLabel = "12.05 20:40",
+            isLongUnused = true,
+            isCurrent = false,
+        ),
+    ),
 )
 
 private fun peopleWithAttention(): PeopleState = PeopleState.initial().withFirstPage(

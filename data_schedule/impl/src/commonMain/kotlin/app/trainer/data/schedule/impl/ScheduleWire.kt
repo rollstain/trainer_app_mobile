@@ -71,6 +71,8 @@ data class CoachSlotResponse(
     val takenSeats: Int?,
     @SerialName("participants")
     val participants: List<SlotParticipantResponse>?,
+    @SerialName("waitlist")
+    val waitlist: List<SlotWaitlistResponse>?,
 )
 
 @Serializable
@@ -79,6 +81,20 @@ data class SlotParticipantResponse(
     val userId: String?,
     @SerialName("displayName")
     val displayName: String?,
+    @SerialName("bookedAt")
+    val bookedAt: String?,
+    @SerialName("hasMedicalNotes")
+    val hasMedicalNotes: Boolean?,
+)
+
+@Serializable
+data class SlotWaitlistResponse(
+    @SerialName("userId")
+    val userId: String?,
+    @SerialName("displayName")
+    val displayName: String?,
+    @SerialName("joinedAt")
+    val joinedAt: String?,
 )
 
 @Serializable

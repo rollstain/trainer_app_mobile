@@ -13,7 +13,7 @@ import app.trainer.uikit.AppTheme
 
 private const val MAX_INITIALS = 2
 
-enum class AvatarSize { Small, Medium, Large }
+enum class AvatarSize { Small, Medium, Large, Hero }
 
 enum class AvatarTone { Active, Neutral }
 
@@ -40,7 +40,7 @@ fun AppAvatar(
     ) {
         Text(
             text = initialsOf(displayName),
-            style = AppTheme.typography.label,
+            style = if (size == AvatarSize.Hero) AppTheme.typography.headline else AppTheme.typography.label,
             color = content,
         )
     }
@@ -60,4 +60,5 @@ private fun diameterOf(size: AvatarSize): Dp = when (size) {
     AvatarSize.Small -> AppTheme.sizing.avatarSmall
     AvatarSize.Medium -> AppTheme.sizing.avatarMedium
     AvatarSize.Large -> AppTheme.sizing.avatarLarge
+    AvatarSize.Hero -> AppTheme.sizing.avatarHero
 }

@@ -1,25 +1,24 @@
 package app.trainer.feature.account.invite.mvi
 
 import app.trainer.entities.RequestResult
-
-private const val INVITE_CODE_LENGTH = 6
+import app.trainer.uikit.widgets.CODE_LENGTH
 
 data class InviteState(
+    val afterSessionExpiry: Boolean,
     val code: String,
-    val displayName: String,
-    val isSubmitting: Boolean,
+    val isChecking: Boolean,
     val codeError: String?,
 ) {
 
     val isSubmitEnabled: Boolean
-        get() = code.length == INVITE_CODE_LENGTH && displayName.isNotBlank() && !isSubmitting
+        get() = code.length == CODE_LENGTH && !isChecking
 
     companion object {
 
-        fun initial(prefilledCode: String?): InviteState = InviteState(
-            code = prefilledCode.orEmpty(),
-            displayName = "",
-            isSubmitting = false,
+        fun initial(afterSessionExpiry: Boolean): InviteState = InviteState(
+            afterSessionExpiry = afterSessionExpiry,
+            code = "",
+            isChecking = false,
             codeError = null,
         )
     }
@@ -30,13 +29,13 @@ sealed interface InviteEvent {
     data object OnSubmitClicked : InviteEvent
 
     data class OnCodeChanged(val code: String) : InviteEvent
-
-    data class OnDisplayNameChanged(val displayName: String) : InviteEvent
 }
 
 sealed interface InviteSideEffect {
 
-    data object OpenContactLink : InviteSideEffect
+    data class OpenOnboarding(val code: String, val coachDisplayName: String) : InviteSideEffect
+
+    data object SignedIn : InviteSideEffect
 
     data class ShowFailure(val failure: RequestResult.Error) : InviteSideEffect
 }

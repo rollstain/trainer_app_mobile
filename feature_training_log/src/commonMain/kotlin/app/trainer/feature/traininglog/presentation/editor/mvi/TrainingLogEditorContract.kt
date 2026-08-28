@@ -37,6 +37,7 @@ data class SetRow(
     val durationText: String,
     val distanceText: String,
     val lastResult: LastResultHints,
+    val plannedRestSeconds: Int?,
     val isPersonalRecord: Boolean,
     val isCounted: Boolean,
 ) {

@@ -152,6 +152,7 @@ class TrainingLogEditorScreenModel(
             emptyRowFor(option).copy(
                 repetitionsText = line.repetitions?.toString().orEmpty(),
                 weightText = line.weightGrams?.let(weightInput::toKilogramsText).orEmpty(),
+                plannedRestSeconds = line.restSeconds,
             )
         }
     }
@@ -264,7 +265,7 @@ class TrainingLogEditorScreenModel(
                 }
                 current.copy(sets = counted.toImmutableList())
             }
-            restTimer.start(row.exerciseId)
+            restTimer.start(exerciseId = row.exerciseId, plannedRestSeconds = row.plannedRestSeconds)
         }
     }
 
@@ -371,6 +372,7 @@ class TrainingLogEditorScreenModel(
         durationText = input.durationText,
         distanceText = input.distanceText,
         lastResult = hints ?: LastResultHints.Empty,
+        plannedRestSeconds = null,
         isPersonalRecord = false,
         isCounted = false,
     )
@@ -401,6 +403,7 @@ class TrainingLogEditorScreenModel(
         durationText = "",
         distanceText = "",
         lastResult = exercise.lastResult,
+        plannedRestSeconds = null,
         isPersonalRecord = false,
         isCounted = false,
     )
@@ -415,6 +418,7 @@ class TrainingLogEditorScreenModel(
         durationText = set.durationSeconds?.let(durationInput::toMinutesText).orEmpty(),
         distanceText = set.distanceMeters?.toString().orEmpty(),
         lastResult = hints ?: LastResultHints.Empty,
+        plannedRestSeconds = null,
         isPersonalRecord = set.isPersonalRecord,
         isCounted = true,
     )

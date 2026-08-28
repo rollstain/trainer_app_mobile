@@ -33,6 +33,7 @@ class KoinGraphTest {
                 Settings::class,
                 NetworkConfig::class,
                 String::class,
+                Boolean::class,
                 NotificationsUtils::class,
                 RestTimerAlarm::class,
                 PhotoOwner::class,

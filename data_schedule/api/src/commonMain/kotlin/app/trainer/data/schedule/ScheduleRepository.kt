@@ -15,11 +15,11 @@ data class SlotSeriesDraft(
     val capacity: Int,
 )
 
-interface ScheduleRepository {
+interface CoachScheduleRepository {
 
     suspend fun coachSchedule(from: Instant, to: Instant): RequestResult<CoachSchedule>
 
-    suspend fun clientSchedule(coachId: String, from: Instant, to: Instant): RequestResult<ClientSchedule>
+    suspend fun coachSlot(slotId: String): RequestResult<CoachSlot>
 
     suspend fun createSlot(startsAt: Instant, durationMinutes: Int, capacity: Int): RequestResult<CoachSlot>
 
@@ -33,6 +33,15 @@ interface ScheduleRepository {
 
     suspend fun completeSlot(slotId: String): RequestResult<CoachSlot>
 
+    suspend fun pendingChangeRequests(): RequestResult<List<SlotChangeRequest>>
+
+    suspend fun resolveChangeRequest(requestId: String, approve: Boolean): RequestResult<SlotChangeRequest>
+}
+
+interface ClientScheduleRepository {
+
+    suspend fun clientSchedule(coachId: String, from: Instant, to: Instant): RequestResult<ClientSchedule>
+
     suspend fun bookSlot(slotId: String): RequestResult<ClientSlot>
 
     suspend fun joinWaitlist(slotId: String): RequestResult<ClientSlot>
@@ -44,8 +53,4 @@ interface ScheduleRepository {
         kind: SlotChangeKind,
         proposedStartsAt: Instant?,
     ): RequestResult<SlotChangeRequest>
-
-    suspend fun pendingChangeRequests(): RequestResult<List<SlotChangeRequest>>
-
-    suspend fun resolveChangeRequest(requestId: String, approve: Boolean): RequestResult<SlotChangeRequest>
 }

@@ -29,7 +29,7 @@ sealed interface SessionStatus {
 
     data object Loading : SessionStatus
 
-    data object SignedOut : SessionStatus
+    data class SignedOut(val afterSessionExpiry: Boolean) : SessionStatus
 
     data class ProfileUnavailable(val failure: RequestResult.Error) : SessionStatus
 
@@ -71,8 +71,9 @@ class SessionController(
     private suspend fun evaluate() {
         val previous = mutableStatus.value
         if (!authRepository.isAuthorized()) {
-            mutableStatus.value = SessionStatus.SignedOut
-            if (previous is SessionStatus.SignedIn) tearDownAuthorizedWork()
+            val wasSignedIn = previous is SessionStatus.SignedIn
+            mutableStatus.value = SessionStatus.SignedOut(afterSessionExpiry = wasSignedIn)
+            if (wasSignedIn) tearDownAuthorizedWork()
             return
         }
         showLastKnownRole()

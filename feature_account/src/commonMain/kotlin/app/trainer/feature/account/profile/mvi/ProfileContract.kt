@@ -4,6 +4,7 @@ import app.trainer.data.clients.CoachPolicy
 import app.trainer.entities.RequestResult
 
 data class ProfileState(
+    val restSeconds: Int,
     val displayName: String,
     val roleLabel: String,
     val contactLabel: String?,
@@ -20,6 +21,7 @@ data class ProfileState(
     companion object {
 
         fun initial(): ProfileState = ProfileState(
+            restSeconds = 0,
             displayName = "",
             roleLabel = "",
             contactLabel = null,
@@ -38,6 +40,8 @@ sealed interface ProfileEvent {
 
     data object OnAddContactClicked : ProfileEvent
 
+    data object OnDevicesClicked : ProfileEvent
+
     data object OnExerciseLibraryClicked : ProfileEvent
 
     data object OnProgramsClicked : ProfileEvent
@@ -45,6 +49,8 @@ sealed interface ProfileEvent {
     data class OnCancellationWindowSelected(val hours: Int) : ProfileEvent
 
     data class OnReminderHourSelected(val hour: Int) : ProfileEvent
+
+    data class OnRestSecondsSelected(val seconds: Int) : ProfileEvent
 
     data class OnSessionRemindersToggled(val enabled: Boolean) : ProfileEvent
 
@@ -62,6 +68,8 @@ sealed interface ProfileEvent {
 sealed interface ProfileSideEffect {
 
     data object OpenContactLink : ProfileSideEffect
+
+    data object OpenDevices : ProfileSideEffect
 
     data object OpenExerciseLibrary : ProfileSideEffect
 

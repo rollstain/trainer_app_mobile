@@ -87,11 +87,16 @@ class ParticipantsRepositoryImpl(
         }
     }
 
-    override suspend fun clientsOfCoach(limit: Int?, after: String?): RequestResult<Paged<List<CoachClient>>> {
+    override suspend fun clientsOfCoach(
+        limit: Int?,
+        after: String?,
+        query: String?,
+    ): RequestResult<Paged<List<CoachClient>>> {
         val loaded = safePagedRequest<List<CoachClientResponse>> {
             httpClientProvider.client.get("coach/clients") {
                 limit?.let { parameter("limit", it) }
                 after?.let { parameter("after", it) }
+                query?.let { parameter("query", it) }
             }
         }
         return when (loaded) {

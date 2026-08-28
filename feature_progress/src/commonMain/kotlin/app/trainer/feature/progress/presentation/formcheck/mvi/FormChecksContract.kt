@@ -22,8 +22,11 @@ data class FormCheckRow(
     val answer: CoachAnswer,
 )
 
+data class TooLargeVideo(val megabytes: Int, val limitMegabytes: Int)
+
 data class FormChecksState(
     val checks: ImmutableList<FormCheckRow>,
+    val tooLargeVideo: TooLargeVideo?,
     val isLoading: Boolean,
     val isSending: Boolean,
     val failure: RequestResult.Error?,
@@ -33,6 +36,7 @@ data class FormChecksState(
 
         fun initial(): FormChecksState = FormChecksState(
             checks = persistentListOf(),
+            tooLargeVideo = null,
             isLoading = true,
             isSending = false,
             failure = null,
@@ -45,6 +49,8 @@ sealed interface FormChecksEvent {
     data object OnReloadRequested : FormChecksEvent
 
     data class OnVideoPicked(val video: PickedMedia) : FormChecksEvent
+
+    data object OnTooLargeVideoDismissed : FormChecksEvent
 }
 
 sealed interface FormChecksSideEffect {

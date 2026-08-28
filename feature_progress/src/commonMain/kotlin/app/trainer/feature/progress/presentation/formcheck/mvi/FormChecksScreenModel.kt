@@ -10,6 +10,9 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
+private const val MAX_VIDEO_BYTES = 26_214_400
+private const val BYTES_IN_MEGABYTE = 1_048_576
+
 class FormChecksScreenModel(
     private val formCheckRepository: FormCheckRepository,
 ) : BaseScreenModel<FormChecksState, FormChecksSideEffect, FormChecksEvent>(
@@ -36,6 +39,7 @@ class FormChecksScreenModel(
     override fun dispatch(event: FormChecksEvent) {
         when (event) {
             FormChecksEvent.OnReloadRequested -> onFetchData()
+            FormChecksEvent.OnTooLargeVideoDismissed -> updateState { it.copy(tooLargeVideo = null) }
             is FormChecksEvent.OnVideoPicked -> send(event.video)
         }
     }
@@ -43,6 +47,17 @@ class FormChecksScreenModel(
     private fun send(video: PickedMedia) {
         screenModelScope { state ->
             if (state.isSending) return@screenModelScope
+            if (video.bytes.size > MAX_VIDEO_BYTES) {
+                updateState {
+                    it.copy(
+                        tooLargeVideo = TooLargeVideo(
+                            megabytes = video.bytes.size / BYTES_IN_MEGABYTE,
+                            limitMegabytes = MAX_VIDEO_BYTES / BYTES_IN_MEGABYTE,
+                        )
+                    )
+                }
+                return@screenModelScope
+            }
             updateState { it.copy(isSending = true) }
             val sent = formCheckRepository.submit(
                 fileName = video.fileName,

@@ -62,6 +62,14 @@ data class LinkedIdentityResponse(
 )
 
 @Serializable
+data class InvitePreviewResponse(
+    @SerialName("coachDisplayName")
+    val coachDisplayName: String?,
+    @SerialName("needsDisplayName")
+    val needsDisplayName: Boolean?,
+)
+
+@Serializable
 data class DeviceSessionResponse(
     @SerialName("id")
     val id: String?,

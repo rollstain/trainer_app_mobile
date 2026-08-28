@@ -42,7 +42,7 @@ private suspend fun handleSideEffect(
             Screens.ClientBooking(coachId = null, weekStartIso = null)
         )
         NextSideEffect.OpenChat -> navigator.replaceAll(Screens.CoachChats)
-        NextSideEffect.OpenInvite -> navigator.push(Screens.Invite(code = null))
+        NextSideEffect.OpenInvite -> navigator.push(Screens.Invite(afterSessionExpiry = false))
         is NextSideEffect.OpenDiary -> navigator.push(Screens.ClientDiaryDay(dateIso = effect.dateIso))
         is NextSideEffect.OpenCheckIn -> navigator.push(Screens.CheckIn(dateIso = effect.dateIso))
         is NextSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())

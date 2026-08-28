@@ -7,6 +7,11 @@ data class InviteCode(
     val expiresAtLabel: String,
 )
 
+data class InvitePreview(
+    val coachDisplayName: String,
+    val needsDisplayName: Boolean,
+)
+
 enum class AuthProvider { YANDEX, VK, APPLE, GOOGLE }
 
 data class LinkedIdentity(
@@ -24,6 +29,8 @@ data class DeviceSession(
 interface AuthRepository {
 
     suspend fun isAuthorized(): Boolean
+
+    suspend fun previewInvite(code: String): RequestResult<InvitePreview>
 
     suspend fun redeemInvite(code: String, displayName: String, deviceInfo: String): RequestResult<Unit>
 

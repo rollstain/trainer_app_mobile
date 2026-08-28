@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 
-const val DEFAULT_REST_SECONDS = 90
 const val REST_STEP_SECONDS = 15
 
 private const val MAX_REST_SECONDS = 600
@@ -45,8 +44,10 @@ class RestTimer(
         if (rest == null) flowOf(null) else ticking(rest)
     }
 
-    suspend fun start(exerciseId: String) {
-        val seconds = restIntervalStore.secondsFor(exerciseId) ?: DEFAULT_REST_SECONDS
+    suspend fun start(exerciseId: String, plannedRestSeconds: Int?) {
+        val seconds = plannedRestSeconds
+            ?: restIntervalStore.secondsFor(exerciseId)
+            ?: restIntervalStore.defaultSeconds()
         run(exerciseId = exerciseId, seconds = seconds)
     }
 

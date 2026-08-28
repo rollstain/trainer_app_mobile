@@ -13,6 +13,14 @@ enum class SkipReason { OVERLAPS_EXISTING_SLOT }
 data class SlotParticipant(
     val userId: String,
     val displayName: String?,
+    val bookedAt: Instant,
+    val hasMedicalNotes: Boolean,
+)
+
+data class SlotWaiting(
+    val userId: String,
+    val displayName: String?,
+    val joinedAt: Instant,
 )
 
 data class CoachSlot(
@@ -26,6 +34,7 @@ data class CoachSlot(
     val capacity: Int,
     val takenSeats: Int,
     val participants: List<SlotParticipant>,
+    val waitlist: List<SlotWaiting>,
 ) {
 
     val isGroup: Boolean get() = capacity > 1

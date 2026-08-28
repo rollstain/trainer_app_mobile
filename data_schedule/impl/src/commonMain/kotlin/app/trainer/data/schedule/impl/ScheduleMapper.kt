@@ -12,6 +12,7 @@ import app.trainer.data.schedule.SlotChangeStatus
 import app.trainer.data.schedule.SlotParticipant
 import app.trainer.data.schedule.SlotSeriesResult
 import app.trainer.data.schedule.SlotStatus
+import app.trainer.data.schedule.SlotWaiting
 import app.trainer.logger.Logger
 import kotlin.time.Instant
 
@@ -60,12 +61,28 @@ class ScheduleMapper(private val logger: Logger) {
             capacity = capacity,
             takenSeats = takenSeats,
             participants = response.participants.orEmpty().mapNotNull(::toParticipant),
+            waitlist = response.waitlist.orEmpty().mapNotNull(::toWaiting),
         )
     }
 
     private fun toParticipant(response: SlotParticipantResponse): SlotParticipant? {
         val userId = response.userId ?: return skipped(entity = "SlotParticipant", field = "userId")
-        return SlotParticipant(userId = userId, displayName = response.displayName)
+        val bookedAt = parseInstant(response.bookedAt)
+            ?: return skipped(entity = "SlotParticipant", field = "bookedAt")
+        val hasMedicalNotes = response.hasMedicalNotes
+            ?: return skipped(entity = "SlotParticipant", field = "hasMedicalNotes")
+        return SlotParticipant(
+            userId = userId,
+            displayName = response.displayName,
+            bookedAt = bookedAt,
+            hasMedicalNotes = hasMedicalNotes,
+        )
+    }
+
+    private fun toWaiting(response: SlotWaitlistResponse): SlotWaiting? {
+        val userId = response.userId ?: return skipped(entity = "SlotWaiting", field = "userId")
+        val joinedAt = parseInstant(response.joinedAt) ?: return skipped(entity = "SlotWaiting", field = "joinedAt")
+        return SlotWaiting(userId = userId, displayName = response.displayName, joinedAt = joinedAt)
     }
 
     fun toClientSlot(response: ClientSlotResponse): ClientSlot? {
