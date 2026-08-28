@@ -8,6 +8,9 @@ enum class DiaryPeriod { Week, Month, Range }
 sealed interface Screens : NavKey {
 
     @Serializable
+    data class Welcome(val afterSessionExpiry: Boolean) : Screens
+
+    @Serializable
     data class Invite(val afterSessionExpiry: Boolean) : Screens
 
     @Serializable

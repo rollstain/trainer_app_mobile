@@ -3,9 +3,12 @@ package app.trainer.data.auth.impl
 import app.trainer.data.auth.AuthProvider
 import app.trainer.data.auth.AuthRepository
 import app.trainer.data.auth.DeviceSession
+import app.trainer.data.auth.DeviceSessionsRepository
+import app.trainer.data.auth.IdentitiesRepository
 import app.trainer.data.auth.InviteCode
 import app.trainer.data.auth.InvitePreview
 import app.trainer.data.auth.LinkedIdentity
+import app.trainer.data.auth.TelegramLoginStart
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.logger.Logger
@@ -29,7 +32,7 @@ class AuthRepositoryImpl(
     private val tokenStorage: TokenStorage,
     private val sessionEvents: SessionEvents,
     private val logger: Logger,
-) : AuthRepository {
+) : AuthRepository, IdentitiesRepository, DeviceSessionsRepository {
 
     override suspend fun isAuthorized(): Boolean = tokenStorage.read() != null
 
@@ -63,6 +66,26 @@ class AuthRepositoryImpl(
         return when (redeemed) {
             is RequestResult.Error -> redeemed
             is RequestResult.Success -> storeTokens(redeemed.data)
+        }
+    }
+
+    override suspend fun availableProviders(): RequestResult<List<AuthProvider>> {
+        val loaded = safeRequest<List<String>> { httpClientProvider.client.get("auth/providers") }
+        return when (loaded) {
+            is RequestResult.Error -> loaded
+            is RequestResult.Success -> RequestResult.Success(
+                loaded.data.mapNotNull { name -> AuthProvider.entries.firstOrNull { it.name == name } }
+            )
+        }
+    }
+
+    override suspend fun startTelegramLogin(): RequestResult<TelegramLoginStart> {
+        val started = safeRequest<TelegramStartResponse> {
+            httpClientProvider.client.post("auth/telegram/start")
+        }
+        return when (started) {
+            is RequestResult.Error -> started
+            is RequestResult.Success -> telegramStartOf(started.data)
         }
     }
 
@@ -162,6 +185,21 @@ class AuthRepositoryImpl(
             return null
         }
         return LinkedIdentity(provider = provider, linkedAtIso = linkedAt)
+    }
+
+    private fun telegramStartOf(response: TelegramStartResponse): RequestResult<TelegramLoginStart> {
+        val claimToken = response.claimToken
+        val deepLink = response.deepLink
+        if (claimToken == null || deepLink == null) {
+            logger.error(tag = LOG_TAG, message = "в ответе нет ссылки или токена входа через Telegram")
+            return RequestResult.Error(
+                kind = RequestFailure.Parsing,
+                statusCode = null,
+                userMessage = "",
+                devMessage = "TelegramStartResponse is incomplete",
+            )
+        }
+        return RequestResult.Success(TelegramLoginStart(claimToken = claimToken, deepLink = deepLink))
     }
 
     private fun previewOf(response: InvitePreviewResponse): RequestResult<InvitePreview> {

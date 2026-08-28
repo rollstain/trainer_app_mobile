@@ -12,7 +12,12 @@ data class InvitePreview(
     val needsDisplayName: Boolean,
 )
 
-enum class AuthProvider { YANDEX, VK, APPLE, GOOGLE }
+enum class AuthProvider { YANDEX, VK, APPLE, GOOGLE, TELEGRAM }
+
+data class TelegramLoginStart(
+    val claimToken: String,
+    val deepLink: String,
+)
 
 data class LinkedIdentity(
     val provider: AuthProvider,
@@ -30,9 +35,13 @@ interface AuthRepository {
 
     suspend fun isAuthorized(): Boolean
 
+    suspend fun availableProviders(): RequestResult<List<AuthProvider>>
+
     suspend fun previewInvite(code: String): RequestResult<InvitePreview>
 
     suspend fun redeemInvite(code: String, displayName: String, deviceInfo: String): RequestResult<Unit>
+
+    suspend fun startTelegramLogin(): RequestResult<TelegramLoginStart>
 
     suspend fun signInWithProvider(
         provider: AuthProvider,
@@ -42,19 +51,25 @@ interface AuthRepository {
 
     suspend fun joinCoach(code: String): RequestResult<Unit>
 
+    suspend fun createInvite(): RequestResult<InviteCode>
+
+    suspend fun logout()
+}
+
+interface IdentitiesRepository {
+
     suspend fun linkedIdentities(): RequestResult<List<LinkedIdentity>>
 
     suspend fun linkProvider(provider: AuthProvider, token: String): RequestResult<List<LinkedIdentity>>
 
     suspend fun unlinkProvider(provider: AuthProvider): RequestResult<List<LinkedIdentity>>
+}
+
+interface DeviceSessionsRepository {
 
     suspend fun sessions(): RequestResult<List<DeviceSession>>
 
     suspend fun revokeSession(sessionId: String): RequestResult<Unit>
 
     suspend fun revokeOtherSessions(): RequestResult<Unit>
-
-    suspend fun createInvite(): RequestResult<InviteCode>
-
-    suspend fun logout()
 }

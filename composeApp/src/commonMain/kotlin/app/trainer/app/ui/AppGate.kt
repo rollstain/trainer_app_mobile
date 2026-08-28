@@ -77,7 +77,7 @@ private fun OnboardingRoot(afterSessionExpiry: Boolean) {
     val pendingInvite: PendingInvite = koinInject()
     val invitedCode by pendingInvite.code.collectAsState()
     val startKey = invitedCode?.let { Screens.InviteLink(code = it) }
-        ?: Screens.Invite(afterSessionExpiry = afterSessionExpiry)
+        ?: Screens.Welcome(afterSessionExpiry = afterSessionExpiry)
     val navigator = rememberNavigator(startKey = startKey)
     CompositionLocalProvider(LocalNavigator provides navigator) {
         Box(modifier = Modifier.fillMaxSize().screenBackground()) {

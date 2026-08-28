@@ -187,6 +187,15 @@
     <string name="failure_validation_description">Сервер не принял то, что мы отправили.</string>
     <string name="failure_validation_title">Проверьте данные</string>
     <string name="invite_title">Код от тренера</string>
+    <string name="welcome_title">Тренировки с вашим тренером</string>
+    <string name="welcome_telegram_action">Войти через Telegram</string>
+    <string name="welcome_telegram_waiting">Ждём Telegram…</string>
+    <string name="welcome_telegram_hint">Откроется Telegram — нажмите «Старт» и вернитесь сюда</string>
+    <string name="welcome_telegram_cancel">Отменить</string>
+    <string name="welcome_telegram_failed">Telegram не ответил. Попробуйте снова или войдите по коду.</string>
+    <string name="welcome_telegram_expired">Ссылка входа истекла. Нажмите «Войти через Telegram» ещё раз.</string>
+    <string name="welcome_or">или</string>
+    <string name="welcome_code_action">У меня код от тренера</string>
     <string name="no_coach_title">Осталось связаться с тренером</string>
     <string name="no_coach_description">Приложение работает в паре: тренер ведёт расписание и программу, вы записываете тренировки. Без тренера смотреть нечего.</string>
     <string name="no_coach_code_title">Код от тренера</string>

@@ -62,6 +62,14 @@ data class LinkedIdentityResponse(
 )
 
 @Serializable
+data class TelegramStartResponse(
+    @SerialName("claimToken")
+    val claimToken: String?,
+    @SerialName("deepLink")
+    val deepLink: String?,
+)
+
+@Serializable
 data class InvitePreviewResponse(
     @SerialName("coachDisplayName")
     val coachDisplayName: String?,

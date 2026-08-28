@@ -7,6 +7,15 @@
     <string name="chat_list_client_empty_title">No messages yet</string>
     <string name="chat_list_client_title">Chat</string>
     <string name="invite_title">Code from your coach</string>
+    <string name="welcome_title">Training with your coach</string>
+    <string name="welcome_telegram_action">Sign in with Telegram</string>
+    <string name="welcome_telegram_waiting">Waiting for Telegram…</string>
+    <string name="welcome_telegram_hint">Telegram will open — press Start and come back here</string>
+    <string name="welcome_telegram_cancel">Cancel</string>
+    <string name="welcome_telegram_failed">Telegram did not answer. Try again or sign in with a code.</string>
+    <string name="welcome_telegram_expired">The sign-in link expired. Tap Sign in with Telegram again.</string>
+    <string name="welcome_or">or</string>
+    <string name="welcome_code_action">I have a code from my coach</string>
     <string name="no_coach_title">One step left: reach your coach</string>
     <string name="no_coach_description">The app works in pairs: your coach keeps the schedule and the program, you log the workouts. There is nothing to see without a coach.</string>
     <string name="no_coach_code_title">Code from your coach</string>

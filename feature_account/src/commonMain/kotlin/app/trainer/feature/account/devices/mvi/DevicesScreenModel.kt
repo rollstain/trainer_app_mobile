@@ -3,8 +3,8 @@ package app.trainer.feature.account.devices.mvi
 import app.trainer.base.BaseScreenModel
 import app.trainer.base.date.dayMonthOf
 import app.trainer.base.date.timeOfDayOf
-import app.trainer.data.auth.AuthRepository
 import app.trainer.data.auth.DeviceSession
+import app.trainer.data.auth.DeviceSessionsRepository
 import app.trainer.entities.RequestResult
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -16,7 +16,7 @@ import kotlinx.datetime.toLocalDateTime
 private val LONG_UNUSED_PERIOD = 90.days
 
 class DevicesScreenModel(
-    private val authRepository: AuthRepository,
+    private val sessionsRepository: DeviceSessionsRepository,
 ) : BaseScreenModel<DevicesState, DevicesSideEffect, DevicesEvent>(
     initialState = DevicesState.initial(),
 ) {
@@ -28,7 +28,7 @@ class DevicesScreenModel(
     override fun onFetchData() {
         onFetchDataScope {
             updateState { it.copy(isLoading = true, failure = null) }
-            when (val loaded = authRepository.sessions()) {
+            when (val loaded = sessionsRepository.sessions()) {
                 is RequestResult.Error -> updateState { it.copy(isLoading = false, failure = loaded) }
                 is RequestResult.Success -> updateState {
                     it.copy(
@@ -53,7 +53,7 @@ class DevicesScreenModel(
     private fun revokeDevice(sessionId: String) {
         screenModelScope {
             updateState { it.copy(revokingSessionId = sessionId) }
-            val revoked = authRepository.revokeSession(sessionId)
+            val revoked = sessionsRepository.revokeSession(sessionId)
             updateState { it.copy(revokingSessionId = null) }
             finish(revoked)
         }
@@ -62,7 +62,7 @@ class DevicesScreenModel(
     private fun revokeOtherDevices() {
         screenModelScope {
             updateState { it.copy(isRevokeOthersDialogVisible = false, isRevokingOthers = true) }
-            val revoked = authRepository.revokeOtherSessions()
+            val revoked = sessionsRepository.revokeOtherSessions()
             updateState { it.copy(isRevokingOthers = false) }
             finish(revoked)
         }

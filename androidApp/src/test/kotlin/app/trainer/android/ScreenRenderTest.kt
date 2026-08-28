@@ -7,6 +7,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.text.font.FontFamily
 import app.trainer.base.metrics.MetricChart
 import app.trainer.base.metrics.ProgressMetric
+import app.trainer.data.auth.AuthProvider
 import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.schedule.SlotStatus
 import app.trainer.feature.account.devices.mvi.DeviceRow
@@ -22,6 +23,9 @@ import app.trainer.feature.account.nocoach.mvi.NoCoachState
 import app.trainer.feature.account.nocoach.ui.NoCoachView
 import app.trainer.feature.account.profile.mvi.ProfileState
 import app.trainer.feature.account.profile.ui.ProfileView
+import app.trainer.feature.account.welcome.mvi.TelegramLogin
+import app.trainer.feature.account.welcome.mvi.WelcomeState
+import app.trainer.feature.account.welcome.ui.WelcomeView
 import app.trainer.feature.clientcard.presentation.mvi.CheckInReview
 import app.trainer.feature.clientcard.presentation.mvi.CheckInRow
 import app.trainer.feature.clientcard.presentation.mvi.ClientCardState
@@ -119,6 +123,10 @@ private const val DEVICE_CURRENT = "THIS DEVICE"
 private const val BLOCK_FAILED = "Could not load this"
 private const val NEXT_HABITS_TITLE = "Habits"
 private const val PROGRESS_HABITS_TITLE = "Habits"
+private const val WELCOME_TITLE = "Training with your coach"
+private const val WELCOME_TELEGRAM = "Sign in with Telegram"
+private const val WELCOME_CODE = "I have a code from my coach"
+private const val WELCOME_WAITING = "Waiting for Telegram…"
 private const val NO_COACH_TITLE = "One step left: reach your coach"
 private const val NO_COACH_KEEPS_DATA = "Your account data stays here — come back when you get a code."
 private const val NO_COACH_SIGN_OUT = "Sign out"
@@ -428,6 +436,48 @@ class ScreenRenderTest {
 
         compose.onNodeWithText(BLOCK_FAILED).assertIsDisplayed()
         compose.onNodeWithText(PROGRESS_HABITS_TITLE).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `the welcome screen offers telegram above the code`() {
+        compose.setContent {
+            TestTheme {
+                WelcomeView(state = welcomeWithTelegram(), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(WELCOME_TITLE).assertIsDisplayed()
+        compose.onNodeWithText(WELCOME_TELEGRAM).assertIsDisplayed()
+        compose.onNodeWithText(WELCOME_CODE).assertIsDisplayed()
+    }
+
+    @Test
+    fun `without a configured provider only the code is offered`() {
+        compose.setContent {
+            TestTheme {
+                WelcomeView(state = WelcomeState.initial(afterSessionExpiry = false), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(WELCOME_CODE).assertIsDisplayed()
+        compose.onNodeWithText(WELCOME_TELEGRAM).assertDoesNotExist()
+    }
+
+    @Test
+    fun `while telegram is open the screen says what to do`() {
+        compose.setContent {
+            TestTheme {
+                WelcomeView(state = welcomeWaitingForTelegram(), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(WELCOME_WAITING).assertIsDisplayed()
     }
 
     @Test
@@ -755,6 +805,15 @@ private fun coachProfile(): ProfileState = ProfileState.initial().copy(
 )
 
 private const val COACH_NAME = "Dmitry Rogov"
+
+private fun welcomeWithTelegram(): WelcomeState = WelcomeState.initial(afterSessionExpiry = false).copy(
+    isLoading = false,
+    providers = persistentListOf(AuthProvider.TELEGRAM),
+)
+
+private fun welcomeWaitingForTelegram(): WelcomeState = welcomeWithTelegram().copy(
+    telegram = TelegramLogin.Waiting,
+)
 
 private fun nextWithFailedHabits(): NextState = NextState.initial().copy(
     isLoading = false,

@@ -14,6 +14,8 @@ import app.trainer.feature.account.onboarding.mvi.OnboardingScreenModel
 import app.trainer.feature.account.onboarding.ui.OnboardingScreen
 import app.trainer.feature.account.profile.mvi.ProfileScreenModel
 import app.trainer.feature.account.profile.ui.ProfileScreen
+import app.trainer.feature.account.welcome.mvi.WelcomeScreenModel
+import app.trainer.feature.account.welcome.ui.WelcomeScreen
 import app.trainer.navigation.Screens
 import app.trainer.navigation.screen
 import org.koin.core.module.dsl.viewModel
@@ -45,8 +47,15 @@ class AccountFeatureModule {
             )
         }
         viewModel { ContactLinkScreenModel(profileRepository = get()) }
-        viewModel { DevicesScreenModel(authRepository = get()) }
+        viewModel { DevicesScreenModel(sessionsRepository = get()) }
         viewModel { NoCoachScreenModel(authRepository = get()) }
+        viewModel { parameters ->
+            WelcomeScreenModel(
+                afterSessionExpiry = parameters.get(),
+                authRepository = get(),
+                deviceInfo = get(named(DEVICE_INFO_QUALIFIER)),
+            )
+        }
         viewModel {
             ProfileScreenModel(
                 profileRepository = get(),
@@ -63,6 +72,7 @@ class AccountFeatureModule {
         screen<Screens.Profile> { ProfileScreen() }
         screen<Screens.Devices> { DevicesScreen() }
         screen<Screens.NoCoach> { NoCoachScreen() }
+        screen<Screens.Welcome> { WelcomeScreen(afterSessionExpiry = it.afterSessionExpiry) }
     }
 
     companion object {
