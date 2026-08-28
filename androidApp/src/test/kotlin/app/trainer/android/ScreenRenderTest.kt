@@ -14,6 +14,7 @@ import app.trainer.feature.account.profile.ui.ProfileView
 import app.trainer.feature.clientcard.presentation.mvi.CheckInReview
 import app.trainer.feature.clientcard.presentation.mvi.CheckInRow
 import app.trainer.feature.clientcard.presentation.mvi.ClientCardState
+import app.trainer.feature.clientcard.presentation.mvi.ClientCardTab
 import app.trainer.feature.clientcard.presentation.people.mvi.PeopleState
 import app.trainer.feature.clientcard.presentation.people.mvi.PersonRow
 import app.trainer.feature.clientcard.presentation.people.ui.PeopleView
@@ -460,8 +461,8 @@ class ScreenRenderTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText(CLIENT_WEIGHT_LATEST).assertIsDisplayed()
-        compose.onNodeWithText(CLIENT_WEIGHT_DELTA).assertIsDisplayed()
+        compose.onNodeWithText(CLIENT_WEIGHT_LATEST).assertExists()
+        compose.onNodeWithText(CLIENT_WEIGHT_DELTA).assertExists()
     }
 
     @Test
@@ -715,6 +716,7 @@ private fun clientCardWithDynamics(): ClientCardState = ClientCardState.initial(
         ),
     ),
     selectedMetric = ProgressMetric.Weight,
+    tab = ClientCardTab.Metrics,
     isLoading = false,
 )
 

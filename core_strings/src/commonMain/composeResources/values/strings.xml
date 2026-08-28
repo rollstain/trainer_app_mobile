@@ -47,6 +47,12 @@
     <string name="client_card_no_measurements">без замеров</string>
     <string name="client_card_no_wellbeing">самочувствие не отмечено</string>
     <string name="client_card_note_archived_message">Пометка убрана в архив</string>
+    <string name="client_card_tab_now">Сейчас</string>
+    <string name="client_card_tab_metrics">Замеры</string>
+    <string name="client_card_tab_history">История</string>
+    <string name="client_card_history_section">Дневник тренировок</string>
+    <string name="client_card_history_hint">Записи подопечного за период — с подходами и объёмом.</string>
+    <string name="client_card_open_diary_action">Открыть дневник</string>
     <string name="client_card_notes_section">Пометки</string>
     <string name="client_card_notes_section_empty">Пометок пока нет. Запишите важное: ограничения по здоровью, цели, предпочтения.</string>
     <string name="client_card_pin_action">Закрепить</string>

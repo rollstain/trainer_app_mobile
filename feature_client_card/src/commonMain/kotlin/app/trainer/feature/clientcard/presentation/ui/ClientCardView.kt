@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,6 +21,7 @@ import app.trainer.feature.clientcard.presentation.mvi.CheckInPhotoRow
 import app.trainer.feature.clientcard.presentation.mvi.CheckInReview
 import app.trainer.feature.clientcard.presentation.mvi.ClientCardEvent
 import app.trainer.feature.clientcard.presentation.mvi.ClientCardState
+import app.trainer.feature.clientcard.presentation.mvi.ClientCardTab
 import app.trainer.feature.clientcard.presentation.mvi.ClientProgramState
 import app.trainer.feature.clientcard.presentation.mvi.NoteEditor
 import app.trainer.feature.clientcard.presentation.mvi.ProgramPicker
@@ -44,10 +46,13 @@ import app.trainer.strings.client_card_empty_title
 import app.trainer.strings.client_card_general_toggle
 import app.trainer.strings.client_card_habits_empty
 import app.trainer.strings.client_card_habits_section
+import app.trainer.strings.client_card_history_hint
+import app.trainer.strings.client_card_history_section
 import app.trainer.strings.client_card_medical_toggle
 import app.trainer.strings.client_card_new_habit_label
 import app.trainer.strings.client_card_notes_section
 import app.trainer.strings.client_card_notes_section_empty
+import app.trainer.strings.client_card_open_diary_action
 import app.trainer.strings.client_card_photos_action
 import app.trainer.strings.client_card_pin_action
 import app.trainer.strings.client_card_program_assign
@@ -68,6 +73,9 @@ import app.trainer.strings.client_card_review_label
 import app.trainer.strings.client_card_review_save
 import app.trainer.strings.client_card_review_title
 import app.trainer.strings.client_card_save_action
+import app.trainer.strings.client_card_tab_history
+import app.trainer.strings.client_card_tab_metrics
+import app.trainer.strings.client_card_tab_now
 import app.trainer.strings.client_card_title
 import app.trainer.strings.client_card_title_label
 import app.trainer.strings.client_card_unpin_action
@@ -82,6 +90,7 @@ import app.trainer.uikit.widgets.AppIcons
 import app.trainer.uikit.widgets.AppNoteCard
 import app.trainer.uikit.widgets.AppPhotoThumb
 import app.trainer.uikit.widgets.AppStatePlaceholder
+import app.trainer.uikit.widgets.AppTabs
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTextField
 import app.trainer.uikit.widgets.AppTopBar
@@ -121,11 +130,6 @@ fun ClientCardView(
                 onClick = { onEvent(ClientCardEvent.OnAddNoteClicked) },
             ),
         )
-        if (!state.isLoading && state.failure == null) {
-            Box(modifier = Modifier.padding(AppTheme.spacing.dp16)) {
-                ProgramCard(state = state, onEvent = onEvent)
-            }
-        }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             when {
                 state.failure != null -> AppFailureState(
@@ -198,73 +202,127 @@ private fun ArchiveFooter(state: ClientCardState, onEvent: (ClientCardEvent) -> 
 
 @Composable
 private fun CardContent(state: ClientCardState, onEvent: (ClientCardEvent) -> Unit) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(AppTheme.spacing.dp16),
-        verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
-    ) {
-        item(key = "notes-title") { SectionTitle(text = stringResource(Res.string.client_card_notes_section)) }
-        if (state.notes.isEmpty()) {
-            item(key = "notes-empty") { SectionHint(text = stringResource(Res.string.client_card_notes_section_empty)) }
-        }
-        items(items = state.notes, key = { it.noteId }) { note ->
-            AppNoteCard(
-                modifier = Modifier.animateItem(),
-                title = note.title,
-                kind = when (note.kind) {
-                    ClientNoteKind.MEDICAL -> NoteKindView.Medical
-                    ClientNoteKind.GENERAL -> NoteKindView.General
-                },
-                isPinned = note.isPinned,
-                updatedAt = note.updatedAtLabel,
-                onClick = { onEvent(ClientCardEvent.OnNoteClicked(note.noteId)) },
-                details = note.details?.let(NoteDetails::Text) ?: NoteDetails.None,
-            )
-        }
-        state.selectedChart?.let { chart ->
-            item(key = "dynamics") {
-                MetricDynamicsCard(
-                    charts = state.charts,
-                    chart = chart,
-                    onMetricClick = { onEvent(ClientCardEvent.OnMetricSelected(it)) },
-                )
+    Column(modifier = Modifier.fillMaxSize()) {
+        AppTabs(
+            tabs = ClientCardTab.entries,
+            selected = state.tab,
+            labelOf = { tab ->
+                when (tab) {
+                    ClientCardTab.Now -> stringResource(Res.string.client_card_tab_now)
+                    ClientCardTab.Metrics -> stringResource(Res.string.client_card_tab_metrics)
+                    ClientCardTab.History -> stringResource(Res.string.client_card_tab_history)
+                }
+            },
+            onSelect = { onEvent(ClientCardEvent.OnTabSelected(it)) },
+        )
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth().padding(AppTheme.spacing.dp16),
+            verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
+        ) {
+            medicalNotes(state = state, onEvent = onEvent)
+            when (state.tab) {
+                ClientCardTab.Now -> nowTab(state = state, onEvent = onEvent)
+                ClientCardTab.Metrics -> metricsTab(state = state, onEvent = onEvent)
+                ClientCardTab.History -> historyTab(onEvent = onEvent)
             }
         }
-        item(key = "check-ins-title") { SectionTitle(text = stringResource(Res.string.client_card_check_ins_section)) }
-        if (state.checkIns.isEmpty()) {
-            item(key = "check-ins-empty") { SectionHint(text = stringResource(Res.string.client_card_check_ins_empty)) }
-        }
-        items(items = state.checkIns, key = { it.checkInId }) { checkIn ->
-            CheckInCard(
-                modifier = Modifier.animateItem(),
-                dateLabel = checkIn.dateLabel,
-                measurements = checkIn.measurements,
-                wellbeing = checkIn.wellbeingLabel,
-                notes = checkIn.notes,
-                photos = checkIn.photos,
-                review = checkIn.review,
-                onReviewClick = { onEvent(ClientCardEvent.OnReviewClicked(checkIn.checkInId)) },
+    }
+}
+
+private fun LazyListScope.medicalNotes(state: ClientCardState, onEvent: (ClientCardEvent) -> Unit) {
+    val medical = state.notes.filter { it.kind == ClientNoteKind.MEDICAL }
+    if (medical.isEmpty()) return
+    items(items = medical, key = { "medical-${it.noteId}" }) { note ->
+        AppNoteCard(
+            modifier = Modifier.animateItem(),
+            title = note.title,
+            kind = NoteKindView.Medical,
+            isPinned = true,
+            updatedAt = note.updatedAtLabel,
+            onClick = { onEvent(ClientCardEvent.OnNoteClicked(note.noteId)) },
+            details = note.details?.let(NoteDetails::Text) ?: NoteDetails.None,
+        )
+    }
+}
+
+private fun LazyListScope.nowTab(state: ClientCardState, onEvent: (ClientCardEvent) -> Unit) {
+    item(key = "program") { ProgramCard(state = state, onEvent = onEvent) }
+    item(key = "notes-title") { SectionTitle(text = stringResource(Res.string.client_card_notes_section)) }
+    val general = state.notes.filterNot { it.kind == ClientNoteKind.MEDICAL }
+    if (general.isEmpty()) {
+        item(key = "notes-empty") { SectionHint(text = stringResource(Res.string.client_card_notes_section_empty)) }
+    }
+    items(items = general, key = { it.noteId }) { note ->
+        AppNoteCard(
+            modifier = Modifier.animateItem(),
+            title = note.title,
+            kind = NoteKindView.General,
+            isPinned = note.isPinned,
+            updatedAt = note.updatedAtLabel,
+            onClick = { onEvent(ClientCardEvent.OnNoteClicked(note.noteId)) },
+            details = note.details?.let(NoteDetails::Text) ?: NoteDetails.None,
+        )
+    }
+    item(key = "habits-title") { SectionTitle(text = stringResource(Res.string.client_card_habits_section)) }
+    if (state.habits.isEmpty()) {
+        item(key = "habits-empty") { SectionHint(text = stringResource(Res.string.client_card_habits_empty)) }
+    }
+    items(items = state.habits, key = { it.habitId }) { habit ->
+        HabitCard(
+            modifier = Modifier.animateItem(),
+            title = habit.title,
+            doneCountLabel = habit.doneCountLabel,
+        )
+    }
+    item(key = "new-habit") { NewHabitRow(state = state, onEvent = onEvent) }
+}
+
+private fun LazyListScope.metricsTab(state: ClientCardState, onEvent: (ClientCardEvent) -> Unit) {
+    state.selectedChart?.let { chart ->
+        item(key = "dynamics") {
+            MetricDynamicsCard(
+                charts = state.charts,
+                chart = chart,
+                onMetricClick = { onEvent(ClientCardEvent.OnMetricSelected(it)) },
             )
         }
-        item(key = "photos-compare") {
-            AppButton(
-                text = stringResource(Res.string.client_card_photos_action),
-                onClick = { onEvent(ClientCardEvent.OnComparePhotosClicked) },
-                tone = ButtonTone.Secondary,
-                size = ButtonSize.Small,
-            )
-        }
-        item(key = "habits-title") { SectionTitle(text = stringResource(Res.string.client_card_habits_section)) }
-        if (state.habits.isEmpty()) {
-            item(key = "habits-empty") { SectionHint(text = stringResource(Res.string.client_card_habits_empty)) }
-        }
-        items(items = state.habits, key = { it.habitId }) { habit ->
-            HabitCard(
-                modifier = Modifier.animateItem(),
-                title = habit.title,
-                doneCountLabel = habit.doneCountLabel,
-            )
-        }
-        item(key = "new-habit") { NewHabitRow(state = state, onEvent = onEvent) }
+    }
+    item(key = "photos-compare") {
+        AppButton(
+            text = stringResource(Res.string.client_card_photos_action),
+            onClick = { onEvent(ClientCardEvent.OnComparePhotosClicked) },
+            tone = ButtonTone.Secondary,
+            size = ButtonSize.Small,
+        )
+    }
+    item(key = "check-ins-title") { SectionTitle(text = stringResource(Res.string.client_card_check_ins_section)) }
+    if (state.checkIns.isEmpty()) {
+        item(key = "check-ins-empty") { SectionHint(text = stringResource(Res.string.client_card_check_ins_empty)) }
+    }
+    items(items = state.checkIns, key = { it.checkInId }) { checkIn ->
+        CheckInCard(
+            modifier = Modifier.animateItem(),
+            dateLabel = checkIn.dateLabel,
+            measurements = checkIn.measurements,
+            wellbeing = checkIn.wellbeingLabel,
+            notes = checkIn.notes,
+            photos = checkIn.photos,
+            review = checkIn.review,
+            onReviewClick = { onEvent(ClientCardEvent.OnReviewClicked(checkIn.checkInId)) },
+        )
+    }
+}
+
+private fun LazyListScope.historyTab(onEvent: (ClientCardEvent) -> Unit) {
+    item(key = "history-title") { SectionTitle(text = stringResource(Res.string.client_card_history_section)) }
+    item(key = "history-hint") { SectionHint(text = stringResource(Res.string.client_card_history_hint)) }
+    item(key = "open-diary") {
+        AppButton(
+            text = stringResource(Res.string.client_card_open_diary_action),
+            onClick = { onEvent(ClientCardEvent.OnOpenDiaryClicked) },
+            tone = ButtonTone.Secondary,
+            size = ButtonSize.Small,
+        )
     }
 }
 

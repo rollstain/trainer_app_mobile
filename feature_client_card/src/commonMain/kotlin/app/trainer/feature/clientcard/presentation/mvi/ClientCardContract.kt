@@ -98,8 +98,11 @@ data class ProgramPicker(
     val isSaving: Boolean,
 )
 
+enum class ClientCardTab { Now, Metrics, History }
+
 data class ClientCardState(
     val clientUserId: String,
+    val tab: ClientCardTab,
     val notes: ImmutableList<NoteRow>,
     val checkIns: ImmutableList<CheckInRow>,
     val charts: ImmutableList<MetricChart>,
@@ -129,6 +132,7 @@ data class ClientCardState(
 
         fun initial(clientUserId: String): ClientCardState = ClientCardState(
             clientUserId = clientUserId,
+            tab = ClientCardTab.Now,
             notes = persistentListOf(),
             checkIns = persistentListOf(),
             charts = persistentListOf(),
@@ -173,6 +177,10 @@ sealed interface ClientCardEvent {
 
     data object OnHabitAdded : ClientCardEvent
 
+    data class OnTabSelected(val tab: ClientCardTab) : ClientCardEvent
+
+    data object OnOpenDiaryClicked : ClientCardEvent
+
     data class OnMetricSelected(val metric: ProgressMetric) : ClientCardEvent
 
     data class OnReviewClicked(val checkInId: String) : ClientCardEvent
@@ -203,6 +211,8 @@ sealed interface ClientCardEvent {
 }
 
 sealed interface ClientCardSideEffect {
+
+    data class OpenDiary(val clientUserId: String) : ClientCardSideEffect
 
     data class ShowFailure(val failure: RequestResult.Error) : ClientCardSideEffect
 

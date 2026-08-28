@@ -47,6 +47,12 @@
     <string name="client_card_no_measurements">no measurements</string>
     <string name="client_card_no_wellbeing">wellbeing not recorded</string>
     <string name="client_card_note_archived_message">Note moved to the archive</string>
+    <string name="client_card_tab_now">Now</string>
+    <string name="client_card_tab_metrics">Metrics</string>
+    <string name="client_card_tab_history">History</string>
+    <string name="client_card_history_section">Training diary</string>
+    <string name="client_card_history_hint">The client's entries for a period — sets and volume.</string>
+    <string name="client_card_open_diary_action">Open the diary</string>
     <string name="client_card_notes_section">Notes</string>
     <string name="client_card_notes_section_empty">No notes yet. Write down what matters: health limits, goals, preferences.</string>
     <string name="client_card_pin_action">Pin</string>

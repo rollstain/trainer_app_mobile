@@ -104,6 +104,10 @@ class ClientCardScreenModel(
             is ClientCardEvent.OnEditorKindChanged -> updateEditor { it.copy(kind = event.kind) }
             is ClientCardEvent.OnNewHabitTitleChanged -> updateState { it.copy(newHabitTitle = event.title) }
             ClientCardEvent.OnHabitAdded -> addHabit()
+            is ClientCardEvent.OnTabSelected -> updateState { it.copy(tab = event.tab) }
+            ClientCardEvent.OnOpenDiaryClicked -> screenModelScope {
+                postSideEffect(ClientCardSideEffect.OpenDiary(clientUserId = clientUserId))
+            }
             is ClientCardEvent.OnMetricSelected -> updateState { it.copy(selectedMetric = event.metric) }
             is ClientCardEvent.OnReviewClicked -> openReview(event.checkInId)
             ClientCardEvent.OnComparePhotosClicked -> screenModelScope {

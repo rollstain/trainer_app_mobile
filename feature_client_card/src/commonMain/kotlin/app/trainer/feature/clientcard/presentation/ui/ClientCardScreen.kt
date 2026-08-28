@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import app.trainer.base.failure.toastMessage
 import app.trainer.feature.clientcard.presentation.mvi.ClientCardScreenModel
 import app.trainer.feature.clientcard.presentation.mvi.ClientCardSideEffect
+import app.trainer.navigation.DiaryPeriod
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.Navigator
 import app.trainer.navigation.Screen
@@ -60,5 +61,8 @@ private suspend fun handleSideEffect(
         }
         is ClientCardSideEffect.OpenPhotoCompare ->
             navigator.push(Screens.PhotoCompare(clientUserId = effect.clientUserId))
+        is ClientCardSideEffect.OpenDiary -> navigator.push(
+            Screens.CoachClientDiary(clientUserId = effect.clientUserId, period = DiaryPeriod.Month)
+        )
     }
 }
