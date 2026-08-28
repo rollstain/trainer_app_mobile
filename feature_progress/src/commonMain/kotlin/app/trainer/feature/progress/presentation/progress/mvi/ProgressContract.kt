@@ -40,6 +40,11 @@ sealed interface CoachReply {
     data class Text(val value: String) : CoachReply
 }
 
+data class ProgressPhotoRow(
+    val photoId: String,
+    val url: String,
+)
+
 data class ProgressState(
     val checkInDateLabel: String,
     val checkInSummary: String,
@@ -48,6 +53,7 @@ data class ProgressState(
     val charts: ImmutableList<MetricChart>,
     val selectedMetric: ProgressMetric?,
     val habits: ImmutableList<HabitRow>,
+    val photos: ImmutableList<ProgressPhotoRow>,
     val newHabitTitle: String,
     val isLoading: Boolean,
     val failure: RequestResult.Error?,
@@ -69,6 +75,7 @@ data class ProgressState(
             charts = persistentListOf(),
             selectedMetric = null,
             habits = persistentListOf(),
+            photos = persistentListOf(),
             newHabitTitle = "",
             isLoading = true,
             failure = null,
@@ -81,6 +88,8 @@ sealed interface ProgressEvent {
     data object OnReloadRequested : ProgressEvent
 
     data object OnCheckInClicked : ProgressEvent
+
+    data object OnComparePhotosClicked : ProgressEvent
 
     data class OnMetricSelected(val metric: ProgressMetric) : ProgressEvent
 
@@ -98,4 +107,6 @@ sealed interface ProgressSideEffect {
     data class ShowFailure(val failure: RequestResult.Error) : ProgressSideEffect
 
     data class OpenCheckIn(val dateIso: String) : ProgressSideEffect
+
+    data object OpenPhotoCompare : ProgressSideEffect
 }

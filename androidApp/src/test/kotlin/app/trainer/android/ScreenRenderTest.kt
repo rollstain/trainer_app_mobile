@@ -29,10 +29,15 @@ import app.trainer.feature.home.presentation.today.mvi.TodaySessionRow
 import app.trainer.feature.home.presentation.today.mvi.TodayState
 import app.trainer.feature.home.presentation.today.mvi.TodayTomorrow
 import app.trainer.feature.home.presentation.today.ui.TodayView
+import app.trainer.feature.progress.presentation.photos.mvi.CompareSide
+import app.trainer.feature.progress.presentation.photos.mvi.PhotoCompareState
+import app.trainer.feature.progress.presentation.photos.mvi.PhotoShot
+import app.trainer.feature.progress.presentation.photos.ui.PhotoCompareView
 import app.trainer.feature.progress.presentation.progress.mvi.HabitDay
 import app.trainer.feature.progress.presentation.progress.mvi.HabitRow
 import app.trainer.feature.progress.presentation.progress.mvi.MetricChart
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressMetric
+import app.trainer.feature.progress.presentation.progress.mvi.ProgressPhotoRow
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressState
 import app.trainer.feature.progress.presentation.progress.ui.ProgressView
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleState
@@ -70,6 +75,14 @@ private val MONDAY = LocalDate(2026, 8, 24)
 private const val CANCELLATION_WINDOW_HOURS = 12
 private const val REMINDER_HOUR = 10
 private const val REMINDERS_TITLE = "Client reminders"
+private const val COMPARE_BEFORE = "Before"
+private const val COMPARE_AFTER = "After"
+private const val COMPARE_EMPTY_TITLE = "Nothing to compare yet"
+private const val PROGRESS_PHOTOS_SECTION = "Photos"
+private const val PROGRESS_PHOTOS_COMPARE = "Compare"
+private const val PROGRESS_PHOTOS_EMPTY = "Attach a photo to a check-in and it will show up here"
+private const val FIRST_SHOT_DATE = "3 June"
+private const val LAST_SHOT_DATE = "28 August"
 private const val REMINDER_HOUR_LABEL = "10:00"
 private const val DIARY_REMINDER_TITLE = "When the diary is a week idle"
 
@@ -278,6 +291,70 @@ class ScreenRenderTest {
     }
 
     @Test
+    fun `progress offers to compare the photos it shows`() {
+        compose.setContent {
+            TestTheme {
+                ProgressView(
+                    state = progressWithCharts().copy(
+                        photos = persistentListOf(
+                            ProgressPhotoRow(photoId = "photo-0", url = "https://example.invalid/0.jpg"),
+                            ProgressPhotoRow(photoId = "photo-1", url = "https://example.invalid/1.jpg"),
+                        ),
+                    ),
+                    onEvent = {},
+                )
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(PROGRESS_PHOTOS_SECTION).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(PROGRESS_PHOTOS_COMPARE).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `progress explains where photos come from when there are none`() {
+        compose.setContent {
+            TestTheme {
+                ProgressView(state = progressWithCharts(), onEvent = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(PROGRESS_PHOTOS_EMPTY).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `photo comparison shows the first and the last shot`() {
+        compose.setContent {
+            TestTheme {
+                PhotoCompareView(state = photosToCompare(), onEvent = {}, onBackClick = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(COMPARE_BEFORE).assertIsDisplayed()
+        compose.onNodeWithText(COMPARE_AFTER).assertIsDisplayed()
+        compose.onNodeWithText(FIRST_SHOT_DATE).assertIsDisplayed()
+        compose.onNodeWithText(LAST_SHOT_DATE).assertIsDisplayed()
+    }
+
+    @Test
+    fun `photo comparison asks for a second shot when there is only one`() {
+        compose.setContent {
+            TestTheme {
+                PhotoCompareView(
+                    state = photosToCompare().copy(shots = persistentListOf(shot(index = 0))),
+                    onEvent = {},
+                    onBackClick = {},
+                )
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText(COMPARE_EMPTY_TITLE).assertIsDisplayed()
+    }
+
+    @Test
     fun `progress renders charts and habits`() {
         compose.setContent {
             TestTheme {
@@ -314,6 +391,21 @@ private fun TestTheme(content: @androidx.compose.runtime.Composable () -> Unit) 
         content = content,
     )
 }
+
+private fun photosToCompare(): PhotoCompareState = PhotoCompareState.initial().copy(
+    shots = persistentListOf(shot(index = 0), shot(index = 1)),
+    beforePhotoId = "photo-0",
+    afterPhotoId = "photo-1",
+    selectedSide = CompareSide.After,
+    isLoading = false,
+)
+
+private fun shot(index: Int): PhotoShot = PhotoShot(
+    photoId = "photo-$index",
+    url = "https://example.invalid/photo-$index.jpg",
+    dateIso = if (index == 0) "2026-06-03" else "2026-08-28",
+    dateLabel = if (index == 0) FIRST_SHOT_DATE else LAST_SHOT_DATE,
+)
 
 private fun coachProfile(): ProfileState = ProfileState.initial().copy(
     displayName = "Иван",

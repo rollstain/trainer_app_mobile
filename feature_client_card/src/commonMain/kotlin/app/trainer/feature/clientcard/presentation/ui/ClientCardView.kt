@@ -47,6 +47,7 @@ import app.trainer.strings.client_card_medical_toggle
 import app.trainer.strings.client_card_new_habit_label
 import app.trainer.strings.client_card_notes_section
 import app.trainer.strings.client_card_notes_section_empty
+import app.trainer.strings.client_card_photos_action
 import app.trainer.strings.client_card_pin_action
 import app.trainer.strings.client_card_program_assign
 import app.trainer.strings.client_card_program_change
@@ -232,6 +233,14 @@ private fun CardContent(state: ClientCardState, onEvent: (ClientCardEvent) -> Un
                 photos = checkIn.photos,
                 review = checkIn.review,
                 onReviewClick = { onEvent(ClientCardEvent.OnReviewClicked(checkIn.checkInId)) },
+            )
+        }
+        item(key = "photos-compare") {
+            AppButton(
+                text = stringResource(Res.string.client_card_photos_action),
+                onClick = { onEvent(ClientCardEvent.OnComparePhotosClicked) },
+                tone = ButtonTone.Secondary,
+                size = ButtonSize.Small,
             )
         }
         item(key = "habits-title") { SectionTitle(text = stringResource(Res.string.client_card_habits_section)) }

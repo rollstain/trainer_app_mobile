@@ -411,4 +411,16 @@
     <string name="new_exercise_description_label">How to perform it</string>
     <string name="new_exercise_video_label">Video link</string>
     <string name="exercise_library_video_action">Watch the video</string>
+    <string name="photo_compare_title">Before and after</string>
+    <string name="photo_compare_before">Before</string>
+    <string name="photo_compare_after">After</string>
+    <string name="photo_compare_pick_hint">Pick a side, then a shot from the strip</string>
+    <string name="photo_compare_empty_title">Nothing to compare yet</string>
+    <string name="photo_compare_empty_description">Two shots are needed. Attach photos to your check-ins and they will line up here.</string>
+    <string name="photo_compare_date">%1$d %2$s</string>
+    <string name="photo_compare_date_with_year">%1$d %2$s %3$d</string>
+    <string name="progress_photos_section">Photos</string>
+    <string name="progress_photos_compare_action">Compare</string>
+    <string name="progress_photos_empty">Attach a photo to a check-in and it will show up here</string>
+    <string name="client_card_photos_action">Compare photos</string>
 </resources>

@@ -166,6 +166,8 @@ sealed interface ClientCardEvent {
 
     data class OnReviewClicked(val checkInId: String) : ClientCardEvent
 
+    data object OnComparePhotosClicked : ClientCardEvent
+
     data object OnReviewDismissed : ClientCardEvent
 
     data object OnReviewSaveClicked : ClientCardEvent
@@ -196,4 +198,6 @@ sealed interface ClientCardSideEffect {
     data object ShowNoteArchived : ClientCardSideEffect
 
     data object ClientArchived : ClientCardSideEffect
+
+    data class OpenPhotoCompare(val clientUserId: String) : ClientCardSideEffect
 }

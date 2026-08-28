@@ -34,6 +34,7 @@ import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.getString
 
 private const val CHECK_IN_HISTORY_DAYS = 30
+private const val PHOTO_STRIP_LIMIT = 6
 private const val HABIT_WEEK_DAYS = 7
 private const val MILLIMETERS_IN_CENTIMETER = 10
 private const val SUMMARY_SEPARATOR = " · "
@@ -83,6 +84,9 @@ class ProgressScreenModel(
         when (event) {
             ProgressEvent.OnReloadRequested -> onFetchData()
             ProgressEvent.OnCheckInClicked -> openCheckIn()
+            ProgressEvent.OnComparePhotosClicked -> screenModelScope {
+                postSideEffect(ProgressSideEffect.OpenPhotoCompare)
+            }
             is ProgressEvent.OnMetricSelected -> updateState { it.copy(selectedMetric = event.metric) }
             ProgressEvent.OnHabitAdded -> addHabit()
             is ProgressEvent.OnNewHabitTitleChanged -> updateState { it.copy(newHabitTitle = event.title) }
@@ -102,6 +106,11 @@ class ProgressScreenModel(
         val checkInDateLabel = latestCheckIn?.let { formatDate(it.checkInDate) }.orEmpty()
         val checkInSummary = latestCheckIn?.let { formatSummary(it) }.orEmpty()
         val habitRows = habits.map { toRow(it) }
+        val photos = checkIns
+            .sortedByDescending { it.checkInDate }
+            .flatMap { checkIn -> checkIn.photos }
+            .take(PHOTO_STRIP_LIMIT)
+            .map { photo -> ProgressPhotoRow(photoId = photo.id, url = photo.downloadUrl) }
         updateState { current ->
             current.copy(
                 checkInDateLabel = checkInDateLabel,
@@ -116,6 +125,7 @@ class ProgressScreenModel(
                     .firstOrNull { it == current.selectedMetric }
                     ?: charts.firstOrNull()?.metric,
                 habits = habitRows.toImmutableList(),
+                photos = photos.toImmutableList(),
                 isLoading = false,
                 failure = null,
             )

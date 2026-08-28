@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -21,12 +22,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import app.trainer.base.failure.AppFailureState
 import app.trainer.feature.progress.presentation.progress.mvi.CoachReply
 import app.trainer.feature.progress.presentation.progress.mvi.HabitDay
 import app.trainer.feature.progress.presentation.progress.mvi.HabitRow
 import app.trainer.feature.progress.presentation.progress.mvi.MetricChart
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressEvent
+import app.trainer.feature.progress.presentation.progress.mvi.ProgressPhotoRow
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressState
 import app.trainer.strings.Res
 import app.trainer.strings.progress_add_habit_action
@@ -44,6 +47,9 @@ import app.trainer.strings.progress_dynamics_title
 import app.trainer.strings.progress_habits_empty
 import app.trainer.strings.progress_habits_title
 import app.trainer.strings.progress_new_habit_label
+import app.trainer.strings.progress_photos_compare_action
+import app.trainer.strings.progress_photos_empty
+import app.trainer.strings.progress_photos_section
 import app.trainer.strings.progress_title
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
@@ -51,6 +57,7 @@ import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCard
 import app.trainer.uikit.widgets.AppCardShimmerList
 import app.trainer.uikit.widgets.AppLineChart
+import app.trainer.uikit.widgets.AppPhotoThumb
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTextField
 import app.trainer.uikit.widgets.AppTopBar
@@ -59,8 +66,10 @@ import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
+import kotlinx.collections.immutable.ImmutableList
 import org.jetbrains.compose.resources.stringResource
 
+private val PHOTO_STRIP_THUMB_SIZE = 88.dp
 private const val SHIMMER_CARDS = 3
 private const val SHIMMER_CARD_LINES = 3
 
@@ -101,6 +110,9 @@ private fun ProgressContent(state: ProgressState, onEvent: (ProgressEvent) -> Un
             item(key = "dynamics") {
                 DynamicsCard(charts = state.charts, chart = chart, onEvent = onEvent)
             }
+        }
+        item(key = "photos") {
+            PhotosCard(photos = state.photos, onEvent = onEvent)
         }
         item(key = "habits-title") {
             AppText(
@@ -245,6 +257,43 @@ private fun DynamicsCard(
                 minLabel = chart.minLabel,
                 rangeLabel = chart.rangeLabel,
             )
+        }
+    }
+}
+
+@Composable
+private fun PhotosCard(photos: ImmutableList<ProgressPhotoRow>, onEvent: (ProgressEvent) -> Unit) {
+    AppCard {
+        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
+            AppText(
+                text = stringResource(Res.string.progress_photos_section),
+                style = AppTheme.typography.bodyStrong,
+                color = AppTheme.colors.textPrimary,
+            )
+            if (photos.isEmpty()) {
+                AppText(
+                    text = stringResource(Res.string.progress_photos_empty),
+                    style = AppTheme.typography.caption,
+                    color = AppTheme.colors.textSecondary,
+                )
+            } else {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
+                    items(items = photos, key = { it.photoId }) { photo ->
+                        AppPhotoThumb(
+                            modifier = Modifier.width(PHOTO_STRIP_THUMB_SIZE),
+                            url = photo.url,
+                            cacheKey = photo.photoId,
+                            contentDescription = null,
+                        )
+                    }
+                }
+                AppButton(
+                    text = stringResource(Res.string.progress_photos_compare_action),
+                    onClick = { onEvent(ProgressEvent.OnComparePhotosClicked) },
+                    tone = ButtonTone.Secondary,
+                    size = ButtonSize.Small,
+                )
+            }
         }
     }
 }

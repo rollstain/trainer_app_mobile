@@ -4,6 +4,7 @@ import app.trainer.app.di.sharedModules
 import app.trainer.data.push.NotificationsUtils
 import app.trainer.data.push.RestTimerAlarm
 import app.trainer.database.DatabaseDriverFactory
+import app.trainer.feature.progress.presentation.photos.mvi.PhotoOwner
 import app.trainer.network.impl.NetworkConfig
 import app.trainer.network.impl.SecureSettingsFactory
 import com.russhwolf.settings.Settings
@@ -34,6 +35,7 @@ class KoinGraphTest {
                 String::class,
                 NotificationsUtils::class,
                 RestTimerAlarm::class,
+                PhotoOwner::class,
             )
         )
     }

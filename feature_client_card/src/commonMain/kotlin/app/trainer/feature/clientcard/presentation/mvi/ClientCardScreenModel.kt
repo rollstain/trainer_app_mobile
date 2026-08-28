@@ -93,6 +93,9 @@ class ClientCardScreenModel(
             is ClientCardEvent.OnNewHabitTitleChanged -> updateState { it.copy(newHabitTitle = event.title) }
             ClientCardEvent.OnHabitAdded -> addHabit()
             is ClientCardEvent.OnReviewClicked -> openReview(event.checkInId)
+            ClientCardEvent.OnComparePhotosClicked -> screenModelScope {
+                postSideEffect(ClientCardSideEffect.OpenPhotoCompare(clientUserId = clientUserId))
+            }
             ClientCardEvent.OnReviewDismissed -> updateState { it.copy(reviewEditor = null) }
             ClientCardEvent.OnReviewSaveClicked -> saveReview()
             is ClientCardEvent.OnReviewCommentChanged -> updateState { current ->

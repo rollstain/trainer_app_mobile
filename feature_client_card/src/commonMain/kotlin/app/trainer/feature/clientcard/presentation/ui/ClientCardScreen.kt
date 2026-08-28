@@ -9,6 +9,7 @@ import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.Navigator
 import app.trainer.navigation.Screen
 import app.trainer.navigation.ScreenRequestKey
+import app.trainer.navigation.Screens
 import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
 import app.trainer.strings.Res
@@ -57,5 +58,7 @@ private suspend fun handleSideEffect(
             toastHost.show(getString(Res.string.client_card_archived_message))
             navigator.popWithResult(CLIENT_ARCHIVED_REQUEST, Unit)
         }
+        is ClientCardSideEffect.OpenPhotoCompare ->
+            navigator.push(Screens.PhotoCompare(clientUserId = effect.clientUserId))
     }
 }

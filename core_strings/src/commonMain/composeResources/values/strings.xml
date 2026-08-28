@@ -411,4 +411,16 @@
     <string name="new_exercise_description_label">Техника выполнения</string>
     <string name="new_exercise_video_label">Ссылка на видео</string>
     <string name="exercise_library_video_action">Смотреть видео</string>
+    <string name="photo_compare_title">До и после</string>
+    <string name="photo_compare_before">До</string>
+    <string name="photo_compare_after">После</string>
+    <string name="photo_compare_pick_hint">Выберите сторону, затем снимок из ленты</string>
+    <string name="photo_compare_empty_title">Пока нечего сравнивать</string>
+    <string name="photo_compare_empty_description">Нужно хотя бы два снимка. Прикрепляйте фото к чек-инам — здесь они встанут рядом.</string>
+    <string name="photo_compare_date">%1$d %2$s</string>
+    <string name="photo_compare_date_with_year">%1$d %2$s %3$d</string>
+    <string name="progress_photos_section">Фото</string>
+    <string name="progress_photos_compare_action">Сравнить</string>
+    <string name="progress_photos_empty">Прикрепите фото к чек-ину — они появятся здесь</string>
+    <string name="client_card_photos_action">Сравнить фото</string>
 </resources>
