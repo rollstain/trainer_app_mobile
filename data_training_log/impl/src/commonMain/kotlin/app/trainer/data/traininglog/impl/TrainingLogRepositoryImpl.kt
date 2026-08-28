@@ -4,6 +4,7 @@ import app.trainer.data.traininglog.ClientDiarySummary
 import app.trainer.data.traininglog.Equipment
 import app.trainer.data.traininglog.Exercise
 import app.trainer.data.traininglog.ExerciseKind
+import app.trainer.data.traininglog.ExerciseOwnerKind
 import app.trainer.data.traininglog.MuscleGroup
 import app.trainer.data.traininglog.SaveOutcome
 import app.trainer.data.traininglog.TrainingLogDraft
@@ -40,18 +41,29 @@ class TrainingLogRepositoryImpl(
 
     private val client get() = httpClientProvider.client
 
-    override suspend fun availableExercises(limit: Int?, after: String?): RequestResult<Paged<List<Exercise>>> {
+    override suspend fun availableExercises(
+        limit: Int?,
+        after: String?,
+        search: String?,
+        muscles: List<MuscleGroup>,
+        equipment: List<Equipment>,
+        ownerKind: ExerciseOwnerKind?,
+    ): RequestResult<Paged<List<Exercise>>> {
         val loaded = safePagedRequest<List<ExerciseResponse>> {
             client.get("exercises") {
                 limit?.let { parameter("limit", it) }
                 after?.let { parameter("after", it) }
+                search?.takeIf { it.isNotBlank() }?.let { parameter("search", it.trim()) }
+                muscles.forEach { parameter("muscle", it.name) }
+                equipment.forEach { parameter("equipment", it.name) }
+                ownerKind?.let { parameter("owner", it.name) }
             }
         }
         return when (loaded) {
             is RequestResult.Error -> loaded
             is RequestResult.Success -> RequestResult.Success(
                 Paged(
-                    items = loaded.data.items.mapNotNull(mapper::toExercise),
+                    items = loaded.data.items.orEmpty().mapNotNull(mapper::toExercise),
                     nextCursor = loaded.data.nextCursor,
                 )
             )

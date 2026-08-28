@@ -15,7 +15,14 @@ sealed interface SaveOutcome {
 
 interface TrainingLogRepository : LocalDataCleaner {
 
-    suspend fun availableExercises(limit: Int? = null, after: String? = null): RequestResult<Paged<List<Exercise>>>
+    suspend fun availableExercises(
+        limit: Int? = null,
+        after: String? = null,
+        search: String? = null,
+        muscles: List<MuscleGroup> = emptyList(),
+        equipment: List<Equipment> = emptyList(),
+        ownerKind: ExerciseOwnerKind? = null,
+    ): RequestResult<Paged<List<Exercise>>>
 
     suspend fun coachDiarySummary(from: LocalDate, to: LocalDate): RequestResult<List<ClientDiarySummary>>
 

@@ -5,6 +5,7 @@ import app.trainer.data.traininglog.Exercise
 import app.trainer.data.traininglog.ExerciseKind
 import app.trainer.data.traininglog.ExerciseOwnerKind
 import app.trainer.data.traininglog.TrainingLogRepository
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestResult
 import app.trainer.feature.traininglog.presentation.label
 import app.trainer.media.PickedMedia
@@ -12,11 +13,15 @@ import app.trainer.strings.Res
 import app.trainer.strings.exercise_library_bodyweight_label
 import app.trainer.strings.exercise_library_cardio_label
 import app.trainer.strings.exercise_library_strength_label
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.getString
 
 private const val DETAILS_SEPARATOR = " · "
 private const val PAGE_SIZE = 30
+private const val SEARCH_DEBOUNCE_MILLIS = 300L
 
 class ExerciseLibraryScreenModel(
     private val trainingLogRepository: TrainingLogRepository,
@@ -31,7 +36,7 @@ class ExerciseLibraryScreenModel(
     override fun onFetchData() {
         onFetchDataScope {
             updateState { it.copy(isLoading = true, failure = null) }
-            when (val loaded = trainingLogRepository.availableExercises(limit = PAGE_SIZE, after = null)) {
+            when (val loaded = load(after = null, search = state.search, filter = state.filter)) {
                 is RequestResult.Error -> {
                     updateState { it.copy(isLoading = false, failure = loaded) }
                     postSideEffect(ExerciseLibrarySideEffect.ShowFailure(loaded))
@@ -52,6 +57,22 @@ class ExerciseLibraryScreenModel(
                 postSideEffect(ExerciseLibrarySideEffect.OpenExerciseCreation)
             }
             is ExerciseLibraryEvent.OnArchiveClicked -> archiveExercise(event.exerciseId)
+            is ExerciseLibraryEvent.OnSearchChanged -> searchChanged(event.query)
+            ExerciseLibraryEvent.OnFilterOpened -> updateState { it.copy(draftFilter = it.filter) }
+            ExerciseLibraryEvent.OnFilterDismissed -> updateState { it.copy(draftFilter = null) }
+            ExerciseLibraryEvent.OnFilterCleared -> updateState {
+                it.copy(draftFilter = ExerciseFilter.empty())
+            }
+            ExerciseLibraryEvent.OnFilterApplied -> applyFilter()
+            is ExerciseLibraryEvent.OnMuscleToggled -> updateDraft { draft ->
+                draft.copy(muscles = draft.muscles.toggled(event.muscle))
+            }
+            is ExerciseLibraryEvent.OnEquipmentToggled -> updateDraft { draft ->
+                draft.copy(equipment = draft.equipment.toggled(event.equipment))
+            }
+            is ExerciseLibraryEvent.OnOwnerKindChanged -> updateDraft { draft ->
+                draft.copy(ownerKind = event.ownerKind)
+            }
             is ExerciseLibraryEvent.OnVideoPicked -> uploadVideo(
                 exerciseId = event.exerciseId,
                 video = event.video,
@@ -59,12 +80,54 @@ class ExerciseLibraryScreenModel(
         }
     }
 
+    private suspend fun load(
+        after: String?,
+        search: String,
+        filter: ExerciseFilter,
+    ): RequestResult<Paged<List<Exercise>>> = trainingLogRepository.availableExercises(
+        limit = PAGE_SIZE,
+        after = after,
+        search = search.takeIf { it.isNotBlank() },
+        muscles = filter.muscles,
+        equipment = filter.equipment,
+        ownerKind = filter.ownerKind,
+    )
+
+    private fun searchChanged(query: String) {
+        searchJob?.cancel()
+        updateState { it.copy(search = query) }
+        searchJob = screenModelScope {
+            delay(SEARCH_DEBOUNCE_MILLIS)
+            onFetchData()
+        }
+    }
+
+    private var searchJob: Job? = null
+
+    private fun applyFilter() {
+        screenModelScope { state ->
+            val draft = state.draftFilter ?: return@screenModelScope
+            updateState { it.copy(filter = draft, draftFilter = null) }
+            onFetchData()
+        }
+    }
+
+    private fun updateDraft(change: (ExerciseFilter) -> ExerciseFilter) {
+        updateState { current ->
+            val draft = current.draftFilter ?: ExerciseFilter.empty()
+            current.copy(draftFilter = change(draft))
+        }
+    }
+
+    private fun <T> ImmutableList<T>.toggled(value: T): ImmutableList<T> =
+        if (contains(value)) (this - value).toImmutableList() else (this + value).toImmutableList()
+
     private fun loadMore() {
         screenModelScope { state ->
             val cursor = state.nextCursor ?: return@screenModelScope
             if (state.isLoadingMore) return@screenModelScope
             updateState { it.copy(isLoadingMore = true) }
-            when (val loaded = trainingLogRepository.availableExercises(limit = PAGE_SIZE, after = cursor)) {
+            when (val loaded = load(after = cursor, search = state.search, filter = state.filter)) {
                 is RequestResult.Error -> {
                     updateState { it.copy(isLoadingMore = false) }
                     postSideEffect(ExerciseLibrarySideEffect.ShowFailure(loaded))

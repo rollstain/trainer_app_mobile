@@ -27,6 +27,7 @@ import app.trainer.uikit.resources.ic_close
 import app.trainer.uikit.resources.ic_delete
 import app.trainer.uikit.resources.ic_done_all
 import app.trainer.uikit.resources.ic_error
+import app.trainer.uikit.resources.ic_filter
 import app.trainer.uikit.resources.ic_fitness_center
 import app.trainer.uikit.resources.ic_group
 import app.trainer.uikit.resources.ic_group_filled
@@ -41,6 +42,7 @@ import app.trainer.uikit.resources.ic_more_vert
 import app.trainer.uikit.resources.ic_person
 import app.trainer.uikit.resources.ic_person_filled
 import app.trainer.uikit.resources.ic_schedule
+import app.trainer.uikit.resources.ic_search
 import org.jetbrains.compose.resources.painterResource
 
 enum class IconSize { Small, Medium, Large }
@@ -76,6 +78,10 @@ object AppIcons {
     val exercise: Painter @Composable get() = painterResource(Res.drawable.ic_fitness_center)
 
     val logout: Painter @Composable get() = painterResource(Res.drawable.ic_logout)
+
+    val search: Painter @Composable get() = painterResource(Res.drawable.ic_search)
+
+    val filter: Painter @Composable get() = painterResource(Res.drawable.ic_filter)
 
     @Composable
     fun home(isActive: Boolean): Painter = painterResource(
