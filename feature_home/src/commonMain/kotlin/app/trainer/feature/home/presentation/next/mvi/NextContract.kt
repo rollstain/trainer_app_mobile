@@ -3,7 +3,9 @@ package app.trainer.feature.home.presentation.next.mvi
 import app.trainer.entities.RequestResult
 import app.trainer.uikit.widgets.HabitWeekDay
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 
 sealed interface NextSessionCard {
 
@@ -84,6 +86,8 @@ sealed interface NextDynamics {
     ) : NextDynamics
 }
 
+enum class NextBlock { Session, Planned, Fills, Habits, Dynamics }
+
 data class NextState(
     val clientDisplayName: String,
     val session: NextSessionCard,
@@ -92,6 +96,7 @@ data class NextState(
     val habits: ImmutableList<NextHabitRow>,
     val weekdayLabels: ImmutableList<String>,
     val dynamics: NextDynamics,
+    val failedBlocks: ImmutableSet<NextBlock>,
     val isLoading: Boolean,
     val failure: RequestResult.Error?,
 ) {
@@ -106,6 +111,7 @@ data class NextState(
             habits = persistentListOf(),
             weekdayLabels = persistentListOf(),
             dynamics = NextDynamics.NoCheckIns,
+            failedBlocks = persistentSetOf(),
             isLoading = true,
             failure = null,
         )
@@ -115,6 +121,8 @@ data class NextState(
 sealed interface NextEvent {
 
     data object OnRetryClicked : NextEvent
+
+    data class OnBlockRetryClicked(val block: NextBlock) : NextEvent
 
     data object OnProfileClicked : NextEvent
 

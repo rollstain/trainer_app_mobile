@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +19,7 @@ import app.trainer.base.failure.AppFailureState
 import app.trainer.feature.home.presentation.next.mvi.FillKind
 import app.trainer.feature.home.presentation.next.mvi.FillRow
 import app.trainer.feature.home.presentation.next.mvi.FillStatus
+import app.trainer.feature.home.presentation.next.mvi.NextBlock
 import app.trainer.feature.home.presentation.next.mvi.NextDynamics
 import app.trainer.feature.home.presentation.next.mvi.NextEvent
 import app.trainer.feature.home.presentation.next.mvi.NextHabitRow
@@ -49,9 +51,12 @@ import app.trainer.strings.next_session_overline
 import app.trainer.strings.next_title
 import app.trainer.strings.next_write_action
 import app.trainer.strings.next_write_coach_action
+import app.trainer.strings.today_block_failed
+import app.trainer.strings.today_block_retry
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppAvatar
+import app.trainer.uikit.widgets.AppBlockFallback
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCard
 import app.trainer.uikit.widgets.AppCardShimmerList
@@ -110,46 +115,37 @@ private fun NextContent(state: NextState, onEvent: (NextEvent) -> Unit) {
     ) {
         item(key = "session") {
             Box(modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16, vertical = AppTheme.spacing.dp12)) {
-                SessionCard(session = state.session, onEvent = onEvent)
+                if (state.failedBlocks.contains(NextBlock.Session)) {
+                    BlockFallback(block = NextBlock.Session, onEvent = onEvent)
+                } else {
+                    SessionCard(session = state.session, onEvent = onEvent)
+                }
             }
         }
-        when (val planned = state.planned) {
-            PlannedToday.None -> Unit
-            is PlannedToday.Workout -> {
-                item(key = "planned-title") {
-                    AppSectionHeader(title = stringResource(Res.string.next_planned_title))
-                }
-                item(key = "planned") {
-                    Box(modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16)) {
-                        PlannedCard(planned = planned)
+        plannedBlock(state = state, onEvent = onEvent)
+        if (state.session !is NextSessionCard.NoCoach) {
+            item(key = "fills") {
+                Box(modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16)) {
+                    if (state.failedBlocks.contains(NextBlock.Fills)) {
+                        BlockFallback(block = NextBlock.Fills, onEvent = onEvent)
+                    } else {
+                        FillsCard(fills = state.fills, onEvent = onEvent)
                     }
                 }
             }
         }
-        if (state.session !is NextSessionCard.NoCoach) {
-            item(key = "fills") {
-                Box(modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16)) {
-                    FillsCard(fills = state.fills, onEvent = onEvent)
-                }
-            }
-        }
-        if (state.habits.isNotEmpty()) {
-            item(key = "habits-title") {
-                AppSectionHeader(title = stringResource(Res.string.next_habits_title))
-            }
-            item(key = "habits") {
-                Box(modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16)) {
-                    HabitsCard(state = state)
-                }
-            }
-        }
+        habitsBlock(state = state, onEvent = onEvent)
         if (state.session !is NextSessionCard.NoCoach) {
             item(key = "dynamics-title") {
                 AppSectionHeader(title = stringResource(Res.string.next_dynamics_title))
             }
             item(key = "dynamics") {
                 Box(modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16)) {
-                    DynamicsCard(dynamics = state.dynamics, onEvent = onEvent)
+                    if (state.failedBlocks.contains(NextBlock.Dynamics)) {
+                        BlockFallback(block = NextBlock.Dynamics, onEvent = onEvent)
+                    } else {
+                        DynamicsCard(dynamics = state.dynamics, onEvent = onEvent)
+                    }
                 }
             }
         }
@@ -500,4 +496,48 @@ private fun DynamicsCard(dynamics: NextDynamics, onEvent: (NextEvent) -> Unit) {
             }
         }
     }
+}
+
+private fun LazyListScope.plannedBlock(state: NextState, onEvent: (NextEvent) -> Unit) {
+    val hasFailed = state.failedBlocks.contains(NextBlock.Planned)
+    val planned = state.planned
+    if (!hasFailed && planned !is PlannedToday.Workout) return
+    item(key = "planned-title") {
+        AppSectionHeader(title = stringResource(Res.string.next_planned_title))
+    }
+    item(key = "planned") {
+        Box(modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16)) {
+            if (hasFailed) {
+                BlockFallback(block = NextBlock.Planned, onEvent = onEvent)
+            } else if (planned is PlannedToday.Workout) {
+                PlannedCard(planned = planned)
+            }
+        }
+    }
+}
+
+private fun LazyListScope.habitsBlock(state: NextState, onEvent: (NextEvent) -> Unit) {
+    val hasFailed = state.failedBlocks.contains(NextBlock.Habits)
+    if (!hasFailed && state.habits.isEmpty()) return
+    item(key = "habits-title") {
+        AppSectionHeader(title = stringResource(Res.string.next_habits_title))
+    }
+    item(key = "habits") {
+        Box(modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16)) {
+            if (hasFailed) {
+                BlockFallback(block = NextBlock.Habits, onEvent = onEvent)
+            } else {
+                HabitsCard(state = state)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BlockFallback(block: NextBlock, onEvent: (NextEvent) -> Unit) {
+    AppBlockFallback(
+        message = stringResource(Res.string.today_block_failed),
+        retryText = stringResource(Res.string.today_block_retry),
+        onRetry = { onEvent(NextEvent.OnBlockRetryClicked(block)) },
+    )
 }

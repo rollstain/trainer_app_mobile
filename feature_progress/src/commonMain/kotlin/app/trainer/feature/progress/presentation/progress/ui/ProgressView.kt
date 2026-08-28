@@ -28,6 +28,7 @@ import app.trainer.base.metrics.MetricDynamicsCard
 import app.trainer.feature.progress.presentation.progress.mvi.CoachReply
 import app.trainer.feature.progress.presentation.progress.mvi.HabitDay
 import app.trainer.feature.progress.presentation.progress.mvi.HabitRow
+import app.trainer.feature.progress.presentation.progress.mvi.ProgressBlock
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressEvent
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressPhotoRow
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressState
@@ -51,8 +52,11 @@ import app.trainer.strings.progress_photos_compare_action
 import app.trainer.strings.progress_photos_empty
 import app.trainer.strings.progress_photos_section
 import app.trainer.strings.progress_title
+import app.trainer.strings.today_block_failed
+import app.trainer.strings.today_block_retry
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
+import app.trainer.uikit.widgets.AppBlockFallback
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCard
 import app.trainer.uikit.widgets.AppCardShimmerList
@@ -104,7 +108,11 @@ private fun ProgressContent(state: ProgressState, onEvent: (ProgressEvent) -> Un
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
     ) {
         item(key = "check-in") {
-            CheckInCard(state = state, onEvent = onEvent)
+            if (state.failedBlocks.contains(ProgressBlock.CheckIn)) {
+                BlockFallback(block = ProgressBlock.CheckIn, onEvent = onEvent)
+            } else {
+                CheckInCard(state = state, onEvent = onEvent)
+            }
         }
         state.selectedChart?.let { chart ->
             item(key = "dynamics") {
@@ -134,7 +142,11 @@ private fun ProgressContent(state: ProgressState, onEvent: (ProgressEvent) -> Un
                 color = AppTheme.colors.textPrimary,
             )
         }
-        if (state.habits.isEmpty()) {
+        if (state.failedBlocks.contains(ProgressBlock.Habits)) {
+            item(key = "habits-failed") {
+                BlockFallback(block = ProgressBlock.Habits, onEvent = onEvent)
+            }
+        } else if (state.habits.isEmpty()) {
             item(key = "habits-empty") {
                 AppText(
                     text = stringResource(Res.string.progress_habits_empty),
@@ -381,4 +393,13 @@ private fun dayStateDescription(day: HabitDay): String = when {
     day.isFuture -> stringResource(Res.string.progress_day_future_description)
     day.isDone -> stringResource(Res.string.progress_day_done_description)
     else -> stringResource(Res.string.progress_day_not_done_description)
+}
+
+@Composable
+private fun BlockFallback(block: ProgressBlock, onEvent: (ProgressEvent) -> Unit) {
+    AppBlockFallback(
+        message = stringResource(Res.string.today_block_failed),
+        retryText = stringResource(Res.string.today_block_retry),
+        onRetry = { onEvent(ProgressEvent.OnBlockRetryClicked(block)) },
+    )
 }

@@ -35,6 +35,7 @@ import app.trainer.strings.progress_weight_value
 import app.trainer.uikit.widgets.HabitWeekDay
 import kotlin.time.Clock
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -82,6 +83,7 @@ class NextScreenModel(
     override fun dispatch(event: NextEvent) {
         when (event) {
             NextEvent.OnRetryClicked -> onFetchData()
+            is NextEvent.OnBlockRetryClicked -> screenModelScope { load(showsShimmer = false) }
             NextEvent.OnProfileClicked -> post(NextSideEffect.OpenProfile)
             NextEvent.OnBookingClicked -> post(NextSideEffect.OpenBooking)
             NextEvent.OnChatClicked -> post(NextSideEffect.OpenChat)
@@ -106,8 +108,8 @@ class NextScreenModel(
 
     private fun todayIn(zone: TimeZone): LocalDate = Clock.System.now().toLocalDateTime(zone).date
 
-    private suspend fun load() {
-        updateState { it.copy(isLoading = true, failure = null) }
+    private suspend fun load(showsShimmer: Boolean = true) {
+        updateState { it.copy(isLoading = showsShimmer, failure = null) }
 
         val profile = profileRepository.me()
         if (profile is RequestResult.Error) return showFailure(profile)
@@ -134,51 +136,50 @@ class NextScreenModel(
                 zone = zone,
             ),
         )
-        if (schedule is RequestResult.Error) return showFailure(schedule)
-
         val entries = trainingLogRepository.ownEntries(
             from = today.minus(DatePeriod(days = DIARY_HISTORY_DAYS - 1)),
             to = today,
         )
-        if (entries is RequestResult.Error) return showFailure(entries)
-
         val checkIns = checkInRepository.ownCheckIns(
             from = today.minus(DatePeriod(days = CHECK_IN_HISTORY_DAYS - 1)),
             to = today,
         )
-        if (checkIns is RequestResult.Error) return showFailure(checkIns)
-
         val planned = programRepository.plannedWorkouts(from = today, to = today)
-        if (planned is RequestResult.Error) return showFailure(planned)
-
         val weekEnd = today.plus(DatePeriod(days = HABIT_WEEK_DAYS - 1))
         val habits = habitsRepository.ownHabits(from = weeks.weekStartOf(today), to = weekEnd)
-        if (habits is RequestResult.Error) return showFailure(habits)
+
+        val checkInsFailed = checkIns is RequestResult.Error
+        val failedBlocks = buildSet {
+            if (schedule is RequestResult.Error) add(NextBlock.Session)
+            if (planned is RequestResult.Error) add(NextBlock.Planned)
+            if (entries is RequestResult.Error || checkInsFailed) add(NextBlock.Fills)
+            if (habits is RequestResult.Error) add(NextBlock.Habits)
+            if (checkInsFailed) add(NextBlock.Dynamics)
+        }
 
         show(
-            coach = coach,
-            zone = zone,
-            today = today,
-            slots = (schedule as RequestResult.Success).data.slots,
-            lastEntryDate = (entries as RequestResult.Success).data.maxOfOrNull { it.entryDate },
-            checkIns = (checkIns as RequestResult.Success).data.sortedBy { it.checkInDate },
-            habits = (habits as RequestResult.Success).data,
-            planned = (planned as RequestResult.Success).data.firstOrNull(),
+            NextSources(
+                coach = coach,
+                zone = zone,
+                today = today,
+                slots = schedule.itemsOrEmpty { it.slots },
+                lastEntryDate = entries.itemsOrEmpty { it }.maxOfOrNull { it.entryDate },
+                checkIns = checkIns.itemsOrEmpty { it }.sortedBy { it.checkInDate },
+                habits = habits.itemsOrEmpty { it },
+                planned = planned.itemsOrEmpty { it }.firstOrNull(),
+                failedBlocks = failedBlocks,
+            )
         )
     }
 
-    private suspend fun show(
-        coach: CoachSummary,
-        zone: TimeZone,
-        today: LocalDate,
-        slots: List<ClientSlot>,
-        lastEntryDate: LocalDate?,
-        checkIns: List<CheckIn>,
-        habits: List<Habit>,
-        planned: PlannedWorkout?,
-    ) {
+    private suspend fun show(sources: NextSources) {
+        val coach = sources.coach
+        val zone = sources.zone
+        val today = sources.today
+        val checkIns = sources.checkIns
+        val habits = sources.habits
         val now = Clock.System.now()
-        val upcoming = slots.filter { it.startsAt >= now }.sortedBy { it.startsAt }
+        val upcoming = sources.slots.filter { it.startsAt >= now }.sortedBy { it.startsAt }
         val booked = upcoming.firstOrNull { it.isBookedByMe }
         val freeSlots = upcoming.filter { it.isAvailable && !it.isBookedByMe }
 
@@ -209,7 +210,7 @@ class NextScreenModel(
 
         val fills = fillRowsOf(
             today = today,
-            lastEntryDate = lastEntryDate,
+            lastEntryDate = sources.lastEntryDate,
             lastCheckInDate = checkIns.lastOrNull()?.checkInDate,
         ).toImmutableList()
         val habitRows = habits
@@ -217,7 +218,7 @@ class NextScreenModel(
             .toImmutableList()
         val weekdayLabels = weekDates.map { weekdayShortOf(it) }.toImmutableList()
         val dynamics = dynamicsOf(checkIns = checkIns)
-        val plannedToday = plannedTodayOf(planned)
+        val plannedToday = plannedTodayOf(sources.planned)
 
         updateState { current ->
             current.copy(
@@ -227,6 +228,7 @@ class NextScreenModel(
                 habits = habitRows,
                 weekdayLabels = weekdayLabels,
                 dynamics = dynamics,
+                failedBlocks = sources.failedBlocks.toImmutableSet(),
                 isLoading = false,
                 failure = null,
             )
@@ -354,4 +356,21 @@ class NextScreenModel(
         updateState { it.copy(isLoading = false, failure = failure) }
         postSideEffect(NextSideEffect.ShowFailure(failure))
     }
+}
+
+private data class NextSources(
+    val coach: CoachSummary,
+    val zone: TimeZone,
+    val today: LocalDate,
+    val slots: List<ClientSlot>,
+    val lastEntryDate: LocalDate?,
+    val checkIns: List<CheckIn>,
+    val habits: List<Habit>,
+    val planned: PlannedWorkout?,
+    val failedBlocks: Set<NextBlock>,
+)
+
+private fun <T, R> RequestResult<T>.itemsOrEmpty(select: (T) -> List<R>): List<R> = when (this) {
+    is RequestResult.Success -> select(data)
+    is RequestResult.Error -> emptyList()
 }

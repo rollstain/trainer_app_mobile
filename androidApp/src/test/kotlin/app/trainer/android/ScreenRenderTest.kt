@@ -33,6 +33,7 @@ import app.trainer.feature.clientcard.presentation.ui.ClientCardView
 import app.trainer.feature.home.presentation.next.mvi.FillKind
 import app.trainer.feature.home.presentation.next.mvi.FillRow
 import app.trainer.feature.home.presentation.next.mvi.FillStatus
+import app.trainer.feature.home.presentation.next.mvi.NextBlock
 import app.trainer.feature.home.presentation.next.mvi.NextDynamics
 import app.trainer.feature.home.presentation.next.mvi.NextHabitRow
 import app.trainer.feature.home.presentation.next.mvi.NextSessionCard
@@ -64,6 +65,7 @@ import app.trainer.feature.progress.presentation.photos.mvi.PhotoShot
 import app.trainer.feature.progress.presentation.photos.ui.PhotoCompareView
 import app.trainer.feature.progress.presentation.progress.mvi.HabitDay
 import app.trainer.feature.progress.presentation.progress.mvi.HabitRow
+import app.trainer.feature.progress.presentation.progress.mvi.ProgressBlock
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressPhotoRow
 import app.trainer.feature.progress.presentation.progress.mvi.ProgressState
 import app.trainer.feature.progress.presentation.progress.ui.ProgressView
@@ -115,6 +117,8 @@ private const val REMINDER_HOUR = 10
 private const val REMINDERS_TITLE = "Client reminders"
 private const val DEVICE_CURRENT = "THIS DEVICE"
 private const val BLOCK_FAILED = "Could not load this"
+private const val NEXT_HABITS_TITLE = "Habits"
+private const val PROGRESS_HABITS_TITLE = "Habits"
 private const val NO_COACH_TITLE = "One step left: reach your coach"
 private const val NO_COACH_KEEPS_DATA = "Your account data stays here — come back when you get a code."
 private const val NO_COACH_SIGN_OUT = "Sign out"
@@ -396,6 +400,34 @@ class ScreenRenderTest {
         compose.onNodeWithText(REMINDERS_TITLE).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(DIARY_REMINDER_TITLE).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(REMINDER_HOUR_LABEL).assertExists()
+    }
+
+    @Test
+    fun `on next a failed block keeps the rest of the screen alive`() {
+        compose.setContent {
+            TestTheme {
+                NextView(state = nextWithFailedHabits(), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(BLOCK_FAILED).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(NEXT_HABITS_TITLE).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `on progress a failed block does not replace the whole screen`() {
+        compose.setContent {
+            TestTheme {
+                ProgressView(state = progressWithFailedCheckIn(), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(BLOCK_FAILED).assertIsDisplayed()
+        compose.onNodeWithText(PROGRESS_HABITS_TITLE).performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -723,6 +755,18 @@ private fun coachProfile(): ProfileState = ProfileState.initial().copy(
 )
 
 private const val COACH_NAME = "Dmitry Rogov"
+
+private fun nextWithFailedHabits(): NextState = NextState.initial().copy(
+    isLoading = false,
+    clientDisplayName = "Anna",
+    session = NextSessionCard.NoSlots,
+    failedBlocks = persistentSetOf(NextBlock.Habits),
+)
+
+private fun progressWithFailedCheckIn(): ProgressState = ProgressState.initial().copy(
+    isLoading = false,
+    failedBlocks = persistentSetOf(ProgressBlock.CheckIn),
+)
 
 private fun groupSession(): GroupSessionState = GroupSessionState.initial().copy(
     isLoading = false,

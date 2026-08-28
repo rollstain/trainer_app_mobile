@@ -28,6 +28,7 @@ import app.trainer.strings.progress_weight_value
 import app.trainer.strings.progress_wellbeing_title
 import kotlin.time.Clock
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -57,31 +58,35 @@ class ProgressScreenModel(
     }
 
     override fun onFetchData() {
-        onFetchDataScope {
-            updateState { it.copy(isLoading = true, failure = null) }
-            val checkIns = checkInRepository.ownCheckIns(
-                from = today.minus(DatePeriod(days = CHECK_IN_HISTORY_DAYS)),
-                to = today,
-            )
-            if (checkIns is RequestResult.Error) {
-                showFailure(checkIns)
-                return@onFetchDataScope
-            }
-            val habits = habitsRepository.ownHabits(from = weekStart(), to = weekStart().plus(weekLength()))
-            if (habits is RequestResult.Error) {
-                showFailure(habits)
-                return@onFetchDataScope
-            }
-            showLoaded(
-                checkIns = (checkIns as RequestResult.Success).data,
-                habits = (habits as RequestResult.Success).data,
-            )
+        onFetchDataScope { load(showsShimmer = true) }
+    }
+
+    private suspend fun load(showsShimmer: Boolean) {
+        updateState { it.copy(isLoading = showsShimmer, failure = null) }
+        val checkIns = checkInRepository.ownCheckIns(
+            from = today.minus(DatePeriod(days = CHECK_IN_HISTORY_DAYS)),
+            to = today,
+        )
+        val habits = habitsRepository.ownHabits(from = weekStart(), to = weekStart().plus(weekLength()))
+        if (checkIns is RequestResult.Error && habits is RequestResult.Error) {
+            showFailure(checkIns)
+            return
         }
+        val failedBlocks = buildSet {
+            if (checkIns is RequestResult.Error) add(ProgressBlock.CheckIn)
+            if (habits is RequestResult.Error) add(ProgressBlock.Habits)
+        }
+        showLoaded(
+            checkIns = checkIns.itemsOrEmpty(),
+            habits = habits.itemsOrEmpty(),
+            failedBlocks = failedBlocks,
+        )
     }
 
     override fun dispatch(event: ProgressEvent) {
         when (event) {
             ProgressEvent.OnReloadRequested -> onFetchData()
+            is ProgressEvent.OnBlockRetryClicked -> screenModelScope { load(showsShimmer = false) }
             ProgressEvent.OnCheckInClicked -> openCheckIn()
             ProgressEvent.OnComparePhotosClicked -> screenModelScope {
                 postSideEffect(ProgressSideEffect.OpenPhotoCompare)
@@ -102,7 +107,11 @@ class ProgressScreenModel(
         postSideEffect(ProgressSideEffect.ShowFailure(failure))
     }
 
-    private suspend fun showLoaded(checkIns: List<CheckIn>, habits: List<Habit>) {
+    private suspend fun showLoaded(
+        checkIns: List<CheckIn>,
+        habits: List<Habit>,
+        failedBlocks: Set<ProgressBlock>,
+    ) {
         val latestCheckIn = checkIns.firstOrNull()
         val charts = chartsOf(checkIns)
         val checkInDateLabel = latestCheckIn?.let { formatDate(it.checkInDate) }.orEmpty()
@@ -128,6 +137,7 @@ class ProgressScreenModel(
                     ?: charts.firstOrNull()?.metric,
                 habits = habitRows.toImmutableList(),
                 photos = photos.toImmutableList(),
+                failedBlocks = failedBlocks.toImmutableSet(),
                 isLoading = false,
                 failure = null,
             )
@@ -298,4 +308,9 @@ class ProgressScreenModel(
         val month = monthGenitiveOf(date)
         return "${date.day} $month"
     }
+}
+
+private fun <T> RequestResult<List<T>>.itemsOrEmpty(): List<T> = when (this) {
+    is RequestResult.Success -> data
+    is RequestResult.Error -> emptyList()
 }

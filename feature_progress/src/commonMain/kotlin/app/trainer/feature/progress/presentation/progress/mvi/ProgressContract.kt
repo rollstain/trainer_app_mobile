@@ -4,7 +4,9 @@ import app.trainer.base.metrics.MetricChart
 import app.trainer.base.metrics.ProgressMetric
 import app.trainer.entities.RequestResult
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentSetOf
 
 data class HabitDay(
     val dateIso: String,
@@ -34,6 +36,8 @@ data class ProgressPhotoRow(
     val url: String,
 )
 
+enum class ProgressBlock { CheckIn, Habits }
+
 data class ProgressState(
     val checkInDateLabel: String,
     val checkInSummary: String,
@@ -44,6 +48,7 @@ data class ProgressState(
     val habits: ImmutableList<HabitRow>,
     val photos: ImmutableList<ProgressPhotoRow>,
     val newHabitTitle: String,
+    val failedBlocks: ImmutableSet<ProgressBlock>,
     val isLoading: Boolean,
     val failure: RequestResult.Error?,
 ) {
@@ -66,6 +71,7 @@ data class ProgressState(
             habits = persistentListOf(),
             photos = persistentListOf(),
             newHabitTitle = "",
+            failedBlocks = persistentSetOf(),
             isLoading = true,
             failure = null,
         )
@@ -75,6 +81,8 @@ data class ProgressState(
 sealed interface ProgressEvent {
 
     data object OnReloadRequested : ProgressEvent
+
+    data class OnBlockRetryClicked(val block: ProgressBlock) : ProgressEvent
 
     data object OnCheckInClicked : ProgressEvent
 
