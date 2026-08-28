@@ -59,6 +59,7 @@ import app.trainer.feature.schedule.presentation.client.ui.ClientScheduleView
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleState
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachSlotRow
 import app.trainer.feature.schedule.presentation.coach.mvi.ScheduleDay
+import app.trainer.feature.schedule.presentation.coach.mvi.SlotParticipantRow
 import app.trainer.feature.schedule.presentation.coach.ui.CoachScheduleView
 import app.trainer.feature.traininglog.presentation.editor.mvi.PlannedForDay
 import app.trainer.feature.traininglog.presentation.editor.mvi.TrainingLogEditorState
@@ -94,6 +95,8 @@ private const val REMINDERS_TITLE = "Client reminders"
 private const val COMPARE_BEFORE = "Before"
 private const val COMPARE_AFTER = "After"
 private const val GROUP_SEATS_LABEL = "3 of 8"
+private const val GROUP_CAPACITY = 8
+private const val PERSONAL_SEATS = 1
 private const val GROUP_PARTICIPANTS = "Анна, Мария, Пётр"
 private const val GROUP_FREE_SEATS = "5 of 8 seats free"
 private const val CLIENT_WEIGHT_LATEST = "82,4 kg"
@@ -646,6 +649,11 @@ private fun slotAt(
         hasPendingChangeRequest = false,
         isGroup = seats is SlotSeats.Group,
         hasParticipants = client != null || seats is SlotSeats.Group,
+        capacity = (seats as? SlotSeats.Group)?.capacity ?: PERSONAL_SEATS,
+        takenSeats = if (client == null && seats is SlotSeats.Personal) 0 else 1,
+        participants = client
+            ?.let { persistentListOf(SlotParticipantRow(clientUserId = "client-1", displayName = it)) }
+            ?: persistentListOf(),
         seatsLabel = (seats as? SlotSeats.Group)?.label.orEmpty(),
         participantNames = (seats as? SlotSeats.Group)?.names.orEmpty(),
     )
@@ -654,7 +662,7 @@ private sealed interface SlotSeats {
 
     data object Personal : SlotSeats
 
-    data class Group(val label: String, val names: String) : SlotSeats
+    data class Group(val label: String, val names: String, val capacity: Int = GROUP_CAPACITY) : SlotSeats
 }
 
 private fun clientCardWithDynamics(): ClientCardState = ClientCardState.initial(clientUserId = "client-1").copy(

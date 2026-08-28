@@ -26,6 +26,7 @@ import app.trainer.base.failure.AppFailureState
 import app.trainer.data.schedule.SlotChangeKind
 import app.trainer.data.schedule.SlotStatus
 import app.trainer.feature.schedule.presentation.coach.mvi.ChangeRequestRow
+import app.trainer.feature.schedule.presentation.coach.mvi.ClientPicker
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleEvent
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachScheduleState
 import app.trainer.feature.schedule.presentation.coach.mvi.CoachSlotRow
@@ -34,6 +35,10 @@ import app.trainer.feature.schedule.presentation.coach.mvi.SlotActions
 import app.trainer.feature.schedule.presentation.coach.mvi.SlotActionsKind
 import app.trainer.strings.Res
 import app.trainer.strings.coach_schedule_add_slot_action
+import app.trainer.strings.coach_schedule_assign_action
+import app.trainer.strings.coach_schedule_assign_empty
+import app.trainer.strings.coach_schedule_assign_loading
+import app.trainer.strings.coach_schedule_assign_title
 import app.trainer.strings.coach_schedule_cancel_session_action
 import app.trainer.strings.coach_schedule_cancel_slot_action
 import app.trainer.strings.coach_schedule_complete_action
@@ -43,6 +48,7 @@ import app.trainer.strings.coach_schedule_day_summary_busy
 import app.trainer.strings.coach_schedule_day_summary_free
 import app.trainer.strings.coach_schedule_empty_description
 import app.trainer.strings.coach_schedule_next_week_action
+import app.trainer.strings.coach_schedule_remove_participant
 import app.trainer.strings.coach_schedule_requests_title
 import app.trainer.strings.coach_schedule_slot_actions_dismiss
 import app.trainer.strings.coach_schedule_today_mark
@@ -132,8 +138,47 @@ fun CoachScheduleView(
             }
         }
         state.slotActions?.let { actions ->
-            SlotActionsSheet(actions = actions, onEvent = onEvent)
+            val picker = actions.picker
+            if (picker == null) {
+                SlotActionsSheet(actions = actions, onEvent = onEvent)
+            } else {
+                ClientPickerSheet(picker = picker, onEvent = onEvent)
+            }
         }
+    }
+}
+
+@Composable
+private fun ClientPickerSheet(picker: ClientPicker, onEvent: (CoachScheduleEvent) -> Unit) {
+    AppBottomSheetContainer(title = stringResource(Res.string.coach_schedule_assign_title)) {
+        when {
+            picker.isLoading -> AppText(
+                text = stringResource(Res.string.coach_schedule_assign_loading),
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.textSecondary,
+            )
+            picker.clients.isEmpty() -> AppText(
+                text = stringResource(Res.string.coach_schedule_assign_empty),
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.textSecondary,
+            )
+            else -> picker.clients.forEach { client ->
+                AppButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = client.displayName,
+                    onClick = { onEvent(CoachScheduleEvent.OnClientPicked(client.clientUserId)) },
+                    tone = ButtonTone.Secondary,
+                    size = ButtonSize.Large,
+                )
+            }
+        }
+        AppButton(
+            modifier = Modifier.fillMaxWidth(),
+            text = stringResource(Res.string.coach_schedule_slot_actions_dismiss),
+            onClick = { onEvent(CoachScheduleEvent.OnClientPickerDismissed) },
+            tone = ButtonTone.Text,
+            size = ButtonSize.Large,
+        )
     }
 }
 
@@ -141,6 +186,26 @@ fun CoachScheduleView(
 private fun SlotActionsSheet(actions: SlotActions, onEvent: (CoachScheduleEvent) -> Unit) {
     val buttonState = if (actions.isResolving) ButtonState.Loading else ButtonState.Idle
     AppBottomSheetContainer(title = actions.title) {
+        actions.participants.forEach { participant ->
+            AppButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = stringResource(Res.string.coach_schedule_remove_participant, participant.displayName),
+                onClick = { onEvent(CoachScheduleEvent.OnParticipantRemoved(participant.clientUserId)) },
+                tone = ButtonTone.Secondary,
+                size = ButtonSize.Large,
+                state = buttonState,
+            )
+        }
+        if (actions.hasFreeSeats) {
+            AppButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = stringResource(Res.string.coach_schedule_assign_action),
+                onClick = { onEvent(CoachScheduleEvent.OnAssignClientClicked) },
+                tone = ButtonTone.Secondary,
+                size = ButtonSize.Large,
+                state = buttonState,
+            )
+        }
         when (actions.kind) {
             SlotActionsKind.Booked -> AppButton(
                 modifier = Modifier.fillMaxWidth(),

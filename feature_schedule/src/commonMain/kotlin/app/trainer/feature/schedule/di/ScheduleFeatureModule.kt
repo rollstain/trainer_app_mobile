@@ -47,6 +47,7 @@ class ScheduleFeatureModule {
         viewModel {
             CoachScheduleScreenModel(
                 scheduleRepository = get(),
+                clientsRepository = get(),
                 profileRepository = get(),
                 weeks = get(),
             )

@@ -361,6 +361,11 @@
     <string name="client_card_archived_message">Client unlinked</string>
     <string name="coach_schedule_complete_action">Mark as done</string>
     <string name="coach_schedule_cancel_session_action">Cancel the session</string>
+    <string name="coach_schedule_assign_action">Sign up a client</string>
+    <string name="coach_schedule_assign_title">Who joins</string>
+    <string name="coach_schedule_assign_loading">Loading the list…</string>
+    <string name="coach_schedule_assign_empty">All your clients are already signed up</string>
+    <string name="coach_schedule_remove_participant">Remove from the session: %1$s</string>
     <string name="coach_schedule_cancel_slot_action">Remove the slot</string>
     <string name="coach_schedule_slot_actions_dismiss">Close</string>
     <string name="programs_title">Programs</string>

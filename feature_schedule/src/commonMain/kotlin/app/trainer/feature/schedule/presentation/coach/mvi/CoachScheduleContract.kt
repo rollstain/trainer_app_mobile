@@ -20,6 +20,9 @@ data class CoachSlotRow(
     val hasParticipants: Boolean,
     val seatsLabel: String,
     val participantNames: String,
+    val capacity: Int,
+    val takenSeats: Int,
+    val participants: ImmutableList<SlotParticipantRow>,
 )
 
 data class ScheduleDay(
@@ -41,11 +44,29 @@ data class ChangeRequestRow(
 
 enum class SlotActionsKind { Booked, Free }
 
+data class SlotParticipantRow(
+    val clientUserId: String,
+    val displayName: String,
+)
+
+data class ClientPickRow(
+    val clientUserId: String,
+    val displayName: String,
+)
+
+data class ClientPicker(
+    val clients: ImmutableList<ClientPickRow>,
+    val isLoading: Boolean,
+)
+
 data class SlotActions(
     val slotId: String,
     val title: String,
     val kind: SlotActionsKind,
     val isResolving: Boolean,
+    val hasFreeSeats: Boolean,
+    val participants: ImmutableList<SlotParticipantRow>,
+    val picker: ClientPicker?,
 )
 
 data class CoachScheduleState(
@@ -89,6 +110,14 @@ sealed interface CoachScheduleEvent {
     data class OnSlotClicked(val slotId: String) : CoachScheduleEvent
 
     data object OnSlotActionsDismissed : CoachScheduleEvent
+
+    data object OnAssignClientClicked : CoachScheduleEvent
+
+    data class OnClientPicked(val clientUserId: String) : CoachScheduleEvent
+
+    data object OnClientPickerDismissed : CoachScheduleEvent
+
+    data class OnParticipantRemoved(val clientUserId: String) : CoachScheduleEvent
 
     data class OnCancelSlotClicked(val slotId: String) : CoachScheduleEvent
 

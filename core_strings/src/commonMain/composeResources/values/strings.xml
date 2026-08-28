@@ -361,6 +361,11 @@
     <string name="client_card_archived_message">Подопечный отвязан</string>
     <string name="coach_schedule_complete_action">Отметить проведённой</string>
     <string name="coach_schedule_cancel_session_action">Отменить занятие</string>
+    <string name="coach_schedule_assign_action">Записать подопечного</string>
+    <string name="coach_schedule_assign_title">Кого записать</string>
+    <string name="coach_schedule_assign_loading">Загружаем список…</string>
+    <string name="coach_schedule_assign_empty">Все ваши подопечные уже записаны</string>
+    <string name="coach_schedule_remove_participant">Снять с занятия: %1$s</string>
     <string name="coach_schedule_cancel_slot_action">Убрать слот</string>
     <string name="coach_schedule_slot_actions_dismiss">Закрыть</string>
     <string name="programs_title">Программы</string>

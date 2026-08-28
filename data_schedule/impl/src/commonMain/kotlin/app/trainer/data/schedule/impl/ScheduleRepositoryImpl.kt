@@ -118,6 +118,13 @@ class ScheduleRepositoryImpl(
         return coachSlotOrError(assigned)
     }
 
+    override suspend fun removeParticipant(slotId: String, clientUserId: String): RequestResult<CoachSlot> {
+        val removed = safeRequest<CoachSlotResponse> {
+            client.delete("schedule/slots/$slotId/participants/$clientUserId")
+        }
+        return coachSlotOrError(removed)
+    }
+
     override suspend fun cancelSlot(slotId: String): RequestResult<CoachSlot> {
         val cancelled = safeRequest<CoachSlotResponse> {
             client.post("schedule/slots/$slotId/cancel")

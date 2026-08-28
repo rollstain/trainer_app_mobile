@@ -4,6 +4,7 @@ import app.trainer.base.BaseScreenModel
 import app.trainer.base.date.ScheduleWeeks
 import app.trainer.base.date.timeOfDayOf
 import app.trainer.base.date.weekdayShortOf
+import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.schedule.CoachSchedule
 import app.trainer.data.schedule.CoachSlot
@@ -17,6 +18,7 @@ import app.trainer.strings.Res
 import app.trainer.strings.slot_duration_minutes
 import app.trainer.strings.slot_seats_taken
 import kotlin.time.Clock
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -30,6 +32,7 @@ private const val NAME_SEPARATOR = ", "
 
 class CoachScheduleScreenModel(
     private val scheduleRepository: ScheduleRepository,
+    private val clientsRepository: ParticipantsRepository,
     private val profileRepository: ProfileRepository,
     private val weeks: ScheduleWeeks,
 ) : BaseScreenModel<CoachScheduleState, CoachScheduleSideEffect, CoachScheduleEvent>(
@@ -59,6 +62,12 @@ class CoachScheduleScreenModel(
             CoachScheduleEvent.OnSlotCreated -> reloadCurrentWeek()
             is CoachScheduleEvent.OnSlotClicked -> openSlot(event.slotId)
             CoachScheduleEvent.OnSlotActionsDismissed -> updateState { it.copy(slotActions = null) }
+            CoachScheduleEvent.OnAssignClientClicked -> openClientPicker()
+            is CoachScheduleEvent.OnClientPicked -> assignClient(event.clientUserId)
+            CoachScheduleEvent.OnClientPickerDismissed -> updateState {
+                it.copy(slotActions = it.slotActions?.copy(picker = null))
+            }
+            is CoachScheduleEvent.OnParticipantRemoved -> removeParticipant(event.clientUserId)
             is CoachScheduleEvent.OnCancelSlotClicked -> cancelSlot(event.slotId)
             is CoachScheduleEvent.OnCompleteSlotClicked -> completeSlot(event.slotId)
             is CoachScheduleEvent.OnChangeRequestResolved -> resolveRequest(
@@ -99,6 +108,9 @@ class CoachScheduleScreenModel(
                         title = titleOf(slot),
                         kind = kind,
                         isResolving = false,
+                        hasFreeSeats = slot.takenSeats < slot.capacity,
+                        participants = slot.participants.toImmutableList(),
+                        picker = null,
                     )
                 )
             }
@@ -109,6 +121,55 @@ class CoachScheduleScreenModel(
         slot.timeLabel,
         slot.clientDisplayName,
     ).joinToString(separator = SLOT_TITLE_SEPARATOR)
+
+    private fun openClientPicker() {
+        screenModelScope { state ->
+            val actions = state.slotActions ?: return@screenModelScope
+            updateState {
+                it.copy(slotActions = actions.copy(picker = ClientPicker(persistentListOf(), isLoading = true)))
+            }
+            val taken = actions.participants.map { it.clientUserId }.toSet()
+            when (val loaded = clientsRepository.clientsOfCoach()) {
+                is RequestResult.Error -> {
+                    updateState { it.copy(slotActions = it.slotActions?.copy(picker = null)) }
+                    postSideEffect(CoachScheduleSideEffect.ShowFailure(loaded))
+                }
+                is RequestResult.Success -> {
+                    val rows = loaded.data.items
+                        .filterNot { client -> taken.contains(client.userId) }
+                        .map { client ->
+                            ClientPickRow(clientUserId = client.userId, displayName = client.displayName)
+                        }
+                    updateState { current ->
+                        current.copy(
+                            slotActions = current.slotActions?.copy(
+                                picker = ClientPicker(clients = rows.toImmutableList(), isLoading = false),
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun assignClient(clientUserId: String) {
+        screenModelScope { state ->
+            val slotId = state.slotActions?.slotId ?: return@screenModelScope
+            updateState { it.copy(slotActions = it.slotActions?.copy(picker = null)) }
+            resolveSlot(slotId = slotId) {
+                scheduleRepository.assignSlot(slotId = it, clientUserId = clientUserId)
+            }
+        }
+    }
+
+    private fun removeParticipant(clientUserId: String) {
+        screenModelScope { state ->
+            val slotId = state.slotActions?.slotId ?: return@screenModelScope
+            resolveSlot(slotId = slotId) {
+                scheduleRepository.removeParticipant(slotId = it, clientUserId = clientUserId)
+            }
+        }
+    }
 
     private fun cancelSlot(slotId: String) {
         resolveSlot(slotId = slotId) { scheduleRepository.cancelSlot(slotId = it) }
@@ -287,6 +348,16 @@ class CoachScheduleScreenModel(
             hasParticipants = slot.takenSeats > 0,
             seatsLabel = getString(Res.string.slot_seats_taken, slot.takenSeats, slot.capacity),
             participantNames = slot.participants.mapNotNull { it.displayName }.joinToString(NAME_SEPARATOR),
+            capacity = slot.capacity,
+            takenSeats = slot.takenSeats,
+            participants = slot.participants
+                .map {
+                    SlotParticipantRow(
+                        clientUserId = it.userId,
+                        displayName = it.displayName.orEmpty(),
+                    )
+                }
+                .toImmutableList(),
         )
     }
 

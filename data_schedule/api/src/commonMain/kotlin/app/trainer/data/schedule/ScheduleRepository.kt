@@ -27,6 +27,8 @@ interface ScheduleRepository {
 
     suspend fun assignSlot(slotId: String, clientUserId: String): RequestResult<CoachSlot>
 
+    suspend fun removeParticipant(slotId: String, clientUserId: String): RequestResult<CoachSlot>
+
     suspend fun cancelSlot(slotId: String): RequestResult<CoachSlot>
 
     suspend fun completeSlot(slotId: String): RequestResult<CoachSlot>
