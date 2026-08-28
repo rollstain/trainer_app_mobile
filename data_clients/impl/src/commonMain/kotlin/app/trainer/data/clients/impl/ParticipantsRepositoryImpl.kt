@@ -4,12 +4,15 @@ import app.trainer.data.clients.CoachClient
 import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.clients.CoachSummary
 import app.trainer.data.clients.ParticipantsRepository
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.network.HttpClientProvider
+import app.trainer.network.safePagedRequest
 import app.trainer.network.safeRequest
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -71,13 +74,21 @@ class ParticipantsRepositoryImpl(
         }
     }
 
-    override suspend fun clientsOfCoach(): RequestResult<List<CoachClient>> {
-        val loaded = safeRequest<List<CoachClientResponse>> {
-            httpClientProvider.client.get("coach/clients")
+    override suspend fun clientsOfCoach(limit: Int?, after: String?): RequestResult<Paged<List<CoachClient>>> {
+        val loaded = safePagedRequest<List<CoachClientResponse>> {
+            httpClientProvider.client.get("coach/clients") {
+                limit?.let { parameter("limit", it) }
+                after?.let { parameter("after", it) }
+            }
         }
         return when (loaded) {
             is RequestResult.Error -> loaded
-            is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(mapper::toCoachClient))
+            is RequestResult.Success -> RequestResult.Success(
+                Paged(
+                    items = loaded.data.items.mapNotNull(mapper::toCoachClient),
+                    nextCursor = loaded.data.nextCursor,
+                )
+            )
         }
     }
 

@@ -74,12 +74,13 @@ class DiariesScreenModel(
         if (clients is RequestResult.Error) return showFailure(clients)
         val windowStart = today.minus(DatePeriod(days = WINDOW_DAYS - 1))
         val historyStart = today.minus(DatePeriod(days = HISTORY_DAYS - 1))
+        val roster = (clients as RequestResult.Success).data.items
         val entriesByClient = loadEntries(
-            clients = (clients as RequestResult.Success).data,
+            clients = roster,
             from = historyStart,
             to = today,
         )
-        val rows = clients.data.map { client ->
+        val rows = roster.map { client ->
             toRow(
                 client = client,
                 entries = entriesByClient[client.userId].orEmpty(),

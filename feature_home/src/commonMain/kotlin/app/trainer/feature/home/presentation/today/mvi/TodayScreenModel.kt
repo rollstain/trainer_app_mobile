@@ -133,7 +133,7 @@ class TodayScreenModel(
         if (clients is RequestResult.Error) return showFailure(clients)
 
         val slots = (schedule as RequestResult.Success).data.slots
-        val roster = (clients as RequestResult.Success).data
+        val roster = (clients as RequestResult.Success).data.items
         val dialogs = chatRepository.observeDialogs().first()
 
         show(

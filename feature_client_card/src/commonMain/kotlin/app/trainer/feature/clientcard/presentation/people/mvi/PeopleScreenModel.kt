@@ -79,7 +79,7 @@ class PeopleScreenModel(
             }
             is RequestResult.Success -> {
                 val sessions = nextSessionsByClient()
-                val rows = loaded.data.map { client -> toRow(client = client, sessions = sessions) }
+                val rows = loaded.data.items.map { client -> toRow(client = client, sessions = sessions) }
                 updateState { current ->
                     current.copy(
                         people = sortRows(rows).toImmutableList(),

@@ -120,7 +120,7 @@ class ProgramDayScreenModel(
         val day = (program as RequestResult.Success).data.days
             .firstOrNull { it.weekNumber == weekNumber && it.dayOfWeek == dayOfWeek }
         val dayLabel = weekdayShortOf(ordinal = dayOfWeek - 1)
-        val choices = (exercises as RequestResult.Success).data
+        val choices = (exercises as RequestResult.Success).data.items
             .map { ExerciseChoice(exerciseId = it.id, name = it.name) }
 
         updateState { current ->

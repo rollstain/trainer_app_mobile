@@ -6,10 +6,12 @@ import app.trainer.data.traininglog.SaveOutcome
 import app.trainer.data.traininglog.TrainingLogDraft
 import app.trainer.data.traininglog.TrainingLogEntry
 import app.trainer.data.traininglog.TrainingLogRepository
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.logger.Logger
 import app.trainer.network.HttpClientProvider
+import app.trainer.network.safePagedRequest
 import app.trainer.network.safeRequest
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
@@ -32,13 +34,21 @@ class TrainingLogRepositoryImpl(
 
     private val client get() = httpClientProvider.client
 
-    override suspend fun availableExercises(): RequestResult<List<Exercise>> {
-        val loaded = safeRequest<List<ExerciseResponse>> {
-            client.get("exercises")
+    override suspend fun availableExercises(limit: Int?, after: String?): RequestResult<Paged<List<Exercise>>> {
+        val loaded = safePagedRequest<List<ExerciseResponse>> {
+            client.get("exercises") {
+                limit?.let { parameter("limit", it) }
+                after?.let { parameter("after", it) }
+            }
         }
         return when (loaded) {
             is RequestResult.Error -> loaded
-            is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(mapper::toExercise))
+            is RequestResult.Success -> RequestResult.Success(
+                Paged(
+                    items = loaded.data.items.mapNotNull(mapper::toExercise),
+                    nextCursor = loaded.data.nextCursor,
+                )
+            )
         }
     }
 

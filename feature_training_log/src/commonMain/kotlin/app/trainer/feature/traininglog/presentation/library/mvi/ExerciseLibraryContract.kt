@@ -3,6 +3,7 @@ package app.trainer.feature.traininglog.presentation.library.mvi
 import app.trainer.entities.RequestResult
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 sealed interface ExerciseVideo {
 
@@ -21,15 +22,40 @@ data class ExerciseRow(
 
 data class ExerciseLibraryState(
     val exercises: ImmutableList<ExerciseRow>,
+    val nextCursor: String?,
     val isLoading: Boolean,
+    val isLoadingMore: Boolean,
     val failure: RequestResult.Error?,
 ) {
+
+    val hasMore: Boolean
+        get() = nextCursor != null
+
+    fun withFirstPage(rows: List<ExerciseRow>, nextCursor: String?): ExerciseLibraryState = copy(
+        exercises = rows.toImmutableList(),
+        nextCursor = nextCursor,
+        isLoading = false,
+        isLoadingMore = false,
+        failure = null,
+    )
+
+    fun withNextPage(rows: List<ExerciseRow>, nextCursor: String?): ExerciseLibraryState {
+        val known = exercises.mapTo(mutableSetOf(), ExerciseRow::exerciseId)
+        val fresh = rows.filterNot { it.exerciseId in known }
+        return copy(
+            exercises = (exercises + fresh).toImmutableList(),
+            nextCursor = nextCursor,
+            isLoadingMore = false,
+        )
+    }
 
     companion object {
 
         fun initial(): ExerciseLibraryState = ExerciseLibraryState(
             exercises = persistentListOf(),
+            nextCursor = null,
             isLoading = true,
+            isLoadingMore = false,
             failure = null,
         )
     }
@@ -38,6 +64,8 @@ data class ExerciseLibraryState(
 sealed interface ExerciseLibraryEvent {
 
     data object OnReloadRequested : ExerciseLibraryEvent
+
+    data object OnEndReached : ExerciseLibraryEvent
 
     data object OnCreateClicked : ExerciseLibraryEvent
 }

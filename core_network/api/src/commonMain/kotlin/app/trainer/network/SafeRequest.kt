@@ -1,5 +1,6 @@
 package app.trainer.network
 
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import io.ktor.client.call.body
@@ -11,6 +12,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+
+const val NEXT_CURSOR_HEADER = "X-Next-Cursor"
 
 private const val STATUS_BAD_REQUEST = 400
 private const val STATUS_UNAUTHORIZED = 401
@@ -76,6 +79,26 @@ suspend inline fun <reified T> safeRequest(request: () -> HttpResponse): Request
         val response = request()
         if (response.status.isSuccess()) {
             RequestResult.Success(response.body<T>())
+        } else {
+            parseApiError(statusCode = response.status.value, rawBody = response.bodyAsText())
+        }
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (failure: Exception) {
+        transportFailure(failure)
+    }
+}
+
+suspend inline fun <reified T> safePagedRequest(request: () -> HttpResponse): RequestResult<Paged<T>> {
+    return try {
+        val response = request()
+        if (response.status.isSuccess()) {
+            RequestResult.Success(
+                Paged(
+                    items = response.body<T>(),
+                    nextCursor = response.headers[NEXT_CURSOR_HEADER]?.takeIf { it.isNotBlank() },
+                )
+            )
         } else {
             parseApiError(statusCode = response.status.value, rawBody = response.bodyAsText())
         }

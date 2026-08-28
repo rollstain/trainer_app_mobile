@@ -9,10 +9,10 @@ import app.trainer.strings.Res
 import app.trainer.strings.exercise_library_bodyweight_label
 import app.trainer.strings.exercise_library_cardio_label
 import app.trainer.strings.exercise_library_strength_label
-import kotlinx.collections.immutable.toImmutableList
 import org.jetbrains.compose.resources.getString
 
 private const val DETAILS_SEPARATOR = " · "
+private const val PAGE_SIZE = 30
 
 class ExerciseLibraryScreenModel(
     private val trainingLogRepository: TrainingLogRepository,
@@ -27,20 +27,14 @@ class ExerciseLibraryScreenModel(
     override fun onFetchData() {
         onFetchDataScope {
             updateState { it.copy(isLoading = true, failure = null) }
-            when (val loaded = trainingLogRepository.availableExercises()) {
+            when (val loaded = trainingLogRepository.availableExercises(limit = PAGE_SIZE, after = null)) {
                 is RequestResult.Error -> {
                     updateState { it.copy(isLoading = false, failure = loaded) }
                     postSideEffect(ExerciseLibrarySideEffect.ShowFailure(loaded))
                 }
                 is RequestResult.Success -> {
-                    val rows = loaded.data.map { toRow(it) }
-                    updateState { current ->
-                        current.copy(
-                            exercises = rows.toImmutableList(),
-                            isLoading = false,
-                            failure = null,
-                        )
-                    }
+                    val rows = loaded.data.items.map { toRow(it) }
+                    updateState { it.withFirstPage(rows = rows, nextCursor = loaded.data.nextCursor) }
                 }
             }
         }
@@ -49,8 +43,27 @@ class ExerciseLibraryScreenModel(
     override fun dispatch(event: ExerciseLibraryEvent) {
         when (event) {
             ExerciseLibraryEvent.OnReloadRequested -> onFetchData()
+            ExerciseLibraryEvent.OnEndReached -> loadMore()
             ExerciseLibraryEvent.OnCreateClicked -> screenModelScope {
                 postSideEffect(ExerciseLibrarySideEffect.OpenExerciseCreation)
+            }
+        }
+    }
+
+    private fun loadMore() {
+        screenModelScope { state ->
+            val cursor = state.nextCursor ?: return@screenModelScope
+            if (state.isLoadingMore) return@screenModelScope
+            updateState { it.copy(isLoadingMore = true) }
+            when (val loaded = trainingLogRepository.availableExercises(limit = PAGE_SIZE, after = cursor)) {
+                is RequestResult.Error -> {
+                    updateState { it.copy(isLoadingMore = false) }
+                    postSideEffect(ExerciseLibrarySideEffect.ShowFailure(loaded))
+                }
+                is RequestResult.Success -> {
+                    val rows = loaded.data.items.map { toRow(it) }
+                    updateState { it.withNextPage(rows = rows, nextCursor = loaded.data.nextCursor) }
+                }
             }
         }
     }

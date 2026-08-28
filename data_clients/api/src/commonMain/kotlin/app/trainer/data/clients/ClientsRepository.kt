@@ -1,12 +1,13 @@
 package app.trainer.data.clients
 
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestResult
 
 interface ParticipantsRepository {
 
     suspend fun coachesOfClient(): RequestResult<List<CoachSummary>>
 
-    suspend fun clientsOfCoach(): RequestResult<List<CoachClient>>
+    suspend fun clientsOfCoach(limit: Int? = null, after: String? = null): RequestResult<Paged<List<CoachClient>>>
 
     suspend fun archiveClient(clientUserId: String): RequestResult<Unit>
 

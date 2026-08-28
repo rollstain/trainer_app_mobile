@@ -110,7 +110,7 @@ class TrainingLogEditorScreenModel(
                 return@onFetchDataScope
             }
             showLoaded(
-                exercises = (exercises as RequestResult.Success).data,
+                exercises = (exercises as RequestResult.Success).data.items,
                 entry = (entries as RequestResult.Success).data.firstOrNull(),
             )
             loadPlan()

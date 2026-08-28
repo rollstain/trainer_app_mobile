@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCard
+import app.trainer.uikit.widgets.AppCardShimmer
 import app.trainer.uikit.widgets.AppCardShimmerList
 import app.trainer.uikit.widgets.AppStatePlaceholder
 import app.trainer.uikit.widgets.AppText
@@ -54,6 +56,7 @@ import org.jetbrains.compose.resources.stringResource
 
 private const val SHIMMER_CARDS = 6
 private const val SHIMMER_CARD_LINES = 2
+private const val LOAD_MORE_SHIMMER_LINES = 2
 
 class ExerciseLibraryScreen : Screen {
 
@@ -112,7 +115,7 @@ private fun ExerciseLibraryView(
                     description = stringResource(Res.string.exercise_library_empty_description),
                     action = PlaceholderAction.None,
                 )
-                else -> ExerciseList(state = state)
+                else -> ExerciseList(state = state, onEvent = onEvent)
             }
         }
         AppButton(
@@ -126,13 +129,19 @@ private fun ExerciseLibraryView(
 }
 
 @Composable
-private fun ExerciseList(state: ExerciseLibraryState) {
+private fun ExerciseList(state: ExerciseLibraryState, onEvent: (ExerciseLibraryEvent) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(AppTheme.spacing.dp16),
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
     ) {
         items(items = state.exercises, key = ExerciseRow::exerciseId) { exercise ->
             ExerciseCard(modifier = Modifier.animateItem(), exercise = exercise)
+        }
+        if (state.hasMore) {
+            item(key = "load-more") {
+                LaunchedEffect(state.nextCursor) { onEvent(ExerciseLibraryEvent.OnEndReached) }
+                AppCardShimmer(lines = LOAD_MORE_SHIMMER_LINES)
+            }
         }
     }
 }
