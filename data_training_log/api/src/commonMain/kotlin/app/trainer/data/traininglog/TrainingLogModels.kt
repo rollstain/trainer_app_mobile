@@ -1,5 +1,6 @@
 package app.trainer.data.traininglog
 
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 
 enum class ExerciseKind { STRENGTH, CARDIO, BODYWEIGHT }
@@ -57,4 +58,17 @@ data class TrainingLogDraft(
     val slotId: String?,
     val notes: String?,
     val sets: List<TrainingSetDraft>,
+)
+
+data class DiaryDay(
+    val entryDate: LocalDate,
+    val volumeGrams: Long,
+)
+
+data class ClientDiarySummary(
+    val clientUserId: String,
+    val displayName: String,
+    val linkedAt: Instant?,
+    val lastEntryDate: LocalDate?,
+    val days: List<DiaryDay>,
 )

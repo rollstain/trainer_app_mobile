@@ -1,5 +1,6 @@
 package app.trainer.data.traininglog.impl
 
+import app.trainer.data.traininglog.ClientDiarySummary
 import app.trainer.data.traininglog.Exercise
 import app.trainer.data.traininglog.ExerciseKind
 import app.trainer.data.traininglog.SaveOutcome
@@ -49,6 +50,22 @@ class TrainingLogRepositoryImpl(
                     nextCursor = loaded.data.nextCursor,
                 )
             )
+        }
+    }
+
+    override suspend fun coachDiarySummary(
+        from: LocalDate,
+        to: LocalDate,
+    ): RequestResult<List<ClientDiarySummary>> {
+        val loaded = safeRequest<List<ClientDiarySummaryResponse>> {
+            client.get("coach/clients/diary-summary") {
+                parameter("from", from.toString())
+                parameter("to", to.toString())
+            }
+        }
+        return when (loaded) {
+            is RequestResult.Error -> loaded
+            is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(mapper::toDiarySummary))
         }
     }
 

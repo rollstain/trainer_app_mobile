@@ -17,6 +17,8 @@ interface TrainingLogRepository : LocalDataCleaner {
 
     suspend fun availableExercises(limit: Int? = null, after: String? = null): RequestResult<Paged<List<Exercise>>>
 
+    suspend fun coachDiarySummary(from: LocalDate, to: LocalDate): RequestResult<List<ClientDiarySummary>>
+
     suspend fun createExercise(
         name: String,
         muscleGroup: String?,

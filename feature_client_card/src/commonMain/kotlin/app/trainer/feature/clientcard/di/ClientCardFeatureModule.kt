@@ -18,7 +18,6 @@ class ClientCardFeatureModule {
         screen<Screens.CoachPeople> { PeopleScreen() }
         viewModel {
             DiariesScreenModel(
-                participantsRepository = get(),
                 trainingLogRepository = get(),
                 profileRepository = get(),
                 volumeFormat = get(),

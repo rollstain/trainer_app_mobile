@@ -7,10 +7,9 @@ import app.trainer.base.diary.DIARY_LAPSE_THRESHOLD_DAYS
 import app.trainer.base.diary.DiaryLapse
 import app.trainer.base.diary.diaryLapseOf
 import app.trainer.base.format.VolumeFormat
-import app.trainer.data.clients.CoachClient
-import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
-import app.trainer.data.traininglog.TrainingLogEntry
+import app.trainer.data.traininglog.ClientDiarySummary
+import app.trainer.data.traininglog.DiaryDay
 import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.entities.RequestResult
 import app.trainer.strings.Res
@@ -20,9 +19,6 @@ import app.trainer.uikit.widgets.ComplianceCell
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -31,10 +27,8 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 private const val WINDOW_DAYS = 14
-private const val HISTORY_DAYS = 90
 
 class DiariesScreenModel(
-    private val participantsRepository: ParticipantsRepository,
     private val trainingLogRepository: TrainingLogRepository,
     private val profileRepository: ProfileRepository,
     private val volumeFormat: VolumeFormat,
@@ -70,20 +64,12 @@ class DiariesScreenModel(
             ?: TimeZone.currentSystemDefault()
         val today = weeks.dateOf(Clock.System.now(), zone)
 
-        val clients = participantsRepository.clientsOfCoach()
-        if (clients is RequestResult.Error) return showFailure(clients)
         val windowStart = today.minus(DatePeriod(days = WINDOW_DAYS - 1))
-        val historyStart = today.minus(DatePeriod(days = HISTORY_DAYS - 1))
-        val roster = (clients as RequestResult.Success).data.items
-        val entriesByClient = loadEntries(
-            clients = roster,
-            from = historyStart,
-            to = today,
-        )
-        val rows = roster.map { client ->
+        val summary = trainingLogRepository.coachDiarySummary(from = windowStart, to = today)
+        if (summary is RequestResult.Error) return showFailure(summary)
+        val rows = (summary as RequestResult.Success).data.map { client ->
             toRow(
                 client = client,
-                entries = entriesByClient[client.userId].orEmpty(),
                 today = today,
                 zone = zone,
             )
@@ -107,58 +93,33 @@ class DiariesScreenModel(
         }
     }
 
-    private suspend fun loadEntries(
-        clients: List<CoachClient>,
-        from: LocalDate,
-        to: LocalDate,
-    ): Map<String, List<TrainingLogEntry>> = coroutineScope {
-        clients
-            .map { client ->
-                async {
-                    val loaded = trainingLogRepository.clientEntries(
-                        clientUserId = client.userId,
-                        from = from,
-                        to = to,
-                    )
-                    client.userId to when (loaded) {
-                        is RequestResult.Success -> loaded.data
-                        is RequestResult.Error -> emptyList()
-                    }
-                }
-            }
-            .awaitAll()
-            .toMap()
-    }
-
     private suspend fun showFailure(failure: RequestResult.Error) {
         updateState { it.copy(isLoading = false, failure = failure) }
         postSideEffect(DiariesSideEffect.ShowFailure(failure))
     }
 
     private suspend fun toRow(
-        client: CoachClient,
-        entries: List<TrainingLogEntry>,
+        client: ClientDiarySummary,
         today: LocalDate,
         zone: TimeZone,
     ): DiaryRow {
-        val loggedDates = entries.map { it.entryDate }.toSet()
+        val loggedDates = client.days.map { it.entryDate }.toSet()
         val windowDates = (0 until WINDOW_DAYS).map { offset ->
             today.minus(DatePeriod(days = WINDOW_DAYS - 1 - offset))
         }
-        val windowEntries = entries.filter { it.entryDate in windowDates }
         val lapse = diaryLapseOf(
             today = today,
-            lastEntryDate = loggedDates.maxOrNull(),
+            lastEntryDate = client.lastEntryDate,
             linkedDate = client.linkedAt?.toLocalDate(zone),
         )
         return DiaryRow(
-            userId = client.userId,
+            userId = client.clientUserId,
             displayName = client.displayName,
             lapse = lapse,
             cells = windowDates
                 .map { date -> cellOf(date = date, loggedDates = loggedDates, lapse = lapse, today = today) }
                 .toImmutableList(),
-            summaryLabel = summaryOf(entries = windowEntries),
+            summaryLabel = summaryOf(days = client.days.filter { it.entryDate in windowDates }),
         )
     }
 
@@ -178,10 +139,10 @@ class DiariesScreenModel(
         }
     }
 
-    private suspend fun summaryOf(entries: List<TrainingLogEntry>): String = getString(
+    private suspend fun summaryOf(days: List<DiaryDay>): String = getString(
         Res.string.diaries_summary,
-        entries.size,
-        volumeFormat.toTons(entries.sumOf { it.totalVolumeGrams }),
+        days.size,
+        volumeFormat.toTons(days.sumOf { it.volumeGrams }),
     )
 }
 

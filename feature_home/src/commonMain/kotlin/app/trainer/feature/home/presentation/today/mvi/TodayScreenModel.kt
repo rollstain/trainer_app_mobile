@@ -9,7 +9,6 @@ import app.trainer.base.diary.DiaryLapse
 import app.trainer.base.diary.diaryLapseOf
 import app.trainer.data.chat.ChatRepository
 import app.trainer.data.chat.Dialog
-import app.trainer.data.clients.CoachClient
 import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.progress.AwaitingCheckIn
@@ -18,6 +17,7 @@ import app.trainer.data.schedule.CoachSlot
 import app.trainer.data.schedule.ScheduleRepository
 import app.trainer.data.schedule.SlotChangeRequest
 import app.trainer.data.schedule.SlotStatus
+import app.trainer.data.traininglog.ClientDiarySummary
 import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
@@ -30,9 +30,6 @@ import app.trainer.strings.today_tomorrow_summary
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -144,7 +141,7 @@ class TodayScreenModel(
                 slots = slots,
                 requests = (requests as RequestResult.Success).data,
                 dialogs = dialogs,
-                lapsed = lapsedRowsOf(clients = roster, today = today, zone = zone),
+                lapsed = lapsedRowsOf(today = today, zone = zone),
                 awaiting = awaitingCheckInsOf(),
                 hasClients = roster.isNotEmpty(),
             )
@@ -295,47 +292,30 @@ class TodayScreenModel(
         }
     }
 
-    private fun lapsedRow(client: CoachClient, since: LapsedSince): TodayLapsedRow = TodayLapsedRow(
-        userId = client.userId,
+    private fun lapsedRow(client: ClientDiarySummary, since: LapsedSince): TodayLapsedRow = TodayLapsedRow(
+        userId = client.clientUserId,
         displayName = client.displayName,
         since = since,
     )
 
-    private suspend fun lapsedRowsOf(
-        clients: List<CoachClient>,
-        today: LocalDate,
-        zone: TimeZone,
-    ): List<TodayLapsedRow> {
+    private suspend fun lapsedRowsOf(today: LocalDate, zone: TimeZone): List<TodayLapsedRow> {
         val historyStart = today.minus(DatePeriod(days = DIARY_HISTORY_DAYS - 1))
-        return coroutineScope {
-            clients
-                .map { client ->
-                    async {
-                        val entries = trainingLogRepository.clientEntries(
-                            clientUserId = client.userId,
-                            from = historyStart,
-                            to = today,
-                        )
-                        val lastEntry = when (entries) {
-                            is RequestResult.Success -> entries.data.maxOfOrNull { it.entryDate }
-                            is RequestResult.Error -> null
-                        }
-                        val lapse = diaryLapseOf(
-                            today = today,
-                            lastEntryDate = lastEntry,
-                            linkedDate = client.linkedAt?.toLocalDateTime(zone)?.date,
-                        )
-                        when (lapse) {
-                            is DiaryLapse.Lapsed -> lapsedRow(client, LapsedSince.Days(lapse.days))
-                            DiaryLapse.NeverLogged -> lapsedRow(client, LapsedSince.Never)
-                            DiaryLapse.Logging, DiaryLapse.NotStartedYet -> null
-                        }
-                    }
+        val summary = trainingLogRepository.coachDiarySummary(from = historyStart, to = today)
+        if (summary is RequestResult.Error) return emptyList()
+        return (summary as RequestResult.Success).data
+            .mapNotNull { client ->
+                val lapse = diaryLapseOf(
+                    today = today,
+                    lastEntryDate = client.lastEntryDate,
+                    linkedDate = client.linkedAt?.toLocalDateTime(zone)?.date,
+                )
+                when (lapse) {
+                    is DiaryLapse.Lapsed -> lapsedRow(client, LapsedSince.Days(lapse.days))
+                    DiaryLapse.NeverLogged -> lapsedRow(client, LapsedSince.Never)
+                    DiaryLapse.Logging, DiaryLapse.NotStartedYet -> null
                 }
-                .awaitAll()
-                .filterNotNull()
-                .sortedByDescending { daysOf(it.since) }
-        }
+            }
+            .sortedByDescending { daysOf(it.since) }
     }
 
     private fun daysOf(since: LapsedSince): Int = when (since) {

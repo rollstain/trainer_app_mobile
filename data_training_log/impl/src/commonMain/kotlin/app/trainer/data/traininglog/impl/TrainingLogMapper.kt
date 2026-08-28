@@ -1,11 +1,14 @@
 package app.trainer.data.traininglog.impl
 
+import app.trainer.data.traininglog.ClientDiarySummary
+import app.trainer.data.traininglog.DiaryDay
 import app.trainer.data.traininglog.Exercise
 import app.trainer.data.traininglog.ExerciseKind
 import app.trainer.data.traininglog.LastPerformed
 import app.trainer.data.traininglog.TrainingLogEntry
 import app.trainer.data.traininglog.TrainingSet
 import app.trainer.logger.Logger
+import kotlin.time.Instant
 import kotlinx.datetime.LocalDate
 
 private const val LOG_TAG = "training-log-mapper"
@@ -82,6 +85,31 @@ class TrainingLogMapper(private val logger: Logger) {
             distanceMeters = response.distanceMeters,
             isPersonalRecord = response.isPersonalRecord ?: false,
         )
+    }
+
+    fun toDiarySummary(response: ClientDiarySummaryResponse): ClientDiarySummary? {
+        val clientUserId = response.clientUserId
+            ?: return skipped(entity = "ClientDiarySummary", field = "clientUserId")
+        val displayName = response.displayName
+            ?: return skipped(entity = "ClientDiarySummary", field = "displayName")
+        return ClientDiarySummary(
+            clientUserId = clientUserId,
+            displayName = displayName,
+            linkedAt = parseInstant(response.linkedAt),
+            lastEntryDate = parseDate(response.lastEntryDate),
+            days = response.days.orEmpty().mapNotNull(::toDiaryDay),
+        )
+    }
+
+    private fun toDiaryDay(response: DiaryDayResponse): DiaryDay? {
+        val entryDate = parseDate(response.entryDate) ?: return skipped(entity = "DiaryDay", field = "entryDate")
+        val volumeGrams = response.volumeGrams ?: return skipped(entity = "DiaryDay", field = "volumeGrams")
+        return DiaryDay(entryDate = entryDate, volumeGrams = volumeGrams)
+    }
+
+    private fun parseInstant(raw: String?): Instant? {
+        if (raw == null) return null
+        return runCatching { Instant.parse(raw) }.getOrNull()
     }
 
     private fun parseKind(raw: String?): ExerciseKind? = ExerciseKind.entries.firstOrNull { it.name == raw }

@@ -108,3 +108,25 @@ data class TrainingLogEntryResponse(
     @SerialName("totalVolumeGrams")
     val totalVolumeGrams: Long?,
 )
+
+@Serializable
+data class DiaryDayResponse(
+    @SerialName("entryDate")
+    val entryDate: String?,
+    @SerialName("volumeGrams")
+    val volumeGrams: Long?,
+)
+
+@Serializable
+data class ClientDiarySummaryResponse(
+    @SerialName("clientUserId")
+    val clientUserId: String?,
+    @SerialName("displayName")
+    val displayName: String?,
+    @SerialName("linkedAt")
+    val linkedAt: String?,
+    @SerialName("lastEntryDate")
+    val lastEntryDate: String?,
+    @SerialName("days")
+    val days: List<DiaryDayResponse>?,
+)
