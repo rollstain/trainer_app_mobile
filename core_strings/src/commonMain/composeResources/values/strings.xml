@@ -211,6 +211,7 @@
     <string name="people_empty_title">Подопечных пока нет</string>
     <string name="people_invite_action">Создать приглашение</string>
     <string name="people_invite_code_message">Код приглашения: %1$s</string>
+    <string name="people_attention_missed">пропустил подряд %1$d тренировки</string>
     <string name="people_attention_diary">не заполняет дневник %1$d дней</string>
     <string name="people_attention_never">ни одной записи в дневнике</string>
     <string name="people_title">Люди</string>

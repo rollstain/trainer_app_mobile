@@ -211,6 +211,7 @@
     <string name="people_empty_title">No clients yet</string>
     <string name="people_invite_action">Create an invite</string>
     <string name="people_invite_code_message">Invite code: %1$s</string>
+    <string name="people_attention_missed">missed %1$d sessions in a row</string>
     <string name="people_attention_diary">no diary entries for %1$d days</string>
     <string name="people_attention_never">never logged a workout</string>
     <string name="people_title">People</string>

@@ -105,6 +105,22 @@ class ParticipantsRepositoryImpl(
         }
     }
 
+    override suspend fun missedSessions(): RequestResult<Map<String, Int>> {
+        val loaded = safeRequest<List<MissedSessionsResponse>> {
+            httpClientProvider.client.get("coach/clients/missed-sessions")
+        }
+        return when (loaded) {
+            is RequestResult.Error -> loaded
+            is RequestResult.Success -> RequestResult.Success(
+                loaded.data.mapNotNull { row ->
+                    val clientUserId = row.clientUserId ?: return@mapNotNull null
+                    val missed = row.missedInARow ?: return@mapNotNull null
+                    clientUserId to missed
+                }.toMap()
+            )
+        }
+    }
+
     override suspend fun archiveClient(clientUserId: String): RequestResult<Unit> {
         return safeRequest { httpClientProvider.client.delete("coach/clients/$clientUserId") }
     }

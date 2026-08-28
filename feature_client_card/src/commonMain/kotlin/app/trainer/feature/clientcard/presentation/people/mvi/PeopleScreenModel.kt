@@ -17,6 +17,7 @@ import app.trainer.data.traininglog.TrainingLogRepository
 import app.trainer.entities.RequestResult
 import app.trainer.strings.Res
 import app.trainer.strings.people_attention_diary
+import app.trainer.strings.people_attention_missed
 import app.trainer.strings.people_attention_never
 import app.trainer.strings.people_next_session
 import kotlin.time.Clock
@@ -34,6 +35,7 @@ import org.jetbrains.compose.resources.getString
 
 private const val SESSION_LOOKAHEAD_DAYS = 14
 private const val DIARY_HISTORY_DAYS = 90
+private const val MISSED_SESSIONS_THRESHOLD = 2
 private const val PAGE_SIZE = 30
 
 class PeopleScreenModel(
@@ -84,7 +86,7 @@ class PeopleScreenModel(
     private suspend fun loadPeople() {
         updateState { it.copy(isLoading = true, failure = null) }
         val sessions = nextSessionsByClient()
-        val lapses = diaryLapsesByClient()
+        val lapses = attentionByClient()
         val booked = bookedRowsOf(sessions = sessions, lapses = lapses)
         if (booked == null) return
 
@@ -129,7 +131,7 @@ class PeopleScreenModel(
             if (state.isLoadingMore) return@screenModelScope
             updateState { it.copy(isLoadingMore = true) }
             val sessions = nextSessionsByClient()
-            val lapses = diaryLapsesByClient()
+            val lapses = attentionByClient()
             when (val page = participantsRepository.clientsOfCoach(limit = PAGE_SIZE, after = cursor)) {
                 is RequestResult.Error -> {
                     updateState { it.copy(isLoadingMore = false) }
@@ -180,6 +182,20 @@ class PeopleScreenModel(
             unreadCount = 0,
             attentionReason = lapses[client.userId],
         )
+    }
+
+    private suspend fun attentionByClient(): Map<String, String> {
+        val missed = missedSessionsByClient()
+        val lapsed = diaryLapsesByClient()
+        return lapsed + missed
+    }
+
+    private suspend fun missedSessionsByClient(): Map<String, String> {
+        val loaded = participantsRepository.missedSessions()
+        if (loaded !is RequestResult.Success) return emptyMap()
+        return loaded.data
+            .filterValues { it >= MISSED_SESSIONS_THRESHOLD }
+            .mapValues { (_, missed) -> getString(Res.string.people_attention_missed, missed) }
     }
 
     private suspend fun diaryLapsesByClient(): Map<String, String> {

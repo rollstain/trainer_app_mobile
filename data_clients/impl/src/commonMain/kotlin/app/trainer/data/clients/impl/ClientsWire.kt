@@ -90,3 +90,11 @@ data class CoachClientResponse(
     @SerialName("linkedAt")
     val linkedAt: String?,
 )
+
+@Serializable
+data class MissedSessionsResponse(
+    @SerialName("clientUserId")
+    val clientUserId: String?,
+    @SerialName("missedInARow")
+    val missedInARow: Int?,
+)
