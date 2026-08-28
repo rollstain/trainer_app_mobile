@@ -423,4 +423,7 @@
     <string name="progress_photos_compare_action">Compare</string>
     <string name="progress_photos_empty">Attach a photo to a check-in and it will show up here</string>
     <string name="client_card_photos_action">Compare photos</string>
+    <string name="people_booked_title">Booked</string>
+    <string name="people_others_title">Everyone else</string>
+    <string name="people_everyone_title">All clients</string>
 </resources>

@@ -423,4 +423,7 @@
     <string name="progress_photos_compare_action">Сравнить</string>
     <string name="progress_photos_empty">Прикрепите фото к чек-ину — они появятся здесь</string>
     <string name="client_card_photos_action">Сравнить фото</string>
+    <string name="people_booked_title">Записаны</string>
+    <string name="people_others_title">Остальные</string>
+    <string name="people_everyone_title">Все подопечные</string>
 </resources>

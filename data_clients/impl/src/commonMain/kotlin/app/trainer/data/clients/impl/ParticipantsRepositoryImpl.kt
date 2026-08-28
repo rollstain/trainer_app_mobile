@@ -55,6 +55,19 @@ class ParticipantsRepositoryImpl(
         return policyOf(updated)
     }
 
+    override suspend fun clientsByIds(userIds: List<String>): RequestResult<List<CoachClient>> {
+        if (userIds.isEmpty()) return RequestResult.Success(emptyList())
+        val loaded = safeRequest<List<CoachClientResponse>> {
+            httpClientProvider.client.get("coach/clients") {
+                userIds.forEach { parameter("ids", it) }
+            }
+        }
+        return when (loaded) {
+            is RequestResult.Error -> loaded
+            is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(mapper::toCoachClient))
+        }
+    }
+
     private fun policyOf(response: RequestResult<CoachPolicyResponse>): RequestResult<CoachPolicy> {
         return when (response) {
             is RequestResult.Error -> response

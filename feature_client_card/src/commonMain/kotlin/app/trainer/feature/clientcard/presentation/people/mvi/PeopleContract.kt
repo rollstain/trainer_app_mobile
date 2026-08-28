@@ -3,6 +3,7 @@ package app.trainer.feature.clientcard.presentation.people.mvi
 import app.trainer.entities.RequestResult
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 data class PersonRow(
     val userId: String,
@@ -14,17 +15,52 @@ data class PersonRow(
 )
 
 data class PeopleState(
-    val people: ImmutableList<PersonRow>,
+    val booked: ImmutableList<PersonRow>,
+    val others: ImmutableList<PersonRow>,
+    val nextCursor: String?,
     val isLoading: Boolean,
+    val isLoadingMore: Boolean,
     val isCreatingInvite: Boolean,
     val failure: RequestResult.Error?,
 ) {
 
+    val isEmpty: Boolean
+        get() = booked.isEmpty() && others.isEmpty()
+
+    val hasMore: Boolean
+        get() = nextCursor != null
+
+    fun withFirstPage(
+        booked: List<PersonRow>,
+        others: List<PersonRow>,
+        nextCursor: String?,
+    ): PeopleState = copy(
+        booked = booked.toImmutableList(),
+        others = others.toImmutableList(),
+        nextCursor = nextCursor,
+        isLoading = false,
+        isLoadingMore = false,
+        failure = null,
+    )
+
+    fun withNextPage(rows: List<PersonRow>, nextCursor: String?): PeopleState {
+        val known = (booked + others).mapTo(mutableSetOf(), PersonRow::userId)
+        val fresh = rows.filterNot { it.userId in known }
+        return copy(
+            others = (others + fresh).toImmutableList(),
+            nextCursor = nextCursor,
+            isLoadingMore = false,
+        )
+    }
+
     companion object {
 
         fun initial(): PeopleState = PeopleState(
-            people = persistentListOf(),
+            booked = persistentListOf(),
+            others = persistentListOf(),
+            nextCursor = null,
             isLoading = true,
+            isLoadingMore = false,
             isCreatingInvite = false,
             failure = null,
         )
@@ -34,6 +70,8 @@ data class PeopleState(
 sealed interface PeopleEvent {
 
     data object OnRetryClicked : PeopleEvent
+
+    data object OnEndReached : PeopleEvent
 
     data object OnCreateInviteClicked : PeopleEvent
 

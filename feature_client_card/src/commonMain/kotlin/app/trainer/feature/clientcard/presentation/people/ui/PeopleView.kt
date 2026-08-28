@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -23,11 +24,14 @@ import app.trainer.feature.clientcard.presentation.people.mvi.PeopleEvent
 import app.trainer.feature.clientcard.presentation.people.mvi.PeopleState
 import app.trainer.feature.clientcard.presentation.people.mvi.PersonRow
 import app.trainer.strings.Res
+import app.trainer.strings.people_booked_title
 import app.trainer.strings.people_empty_description
 import app.trainer.strings.people_empty_title
+import app.trainer.strings.people_everyone_title
 import app.trainer.strings.people_invite_action
 import app.trainer.strings.people_medical_badge
 import app.trainer.strings.people_not_booked
+import app.trainer.strings.people_others_title
 import app.trainer.strings.people_request_mark
 import app.trainer.strings.people_title
 import app.trainer.uikit.AppTheme
@@ -36,6 +40,7 @@ import app.trainer.uikit.widgets.AppAvatar
 import app.trainer.uikit.widgets.AppBadge
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCellShimmerList
+import app.trainer.uikit.widgets.AppSectionHeader
 import app.trainer.uikit.widgets.AppStatePlaceholder
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTopBar
@@ -46,9 +51,11 @@ import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.PlaceholderAction
 import app.trainer.uikit.widgets.PlaceholderKind
+import app.trainer.uikit.widgets.SectionCount
 import org.jetbrains.compose.resources.stringResource
 
 private const val SHIMMER_ROWS = 5
+private const val LOAD_MORE_ROWS = 2
 private const val REQUEST_SEPARATOR = " · "
 
 @Composable
@@ -66,7 +73,7 @@ fun PeopleView(
                     failure = state.failure,
                     onRetry = { onEvent(PeopleEvent.OnRetryClicked) },
                 )
-                state.people.isEmpty() -> AppStatePlaceholder(
+                state.isEmpty -> AppStatePlaceholder(
                     kind = PlaceholderKind.Empty,
                     title = stringResource(Res.string.people_empty_title),
                     description = stringResource(Res.string.people_empty_description),
@@ -75,18 +82,10 @@ fun PeopleView(
                         onClick = { onEvent(PeopleEvent.OnCreateInviteClicked) },
                     ),
                 )
-                else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(items = state.people, key = { it.userId }) { person ->
-                        PersonCell(
-                            modifier = Modifier.animateItem(),
-                            person = person,
-                            onClick = { onEvent(PeopleEvent.OnPersonClicked(person.userId)) },
-                        )
-                    }
-                }
+                else -> PeopleList(state = state, onEvent = onEvent)
             }
         }
-        if (state.people.isNotEmpty()) {
+        if (!state.isEmpty) {
             AppButton(
                 modifier = Modifier.fillMaxWidth().padding(AppTheme.spacing.dp16),
                 text = stringResource(Res.string.people_invite_action),
@@ -95,6 +94,51 @@ fun PeopleView(
                 size = ButtonSize.Large,
                 state = if (state.isCreatingInvite) ButtonState.Loading else ButtonState.Idle,
             )
+        }
+    }
+}
+
+@Composable
+private fun PeopleList(state: PeopleState, onEvent: (PeopleEvent) -> Unit) {
+    LazyColumn(modifier = Modifier.fillMaxSize()) {
+        if (state.booked.isNotEmpty()) {
+            item(key = "booked-title") {
+                AppSectionHeader(
+                    title = stringResource(Res.string.people_booked_title),
+                    count = SectionCount.Value(state.booked.size),
+                )
+            }
+            items(items = state.booked, key = { "booked-${it.userId}" }) { person ->
+                PersonCell(
+                    modifier = Modifier.animateItem(),
+                    person = person,
+                    onClick = { onEvent(PeopleEvent.OnPersonClicked(person.userId)) },
+                )
+            }
+        }
+        if (state.others.isNotEmpty()) {
+            item(key = "others-title") {
+                AppSectionHeader(
+                    title = when {
+                        state.booked.isEmpty() -> stringResource(Res.string.people_everyone_title)
+                        else -> stringResource(Res.string.people_others_title)
+                    },
+                    count = if (state.hasMore) SectionCount.None else SectionCount.Value(state.others.size),
+                )
+            }
+            items(items = state.others, key = { "other-${it.userId}" }) { person ->
+                PersonCell(
+                    modifier = Modifier.animateItem(),
+                    person = person,
+                    onClick = { onEvent(PeopleEvent.OnPersonClicked(person.userId)) },
+                )
+            }
+        }
+        if (state.hasMore) {
+            item(key = "load-more") {
+                LaunchedEffect(state.nextCursor) { onEvent(PeopleEvent.OnEndReached) }
+                AppCellShimmerList(count = LOAD_MORE_ROWS)
+            }
         }
     }
 }

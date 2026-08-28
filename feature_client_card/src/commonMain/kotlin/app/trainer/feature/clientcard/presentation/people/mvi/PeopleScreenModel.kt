@@ -25,6 +25,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 private const val SESSION_LOOKAHEAD_DAYS = 14
+private const val PAGE_SIZE = 30
 
 class PeopleScreenModel(
     private val participantsRepository: ParticipantsRepository,
@@ -54,9 +55,8 @@ class PeopleScreenModel(
             val unreadByUserId = dialogs.associate { it.peerUserId to it.unreadCount }
             updateState { current ->
                 current.copy(
-                    people = current.people
-                        .map { row -> row.copy(unreadCount = unreadByUserId[row.userId] ?: 0) }
-                        .toImmutableList(),
+                    booked = current.booked.withUnread(unreadByUserId).toImmutableList(),
+                    others = current.others.withUnread(unreadByUserId).toImmutableList(),
                 )
             }
         }
@@ -65,6 +65,7 @@ class PeopleScreenModel(
     override fun dispatch(event: PeopleEvent) {
         when (event) {
             PeopleEvent.OnRetryClicked -> onFetchData()
+            PeopleEvent.OnEndReached -> loadMore()
             PeopleEvent.OnCreateInviteClicked -> createInvite()
             is PeopleEvent.OnPersonClicked -> openPerson(event.userId)
         }
@@ -72,20 +73,56 @@ class PeopleScreenModel(
 
     private suspend fun loadPeople() {
         updateState { it.copy(isLoading = true, failure = null) }
-        when (val loaded = participantsRepository.clientsOfCoach()) {
+        val sessions = nextSessionsByClient()
+        val booked = bookedRowsOf(sessions)
+        if (booked == null) return
+
+        when (val page = participantsRepository.clientsOfCoach(limit = PAGE_SIZE, after = null)) {
+            is RequestResult.Error -> {
+                updateState { it.copy(isLoading = false, failure = page) }
+                postSideEffect(PeopleSideEffect.ShowFailure(page))
+            }
+            is RequestResult.Success -> {
+                val bookedIds = booked.mapTo(mutableSetOf(), PersonRow::userId)
+                val others = page.data.items
+                    .filterNot { it.userId in bookedIds }
+                    .map { client -> toRow(client = client, sessions = sessions) }
+                updateState {
+                    it.withFirstPage(booked = booked, others = others, nextCursor = page.data.nextCursor)
+                }
+            }
+        }
+    }
+
+    private suspend fun bookedRowsOf(sessions: Map<String, NextSession>): List<PersonRow>? {
+        if (sessions.isEmpty()) return emptyList()
+        return when (val loaded = participantsRepository.clientsByIds(sessions.keys.toList())) {
             is RequestResult.Error -> {
                 updateState { it.copy(isLoading = false, failure = loaded) }
                 postSideEffect(PeopleSideEffect.ShowFailure(loaded))
+                null
             }
-            is RequestResult.Success -> {
-                val sessions = nextSessionsByClient()
-                val rows = loaded.data.items.map { client -> toRow(client = client, sessions = sessions) }
-                updateState { current ->
-                    current.copy(
-                        people = sortRows(rows).toImmutableList(),
-                        isLoading = false,
-                        failure = null,
-                    )
+            is RequestResult.Success ->
+                loaded.data
+                    .map { client -> toRow(client = client, sessions = sessions) }
+                    .sortedBy { it.displayName }
+        }
+    }
+
+    private fun loadMore() {
+        screenModelScope { state ->
+            val cursor = state.nextCursor ?: return@screenModelScope
+            if (state.isLoadingMore) return@screenModelScope
+            updateState { it.copy(isLoadingMore = true) }
+            val sessions = nextSessionsByClient()
+            when (val page = participantsRepository.clientsOfCoach(limit = PAGE_SIZE, after = cursor)) {
+                is RequestResult.Error -> {
+                    updateState { it.copy(isLoadingMore = false) }
+                    postSideEffect(PeopleSideEffect.ShowFailure(page))
+                }
+                is RequestResult.Success -> {
+                    val rows = page.data.items.map { client -> toRow(client = client, sessions = sessions) }
+                    updateState { it.withNextPage(rows = rows, nextCursor = page.data.nextCursor) }
                 }
             }
         }
@@ -122,10 +159,6 @@ class PeopleScreenModel(
             unreadCount = 0,
         )
     }
-
-    private fun sortRows(rows: List<PersonRow>): List<PersonRow> = rows.sortedWith(
-        compareBy<PersonRow> { it.nextSessionLabel == null }.thenBy { it.displayName },
-    )
 
     private suspend fun nextSessionsByClient(): Map<String, NextSession> {
         val zone = coachZone() ?: return emptyMap()
@@ -169,3 +202,6 @@ class PeopleScreenModel(
 
     private class NextSession(val label: String, val hasPendingChangeRequest: Boolean)
 }
+
+private fun List<PersonRow>.withUnread(unreadByUserId: Map<String, Long>): List<PersonRow> =
+    map { row -> row.copy(unreadCount = unreadByUserId[row.userId] ?: 0) }
