@@ -22,7 +22,7 @@ data class ExerciseRow(
     val author: String?,
     val description: String?,
     val video: ExerciseVideo,
-    val isOwnedByCoach: Boolean,
+    val isOwnedByMe: Boolean,
     val isUploadingVideo: Boolean,
 )
 
@@ -76,6 +76,8 @@ sealed interface ExerciseLibraryEvent {
     data object OnCreateClicked : ExerciseLibraryEvent
 
     data class OnVideoPicked(val exerciseId: String, val video: PickedMedia) : ExerciseLibraryEvent
+
+    data class OnArchiveClicked(val exerciseId: String) : ExerciseLibraryEvent
 }
 
 sealed interface ExerciseLibrarySideEffect {

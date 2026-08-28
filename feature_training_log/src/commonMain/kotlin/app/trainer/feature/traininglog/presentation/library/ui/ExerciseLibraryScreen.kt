@@ -34,6 +34,7 @@ import app.trainer.navigation.Screens
 import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
 import app.trainer.strings.Res
+import app.trainer.strings.exercise_library_archive_action
 import app.trainer.strings.exercise_library_client_author
 import app.trainer.strings.exercise_library_create_action
 import app.trainer.strings.exercise_library_empty_description
@@ -210,7 +211,7 @@ private fun ExerciseCard(
                     url = video.url,
                 )
             }
-            if (exercise.isOwnedByCoach) {
+            if (exercise.isOwnedByMe) {
                 val picker = rememberVideoPicker { picked ->
                     onEvent(ExerciseLibraryEvent.OnVideoPicked(exerciseId = exercise.exerciseId, video = picked))
                 }
@@ -223,6 +224,12 @@ private fun ExerciseCard(
                     tone = ButtonTone.Text,
                     size = ButtonSize.Small,
                     state = if (exercise.isUploadingVideo) ButtonState.Loading else ButtonState.Idle,
+                )
+                AppButton(
+                    text = stringResource(Res.string.exercise_library_archive_action),
+                    onClick = { onEvent(ExerciseLibraryEvent.OnArchiveClicked(exercise.exerciseId)) },
+                    tone = ButtonTone.Text,
+                    size = ButtonSize.Small,
                 )
             }
         }

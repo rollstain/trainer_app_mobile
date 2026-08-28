@@ -51,6 +51,7 @@ class ExerciseLibraryScreenModel(
             ExerciseLibraryEvent.OnCreateClicked -> screenModelScope {
                 postSideEffect(ExerciseLibrarySideEffect.OpenExerciseCreation)
             }
+            is ExerciseLibraryEvent.OnArchiveClicked -> archiveExercise(event.exerciseId)
             is ExerciseLibraryEvent.OnVideoPicked -> uploadVideo(
                 exerciseId = event.exerciseId,
                 video = event.video,
@@ -115,6 +116,15 @@ class ExerciseLibraryScreenModel(
         }
     }
 
+    private fun archiveExercise(exerciseId: String) {
+        screenModelScope {
+            when (val archived = trainingLogRepository.archiveExercise(exerciseId)) {
+                is RequestResult.Error -> postSideEffect(ExerciseLibrarySideEffect.ShowFailure(archived))
+                is RequestResult.Success -> onFetchData()
+            }
+        }
+    }
+
     private suspend fun toRow(exercise: Exercise): ExerciseRow {
         val kindLabel = when (exercise.kind) {
             ExerciseKind.STRENGTH -> getString(Res.string.exercise_library_strength_label)
@@ -133,7 +143,7 @@ class ExerciseLibraryScreenModel(
             author = exercise.ownerDisplayName,
             description = exercise.description,
             video = videoOf(exercise),
-            isOwnedByCoach = exercise.ownerKind == ExerciseOwnerKind.COACH,
+            isOwnedByMe = exercise.ownerKind != ExerciseOwnerKind.SHARED && exercise.ownerDisplayName == null,
             isUploadingVideo = false,
         )
     }

@@ -26,6 +26,8 @@ interface TrainingLogRepository : LocalDataCleaner {
         bytes: ByteArray,
     ): RequestResult<Exercise>
 
+    suspend fun archiveExercise(exerciseId: String): RequestResult<Unit>
+
     suspend fun createExercise(
         name: String,
         primaryMuscle: MuscleGroup,

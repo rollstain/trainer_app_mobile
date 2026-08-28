@@ -110,6 +110,7 @@
     <string name="exercise_kind_strength">Силовое</string>
     <string name="exercise_library_bodyweight_label">только повторы</string>
     <string name="exercise_library_client_author">Упражнение подопечного: %1$s</string>
+    <string name="exercise_library_archive_action">Убрать из справочника</string>
     <string name="exercise_library_cardio_label">минуты и метры</string>
     <string name="exercise_library_create_action">Добавить упражнение</string>
     <string name="exercise_library_empty_description">Добавьте упражнения — подопечные смогут выбирать их в дневнике.</string>

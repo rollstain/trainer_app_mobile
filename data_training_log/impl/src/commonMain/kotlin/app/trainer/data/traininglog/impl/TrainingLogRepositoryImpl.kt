@@ -17,6 +17,7 @@ import app.trainer.network.HttpClientProvider
 import app.trainer.network.PresignedUploader
 import app.trainer.network.safePagedRequest
 import app.trainer.network.safeRequest
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
@@ -129,6 +130,14 @@ class TrainingLogRepositoryImpl(
                     RequestResult.Success(exercise)
                 }
             }
+        }
+    }
+
+    override suspend fun archiveExercise(exerciseId: String): RequestResult<Unit> {
+        val archived = safeRequest<Unit> { client.delete("exercises/$exerciseId") }
+        return when (archived) {
+            is RequestResult.Error -> archived
+            is RequestResult.Success -> RequestResult.Success(Unit)
         }
     }
 

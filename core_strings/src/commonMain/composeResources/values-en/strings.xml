@@ -110,6 +110,7 @@
     <string name="exercise_kind_strength">Strength</string>
     <string name="exercise_library_bodyweight_label">reps only</string>
     <string name="exercise_library_client_author">Client's exercise: %1$s</string>
+    <string name="exercise_library_archive_action">Remove from the library</string>
     <string name="exercise_library_cardio_label">minutes and metres</string>
     <string name="exercise_library_create_action">Add an exercise</string>
     <string name="exercise_library_empty_description">Add exercises — your clients will be able to pick them in the diary.</string>
