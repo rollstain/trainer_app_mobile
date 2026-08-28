@@ -34,6 +34,10 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
+                    android:host="api.lyashukfit.ru"
+                    android:pathPrefix="/i/" />
+                <data
+                    android:scheme="https"
                     android:host="lyashukfit.ru"
                     android:pathPrefix="/i/" />
             </intent-filter>
