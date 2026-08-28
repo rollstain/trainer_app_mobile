@@ -8,6 +8,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import app.trainer.app.PendingInvite
 import app.trainer.app.SessionController
 import app.trainer.app.SessionStatus
 import app.trainer.base.failure.AppFailureState
@@ -46,7 +47,9 @@ fun AppGate() {
 
 @Composable
 private fun OnboardingRoot() {
-    val navigator = rememberNavigator(startKey = Screens.Invite(code = null))
+    val pendingInvite: PendingInvite = koinInject()
+    val invitedCode by pendingInvite.code.collectAsState()
+    val navigator = rememberNavigator(startKey = Screens.Invite(code = invitedCode))
     CompositionLocalProvider(LocalNavigator provides navigator) {
         Box(modifier = Modifier.fillMaxSize().screenBackground()) {
             NavContainer(

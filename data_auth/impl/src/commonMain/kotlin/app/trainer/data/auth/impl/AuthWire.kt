@@ -28,3 +28,47 @@ data class InviteResponse(
     @SerialName("expiresAt")
     val expiresAt: String?,
 )
+
+@Serializable
+data class ExternalSignInRequest(
+    @SerialName("provider")
+    val provider: String,
+    @SerialName("token")
+    val token: String,
+    @SerialName("deviceInfo")
+    val deviceInfo: String,
+)
+
+@Serializable
+data class LinkIdentityRequest(
+    @SerialName("provider")
+    val provider: String,
+    @SerialName("token")
+    val token: String,
+)
+
+@Serializable
+data class JoinCoachRequest(
+    @SerialName("code")
+    val code: String,
+)
+
+@Serializable
+data class LinkedIdentityResponse(
+    @SerialName("provider")
+    val provider: String?,
+    @SerialName("linkedAt")
+    val linkedAt: String?,
+)
+
+@Serializable
+data class DeviceSessionResponse(
+    @SerialName("id")
+    val id: String?,
+    @SerialName("deviceInfo")
+    val deviceInfo: String?,
+    @SerialName("lastSeenAt")
+    val lastSeenAt: String?,
+    @SerialName("isCurrent")
+    val isCurrent: Boolean?,
+)

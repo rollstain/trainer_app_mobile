@@ -1,5 +1,6 @@
 package app.trainer.app.di
 
+import app.trainer.app.PendingInvite
 import app.trainer.app.SessionController
 import app.trainer.base.date.ScheduleWeeks
 import app.trainer.base.input.WeightInput
@@ -15,6 +16,7 @@ class AppModule(private val config: NetworkConfig, private val deviceInfo: Strin
     val module = module {
         single<CoroutineDispatcher> { ioDispatcher() }
         single { WeightInput() }
+        single { PendingInvite() }
         single { ScheduleWeeks() }
         single(named(AccountFeatureModule.DEVICE_INFO_QUALIFIER)) { deviceInfo }
         single(named(ChatDataModule.WEB_SOCKET_URL_QUALIFIER)) { config.chatWebSocketUrl }

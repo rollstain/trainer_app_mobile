@@ -1,6 +1,7 @@
 package app.trainer.android
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -8,9 +9,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import app.trainer.app.PendingInvite
 import app.trainer.app.ui.AppGate
+import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
+
+    private val pendingInvite: PendingInvite by inject()
 
     private val notificationsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -19,7 +24,18 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestNotificationsPermissionIfNeeded()
+        rememberInvite(intent)
         setContent { AppGate() }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        rememberInvite(intent)
+    }
+
+    private fun rememberInvite(intent: Intent?) {
+        val link = intent?.data?.toString() ?: return
+        pendingInvite.remember(link)
     }
 
     private fun requestNotificationsPermissionIfNeeded() {
