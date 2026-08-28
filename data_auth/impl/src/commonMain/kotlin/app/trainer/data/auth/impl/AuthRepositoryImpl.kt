@@ -98,7 +98,10 @@ class AuthRepositoryImpl(
         }
         return when (joined) {
             is RequestResult.Error -> joined
-            is RequestResult.Success -> RequestResult.Success(Unit)
+            is RequestResult.Success -> {
+                sessionEvents.notifyProfileChanged()
+                RequestResult.Success(Unit)
+            }
         }
     }
 

@@ -7,6 +7,13 @@
     <string name="chat_list_client_empty_title">No messages yet</string>
     <string name="chat_list_client_title">Chat</string>
     <string name="invite_title">Code from your coach</string>
+    <string name="no_coach_title">One step left: reach your coach</string>
+    <string name="no_coach_description">The app works in pairs: your coach keeps the schedule and the program, you log the workouts. There is nothing to see without a coach.</string>
+    <string name="no_coach_code_title">Code from your coach</string>
+    <string name="no_coach_code_hint">Your coach sends it in a message or a link</string>
+    <string name="no_coach_waiting_title">No coach yet?</string>
+    <string name="no_coach_keeps_data">Your account data stays here — come back when you get a code.</string>
+    <string name="no_coach_join_action">Connect</string>
     <string name="invite_expired_session_title">Sign in again</string>
     <string name="invite_expired_session_description">It has been a while since we checked it is you. Nothing is lost — your diary and schedule are here.</string>
     <string name="invite_description">Six characters from your coach's message</string>

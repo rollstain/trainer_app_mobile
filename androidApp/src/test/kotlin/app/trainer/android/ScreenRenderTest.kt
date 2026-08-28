@@ -18,6 +18,8 @@ import app.trainer.feature.account.invitelink.mvi.InviteLinkContent
 import app.trainer.feature.account.invitelink.mvi.InviteLinkProblem
 import app.trainer.feature.account.invitelink.mvi.InviteLinkState
 import app.trainer.feature.account.invitelink.ui.InviteLinkView
+import app.trainer.feature.account.nocoach.mvi.NoCoachState
+import app.trainer.feature.account.nocoach.ui.NoCoachView
 import app.trainer.feature.account.profile.mvi.ProfileState
 import app.trainer.feature.account.profile.ui.ProfileView
 import app.trainer.feature.clientcard.presentation.mvi.CheckInReview
@@ -113,6 +115,9 @@ private const val REMINDER_HOUR = 10
 private const val REMINDERS_TITLE = "Client reminders"
 private const val DEVICE_CURRENT = "THIS DEVICE"
 private const val BLOCK_FAILED = "Could not load this"
+private const val NO_COACH_TITLE = "One step left: reach your coach"
+private const val NO_COACH_KEEPS_DATA = "Your account data stays here — come back when you get a code."
+private const val NO_COACH_SIGN_OUT = "Sign out"
 private const val GROUP_BOOKED = "booked"
 private const val GROUP_FREE = "free"
 private const val GROUP_WAITING = "waiting"
@@ -391,6 +396,21 @@ class ScreenRenderTest {
         compose.onNodeWithText(REMINDERS_TITLE).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(DIARY_REMINDER_TITLE).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(REMINDER_HOUR_LABEL).assertExists()
+    }
+
+    @Test
+    fun `a client without a coach gets one screen with a code field and a way out`() {
+        compose.setContent {
+            TestTheme {
+                NoCoachView(state = NoCoachState.initial(), onEvent = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(NO_COACH_TITLE).assertIsDisplayed()
+        compose.onNodeWithText(NO_COACH_KEEPS_DATA).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(NO_COACH_SIGN_OUT).performScrollTo().assertIsDisplayed()
     }
 
     @Test

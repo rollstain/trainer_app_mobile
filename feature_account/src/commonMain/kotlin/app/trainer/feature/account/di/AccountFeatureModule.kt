@@ -8,6 +8,8 @@ import app.trainer.feature.account.invite.mvi.InviteScreenModel
 import app.trainer.feature.account.invite.ui.InviteScreen
 import app.trainer.feature.account.invitelink.mvi.InviteLinkScreenModel
 import app.trainer.feature.account.invitelink.ui.InviteLinkScreen
+import app.trainer.feature.account.nocoach.mvi.NoCoachScreenModel
+import app.trainer.feature.account.nocoach.ui.NoCoachScreen
 import app.trainer.feature.account.onboarding.mvi.OnboardingScreenModel
 import app.trainer.feature.account.onboarding.ui.OnboardingScreen
 import app.trainer.feature.account.profile.mvi.ProfileScreenModel
@@ -44,6 +46,7 @@ class AccountFeatureModule {
         }
         viewModel { ContactLinkScreenModel(profileRepository = get()) }
         viewModel { DevicesScreenModel(authRepository = get()) }
+        viewModel { NoCoachScreenModel(authRepository = get()) }
         viewModel {
             ProfileScreenModel(
                 profileRepository = get(),
@@ -59,6 +62,7 @@ class AccountFeatureModule {
         screen<Screens.ContactLink> { ContactLinkScreen() }
         screen<Screens.Profile> { ProfileScreen() }
         screen<Screens.Devices> { DevicesScreen() }
+        screen<Screens.NoCoach> { NoCoachScreen() }
     }
 
     companion object {

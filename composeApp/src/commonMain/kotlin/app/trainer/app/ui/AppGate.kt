@@ -40,7 +40,11 @@ fun AppGate() {
                     failure = current.failure,
                     onRetry = sessionController::retry,
                 )
-                is SessionStatus.SignedIn -> SignedInRoot(isCoach = current.isCoach)
+                is SessionStatus.SignedIn -> if (current.isCoach || current.hasCoach) {
+                    SignedInRoot(isCoach = current.isCoach)
+                } else {
+                    NoCoachRoot()
+                }
             }
         }
     }
@@ -51,6 +55,21 @@ private fun SignedInRoot(isCoach: Boolean) {
     val pendingInvite: PendingInvite = koinInject()
     LaunchedEffect(Unit) { pendingInvite.consume() }
     AppRoot(isCoach = isCoach)
+}
+
+@Composable
+private fun NoCoachRoot() {
+    val navigator = rememberNavigator(startKey = Screens.NoCoach)
+    CompositionLocalProvider(LocalNavigator provides navigator) {
+        Box(modifier = Modifier.fillMaxSize().screenBackground()) {
+            NavContainer(
+                entries = navigator.state.toEntries(),
+                onBack = navigator::pop,
+                forward = forwardScreenTransition(),
+                backward = backwardScreenTransition(),
+            )
+        }
+    }
 }
 
 @Composable

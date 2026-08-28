@@ -43,6 +43,8 @@ data class MeResponse(
     val coachId: String?,
     @SerialName("zoneId")
     val zoneId: String?,
+    @SerialName("hasCoach")
+    val hasCoach: Boolean?,
 )
 
 class ProfileRepositoryImpl(
@@ -91,8 +93,9 @@ class ProfileRepositoryImpl(
     private fun toProfile(response: MeResponse): RequestResult<UserProfile> {
         val userId = response.userId
         val displayName = response.displayName
-        if (userId == null || displayName == null) {
-            logger.error(tag = LOG_TAG, message = "В ответе /me нет userId или displayName")
+        val hasCoach = response.hasCoach
+        if (userId == null || displayName == null || hasCoach == null) {
+            logger.error(tag = LOG_TAG, message = "В ответе /me нет userId, displayName или hasCoach")
             return RequestResult.Error(
                 kind = RequestFailure.Parsing,
                 statusCode = null,
@@ -108,6 +111,7 @@ class ProfileRepositoryImpl(
                 email = response.email,
                 coachId = response.coachId,
                 zoneId = response.zoneId,
+                hasCoach = hasCoach,
             )
         )
     }

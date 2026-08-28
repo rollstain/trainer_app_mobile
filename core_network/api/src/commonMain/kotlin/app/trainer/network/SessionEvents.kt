@@ -8,7 +8,11 @@ interface SessionEvents {
 
     val authChanged: Flow<Unit>
 
+    val profileChanged: Flow<Unit>
+
     suspend fun notifyExpired()
 
     suspend fun notifyAuthChanged()
+
+    suspend fun notifyProfileChanged()
 }

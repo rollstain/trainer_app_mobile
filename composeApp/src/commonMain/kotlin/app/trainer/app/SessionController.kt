@@ -33,7 +33,7 @@ sealed interface SessionStatus {
 
     data class ProfileUnavailable(val failure: RequestResult.Error) : SessionStatus
 
-    data class SignedIn(val isCoach: Boolean) : SessionStatus
+    data class SignedIn(val isCoach: Boolean, val hasCoach: Boolean) : SessionStatus
 }
 
 class SessionController(
@@ -59,7 +59,13 @@ class SessionController(
 
     fun start() {
         scope.launch {
-            merge(flowOf(Unit), sessionEvents.authChanged, sessionEvents.expired, retries)
+            merge(
+                flowOf(Unit),
+                sessionEvents.authChanged,
+                sessionEvents.profileChanged,
+                sessionEvents.expired,
+                retries,
+            )
                 .collectLatest { evaluate() }
         }
     }
@@ -80,7 +86,10 @@ class SessionController(
         val beforeProfileLoad = mutableStatus.value
         when (val profile = profileRepository.me()) {
             is RequestResult.Success -> {
-                mutableStatus.value = SessionStatus.SignedIn(isCoach = profile.data.coachId != null)
+                mutableStatus.value = SessionStatus.SignedIn(
+                    isCoach = profile.data.coachId != null,
+                    hasCoach = profile.data.hasCoach,
+                )
                 if (beforeProfileLoad !is SessionStatus.SignedIn) startAuthorizedWork()
             }
             is RequestResult.Error -> {
@@ -99,7 +108,7 @@ class SessionController(
     private suspend fun showLastKnownRole() {
         if (mutableStatus.value is SessionStatus.SignedIn) return
         val isCoach = profileRepository.lastKnownIsCoach() ?: return
-        mutableStatus.value = SessionStatus.SignedIn(isCoach = isCoach)
+        mutableStatus.value = SessionStatus.SignedIn(isCoach = isCoach, hasCoach = true)
         startAuthorizedWork()
     }
 

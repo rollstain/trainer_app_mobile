@@ -7,4 +7,5 @@ data class UserProfile(
     val email: String?,
     val coachId: String?,
     val zoneId: String?,
+    val hasCoach: Boolean,
 )

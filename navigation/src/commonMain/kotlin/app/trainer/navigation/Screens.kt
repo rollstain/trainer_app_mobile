@@ -17,6 +17,9 @@ sealed interface Screens : NavKey {
     data class Onboarding(val code: String) : Screens
 
     @Serializable
+    data object NoCoach : Screens
+
+    @Serializable
     data object ContactLink : Screens
 
     @Serializable
