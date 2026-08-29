@@ -55,6 +55,8 @@ data class MeResponse(
     val zoneId: String?,
     @SerialName("hasCoach")
     val hasCoach: Boolean?,
+    @SerialName("isOwner")
+    val isOwner: Boolean?,
 )
 
 @Serializable
@@ -161,6 +163,7 @@ class ProfileRepositoryImpl(
                 coachId = response.coachId,
                 zoneId = response.zoneId,
                 hasCoach = requireNotNull(hasCoach),
+                isOwner = response.isOwner == true,
             )
         )
     }

@@ -19,6 +19,7 @@ import app.trainer.data.clients.CoachPolicy
 import app.trainer.feature.account.profile.mvi.ProfileEvent
 import app.trainer.feature.account.profile.mvi.ProfileState
 import app.trainer.strings.Res
+import app.trainer.strings.coaches_title
 import app.trainer.strings.login_methods_title
 import app.trainer.strings.profile_add_contact_action
 import app.trainer.strings.profile_become_coach_action
@@ -27,6 +28,7 @@ import app.trainer.strings.profile_cancellation_hours
 import app.trainer.strings.profile_cancellation_title
 import app.trainer.strings.profile_devices_action
 import app.trainer.strings.profile_exercise_library_action
+import app.trainer.strings.profile_management_section
 import app.trainer.strings.profile_no_contact_description
 import app.trainer.strings.profile_no_contact_title
 import app.trainer.strings.profile_programs_action
@@ -53,6 +55,7 @@ import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCard
 import app.trainer.uikit.widgets.AppCardShimmerList
 import app.trainer.uikit.widgets.AppConfirmDialog
+import app.trainer.uikit.widgets.AppSectionHeader
 import app.trainer.uikit.widgets.AppSwitch
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTopBar
@@ -206,6 +209,16 @@ private fun ProfileContent(state: ProfileState, onEvent: (ProfileEvent) -> Unit)
             AppCard(action = CardAction.Click { onEvent(ProfileEvent.OnBecomeCoachClicked) }) {
                 AppText(
                     text = stringResource(Res.string.profile_become_coach_action),
+                    style = AppTheme.typography.body,
+                    color = AppTheme.colors.textPrimary,
+                )
+            }
+        }
+        if (state.isOwner) {
+            AppSectionHeader(title = stringResource(Res.string.profile_management_section))
+            AppCard(action = CardAction.Click { onEvent(ProfileEvent.OnCoachesClicked) }) {
+                AppText(
+                    text = stringResource(Res.string.coaches_title),
                     style = AppTheme.typography.body,
                     color = AppTheme.colors.textPrimary,
                 )

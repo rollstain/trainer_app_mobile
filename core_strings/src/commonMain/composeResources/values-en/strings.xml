@@ -17,6 +17,28 @@
     <string name="no_coach_coach_description">Set up your workspace: schedule, programs, diaries. Clients join with the code you send them.</string>
     <string name="no_coach_coach_action">Become a coach</string>
     <string name="profile_become_coach_action">Become a coach</string>
+    <string name="coaches_title">Coaches</string>
+    <string name="coaches_empty_title">No coaches yet</string>
+    <string name="coaches_empty_description">Everyone who sets up a coach workplace shows up here.</string>
+    <string name="coaches_owner_mark">owner</string>
+    <string name="coach_card_title">Coach</string>
+    <string name="coach_card_clients_section">Clients</string>
+    <string name="coach_card_active_clients">Active</string>
+    <string name="coach_card_archived_clients">Archived</string>
+    <string name="coach_card_account_section">Account</string>
+    <string name="coach_card_joined">Coaching since</string>
+    <string name="coach_card_zone">Time zone</string>
+    <string name="coach_card_last_seen">Last seen</string>
+    <string name="coach_card_never_seen">never</string>
+    <string name="coach_card_sign_in_section">Signs in with</string>
+    <string name="coach_card_password">Email and password</string>
+    <string name="coach_card_no_sign_in">No sign-in methods left</string>
+    <string name="coach_card_contacts_section">Contacts</string>
+    <string name="coach_card_email">Email</string>
+    <string name="coach_card_phone">Phone</string>
+    <string name="coach_card_login">Login</string>
+    <string name="coach_card_no_contacts">No contacts</string>
+    <string name="profile_management_section">Management</string>
     <string name="coach_setup_title">Coach workspace</string>
     <string name="coach_setup_description">Next you can build schedules and programs, and clients join with the code you send them.</string>
     <string name="coach_setup_name_label">Name</string>
@@ -748,5 +770,9 @@
     <plurals name="sign_in_locked_title">
         <item quantity="one">Sign-in is closed for %1$d minute</item>
         <item quantity="other">Sign-in is closed for %1$d minutes</item>
+    </plurals>
+    <plurals name="coaches_clients">
+        <item quantity="one">%1$d client</item>
+        <item quantity="other">%1$d clients</item>
     </plurals>
 </resources>

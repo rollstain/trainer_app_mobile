@@ -60,6 +60,9 @@ class ProfileScreenModel(
             ProfileEvent.OnExerciseLibraryClicked -> screenModelScope {
                 postSideEffect(ProfileSideEffect.OpenExerciseLibrary)
             }
+            ProfileEvent.OnCoachesClicked -> screenModelScope {
+                postSideEffect(ProfileSideEffect.OpenCoaches)
+            }
             is ProfileEvent.OnCancellationWindowSelected -> changePolicy { policy ->
                 policy.copy(cancellationWindowHours = event.hours)
             }
@@ -100,6 +103,7 @@ class ProfileScreenModel(
                 contactLabel = profile.phone ?: profile.email,
                 policy = policy,
                 isCoach = isCoach,
+                isOwner = profile.isOwner,
                 isLoading = false,
                 failure = null,
             )

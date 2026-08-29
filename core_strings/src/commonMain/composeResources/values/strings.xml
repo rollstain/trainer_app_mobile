@@ -199,6 +199,28 @@
     <string name="no_coach_coach_description">Заведите рабочее место: расписание, программы, дневники. Подопечные подключатся по коду, который вы им отправите.</string>
     <string name="no_coach_coach_action">Стать тренером</string>
     <string name="profile_become_coach_action">Стать тренером</string>
+    <string name="coaches_title">Тренеры</string>
+    <string name="coaches_empty_title">Тренеров пока нет</string>
+    <string name="coaches_empty_description">Здесь появится каждый, кто заведёт себе рабочее место тренера.</string>
+    <string name="coaches_owner_mark">владелец</string>
+    <string name="coach_card_title">Тренер</string>
+    <string name="coach_card_clients_section">Подопечные</string>
+    <string name="coach_card_active_clients">Активные</string>
+    <string name="coach_card_archived_clients">В архиве</string>
+    <string name="coach_card_account_section">Аккаунт</string>
+    <string name="coach_card_joined">Рабочее место с</string>
+    <string name="coach_card_zone">Часовой пояс</string>
+    <string name="coach_card_last_seen">Последний вход</string>
+    <string name="coach_card_never_seen">не заходил</string>
+    <string name="coach_card_sign_in_section">Как входит</string>
+    <string name="coach_card_password">Почта и пароль</string>
+    <string name="coach_card_no_sign_in">Способов входа не осталось</string>
+    <string name="coach_card_contacts_section">Контакты</string>
+    <string name="coach_card_email">Почта</string>
+    <string name="coach_card_phone">Телефон</string>
+    <string name="coach_card_login">Логин</string>
+    <string name="coach_card_no_contacts">Контактов нет</string>
+    <string name="profile_management_section">Управление</string>
     <string name="coach_setup_title">Рабочее место тренера</string>
     <string name="coach_setup_description">Дальше вы сможете составлять расписание и программы, а подопечные подключатся по коду, который вы им отправите.</string>
     <string name="coach_setup_name_label">Имя</string>
@@ -754,5 +776,11 @@
         <item quantity="few">Вход закрыт на %1$d минуты</item>
         <item quantity="many">Вход закрыт на %1$d минут</item>
         <item quantity="other">Вход закрыт на %1$d минуты</item>
+    </plurals>
+    <plurals name="coaches_clients">
+        <item quantity="one">%1$d подопечный</item>
+        <item quantity="few">%1$d подопечных</item>
+        <item quantity="many">%1$d подопечных</item>
+        <item quantity="other">%1$d подопечного</item>
     </plurals>
 </resources>

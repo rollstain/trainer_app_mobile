@@ -1,5 +1,9 @@
 package app.trainer.feature.account.di
 
+import app.trainer.feature.account.coachcard.mvi.CoachCardScreenModel
+import app.trainer.feature.account.coachcard.ui.CoachCardScreen
+import app.trainer.feature.account.coaches.mvi.CoachesScreenModel
+import app.trainer.feature.account.coaches.ui.CoachesScreen
 import app.trainer.feature.account.coachsetup.mvi.CoachSetupScreenModel
 import app.trainer.feature.account.coachsetup.ui.CoachSetupScreen
 import app.trainer.feature.account.contact.mvi.ContactLinkScreenModel
@@ -117,6 +121,13 @@ class AccountFeatureModule {
         viewModel { PasswordFormScreenModel(identitiesRepository = get(), profileRepository = get()) }
         viewModel { NoCoachScreenModel(authRepository = get(), profileRepository = get()) }
         viewModel { CoachSetupScreenModel(profileRepository = get()) }
+        viewModel { CoachesScreenModel(ownerRepository = get()) }
+        viewModel { parameters ->
+            CoachCardScreenModel(
+                coachId = parameters.get(),
+                ownerRepository = get(),
+            )
+        }
         viewModel { parameters ->
             WelcomeScreenModel(
                 afterSessionExpiry = parameters.get(),
@@ -147,6 +158,8 @@ class AccountFeatureModule {
         screen<Screens.PasswordForm> { PasswordFormScreen() }
         screen<Screens.NoCoach> { NoCoachScreen() }
         screen<Screens.CoachSetup> { CoachSetupScreen() }
+        screen<Screens.Coaches> { CoachesScreen() }
+        screen<Screens.CoachCard> { CoachCardScreen(coachId = it.coachId) }
         screen<Screens.Welcome> { WelcomeScreen(afterSessionExpiry = it.afterSessionExpiry) }
     }
 

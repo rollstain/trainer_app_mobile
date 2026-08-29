@@ -25,4 +25,6 @@ fun timeOfDayOf(dateTime: LocalDateTime): String =
 fun dayMonthOf(date: LocalDate): String =
     "${twoDigits(date.day)}.${twoDigits(date.month.number)}"
 
+fun dayMonthYearOf(date: LocalDate): String = "${dayMonthOf(date)}.${date.year}"
+
 private fun twoDigits(value: Int): String = value.toString().padStart(TWO_DIGITS, '0')

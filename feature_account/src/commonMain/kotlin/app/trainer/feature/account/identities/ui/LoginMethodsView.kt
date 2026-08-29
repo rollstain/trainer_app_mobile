@@ -11,11 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import app.trainer.base.failure.AppFailureState
-import app.trainer.data.auth.AuthProvider
 import app.trainer.feature.account.identities.mvi.LinkProgress
 import app.trainer.feature.account.identities.mvi.LoginMethodRow
 import app.trainer.feature.account.identities.mvi.LoginMethodsEvent
 import app.trainer.feature.account.identities.mvi.LoginMethodsState
+import app.trainer.feature.account.providers.providerNameOf
 import app.trainer.strings.Res
 import app.trainer.strings.login_methods_email
 import app.trainer.strings.login_methods_email_change
@@ -278,12 +278,4 @@ private fun MethodCard(
             }
         }
     }
-}
-
-private fun providerNameOf(provider: AuthProvider): String = when (provider) {
-    AuthProvider.TELEGRAM -> "Telegram"
-    AuthProvider.VK -> "VK ID"
-    AuthProvider.YANDEX -> "Яндекс ID"
-    AuthProvider.APPLE -> "Apple"
-    AuthProvider.GOOGLE -> "Google"
 }

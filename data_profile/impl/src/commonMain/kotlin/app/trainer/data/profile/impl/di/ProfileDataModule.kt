@@ -1,6 +1,8 @@
 package app.trainer.data.profile.impl.di
 
+import app.trainer.data.profile.OwnerRepository
 import app.trainer.data.profile.ProfileRepository
+import app.trainer.data.profile.impl.OwnerRepositoryImpl
 import app.trainer.data.profile.impl.ProfileRepositoryImpl
 import app.trainer.entities.LocalDataCleaner
 import org.koin.dsl.bind
@@ -18,5 +20,11 @@ class ProfileDataModule {
                 logger = get(),
             )
         } bind LocalDataCleaner::class
+        single<OwnerRepository> {
+            OwnerRepositoryImpl(
+                httpClientProvider = get(),
+                logger = get(),
+            )
+        }
     }
 }

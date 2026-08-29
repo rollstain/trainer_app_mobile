@@ -53,6 +53,7 @@ private suspend fun handleSideEffect(
         ProfileSideEffect.OpenDevices -> navigator.push(Screens.Devices)
         ProfileSideEffect.OpenExerciseLibrary -> navigator.push(Screens.ExerciseLibrary)
         ProfileSideEffect.OpenPrograms -> navigator.push(Screens.Programs)
+        ProfileSideEffect.OpenCoaches -> navigator.push(Screens.Coaches)
         ProfileSideEffect.SignedOut -> Unit
         is ProfileSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
     }

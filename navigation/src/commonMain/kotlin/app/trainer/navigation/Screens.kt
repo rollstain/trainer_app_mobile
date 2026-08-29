@@ -130,4 +130,10 @@ sealed interface Screens : NavKey {
 
     @Serializable
     data object LoginMethods : Screens
+
+    @Serializable
+    data object Coaches : Screens
+
+    @Serializable
+    data class CoachCard(val coachId: String) : Screens
 }

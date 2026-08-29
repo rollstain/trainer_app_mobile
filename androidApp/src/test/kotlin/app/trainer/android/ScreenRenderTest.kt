@@ -11,6 +11,11 @@ import app.trainer.data.auth.AuthProvider
 import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.schedule.SlotStatus
 import app.trainer.entities.LegalLinks
+import app.trainer.feature.account.coachcard.mvi.CoachCardState
+import app.trainer.feature.account.coachcard.ui.CoachCardView
+import app.trainer.feature.account.coaches.mvi.CoachRow
+import app.trainer.feature.account.coaches.mvi.CoachesState
+import app.trainer.feature.account.coaches.ui.CoachesView
 import app.trainer.feature.account.devices.mvi.DeviceRow
 import app.trainer.feature.account.devices.mvi.DevicesState
 import app.trainer.feature.account.devices.ui.DevicesView
@@ -124,6 +129,13 @@ private const val CANCELLATION_WINDOW_HOURS = 12
 private const val REMINDER_HOUR = 10
 private const val REMINDERS_TITLE = "Client reminders"
 private const val DEVICE_CURRENT = "THIS DEVICE"
+private const val COACHES_OWNER_MARK = "owner"
+private const val COACHES_EMPTY_TITLE = "No coaches yet"
+private const val COACH_CARD_NEVER_SEEN = "never"
+private const val COACH_CARD_PASSWORD = "Email and password"
+private const val COACH_CARD_NO_CONTACTS = "No contacts"
+private const val COACH_ACTIVE_CLIENTS = 4
+private const val COACH_ARCHIVED_CLIENTS = 2
 private const val BLOCK_FAILED = "Could not load this"
 private const val NEXT_HABITS_TITLE = "Habits"
 private const val PROGRESS_HABITS_TITLE = "Habits"
@@ -751,6 +763,52 @@ class ScreenRenderTest {
         }
         compose.waitForIdle()
     }
+
+    @Test
+    fun `the coach roster marks the owner and counts the clients`() {
+        compose.setContent {
+            TestTheme {
+                CoachesView(state = coaches(), onEvent = {}, onBackClick = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(COACH_NAME).assertIsDisplayed()
+        compose.onNodeWithText("$COACHES_OWNER_MARK · $COACH_ACTIVE_CLIENTS clients").assertIsDisplayed()
+    }
+
+    @Test
+    fun `an empty roster explains where coaches come from`() {
+        compose.setContent {
+            TestTheme {
+                CoachesView(
+                    state = CoachesState.initial().withFirstPage(rows = listOf(), nextCursor = null),
+                    onEvent = {},
+                    onBackClick = {},
+                )
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(COACHES_EMPTY_TITLE).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the card of a coach who never signed in says so instead of showing a date`() {
+        compose.setContent {
+            TestTheme {
+                CoachCardView(state = coachCard(), onEvent = {}, onBackClick = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(COACH_CARD_NEVER_SEEN).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(COACH_CARD_PASSWORD).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(COACH_CARD_NO_CONTACTS).performScrollTo().assertIsDisplayed()
+    }
 }
 
 @androidx.compose.runtime.Composable
@@ -829,6 +887,30 @@ private fun coachProfile(): ProfileState = ProfileState.initial().copy(
 )
 
 private const val COACH_NAME = "Dmitry Rogov"
+
+private fun coaches(): CoachesState = CoachesState.initial().withFirstPage(
+    rows = listOf(
+        CoachRow(
+            coachId = "coach-1",
+            displayName = COACH_NAME,
+            joinedLabel = "24.08.2026",
+            activeClients = COACH_ACTIVE_CLIENTS,
+            isOwner = true,
+        ),
+    ),
+    nextCursor = null,
+)
+
+private fun coachCard(): CoachCardState = CoachCardState.initial().copy(
+    displayName = COACH_NAME,
+    joinedLabel = "24.08.2026",
+    zoneId = "Europe/Moscow",
+    lastSeenLabel = null,
+    activeClients = COACH_ACTIVE_CLIENTS,
+    archivedClients = COACH_ARCHIVED_CLIENTS,
+    hasPassword = true,
+    isLoading = false,
+)
 
 private fun onlyTelegramLinked(): LoginMethodsState = LoginMethodsState.initial().copy(
     isLoading = false,
