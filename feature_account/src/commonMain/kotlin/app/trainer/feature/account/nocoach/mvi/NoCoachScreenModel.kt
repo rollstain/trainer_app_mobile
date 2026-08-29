@@ -1,7 +1,11 @@
 package app.trainer.feature.account.nocoach.mvi
 
 import app.trainer.base.BaseScreenModel
+import app.trainer.base.date.dayMonthOf
+import app.trainer.base.date.monthGenitiveOf
+import app.trainer.base.date.timeOfDayOf
 import app.trainer.data.auth.AuthRepository
+import app.trainer.data.auth.CoachAccess
 import app.trainer.data.auth.CoachAccessStatus
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.entities.RequestFailure
@@ -10,7 +14,13 @@ import app.trainer.strings.Res
 import app.trainer.strings.invite_code_expired_message
 import app.trainer.strings.invite_code_not_found_message
 import app.trainer.strings.invite_code_used_message
+import app.trainer.strings.no_coach_asked_at
 import app.trainer.uikit.widgets.CODE_LENGTH
+import kotlin.time.Clock
+import kotlin.time.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 class NoCoachScreenModel(
@@ -30,18 +40,22 @@ class NoCoachScreenModel(
             if (profile is RequestResult.Success) {
                 updateState { it.copy(displayName = profile.data.displayName) }
             }
-            val status = authRepository.coachAccessStatus()
-            if (status is RequestResult.Success) {
-                updateState { it.copy(coachAccess = accessOf(status.data)) }
+            val access = authRepository.coachAccess()
+            if (access is RequestResult.Success) {
+                val shown = accessOf(access.data)
+                updateState { it.copy(access = shown) }
             }
         }
     }
 
     override fun dispatch(event: NoCoachEvent) {
         when (event) {
+            NoCoachEvent.OnReloadRequested -> onFetchData()
             is NoCoachEvent.OnCodeChanged -> changeCode(event.code)
             NoCoachEvent.OnJoinClicked -> join()
-            NoCoachEvent.OnCoachAccessClicked -> askCoachAccess()
+            NoCoachEvent.OnApplicationClicked -> screenModelScope {
+                postSideEffect(NoCoachSideEffect.OpenApplication)
+            }
             NoCoachEvent.OnSignOutClicked -> updateState { it.copy(isSignOutDialogVisible = true) }
             NoCoachEvent.OnSignOutDismissed -> updateState { it.copy(isSignOutDialogVisible = false) }
             NoCoachEvent.OnSignOutConfirmed -> signOut()
@@ -69,20 +83,6 @@ class NoCoachScreenModel(
         }
     }
 
-    private fun askCoachAccess() {
-        screenModelScope { current ->
-            if (current.coachAccess == CoachAccess.Asking) return@screenModelScope
-            updateState { it.copy(coachAccess = CoachAccess.Asking) }
-            when (val asked = authRepository.askCoachAccess()) {
-                is RequestResult.Error -> {
-                    updateState { it.copy(coachAccess = CoachAccess.NotAsked) }
-                    postSideEffect(NoCoachSideEffect.ShowFailure(asked))
-                }
-                is RequestResult.Success -> updateState { it.copy(coachAccess = accessOf(asked.data)) }
-            }
-        }
-    }
-
     private fun signOut() {
         screenModelScope {
             updateState { it.copy(isSignOutDialogVisible = false) }
@@ -90,11 +90,30 @@ class NoCoachScreenModel(
         }
     }
 
-    private fun accessOf(status: CoachAccessStatus): CoachAccess = when (status) {
-        CoachAccessStatus.NONE -> CoachAccess.NotAsked
-        CoachAccessStatus.PENDING -> CoachAccess.Pending
-        CoachAccessStatus.DECLINED -> CoachAccess.Declined
-        CoachAccessStatus.APPROVED -> CoachAccess.Pending
+    private suspend fun accessOf(access: CoachAccess): CoachAccessState = when (access.status) {
+        CoachAccessStatus.PENDING -> CoachAccessState.Pending(
+            askedAtLabel = askedAtLabelOf(access.askedAtIso),
+        )
+        CoachAccessStatus.DECLINED -> declinedOf(access)
+        CoachAccessStatus.NONE, CoachAccessStatus.APPROVED -> CoachAccessState.NotAsked
+    }
+
+    private suspend fun askedAtLabelOf(askedAtIso: String?): String {
+        if (askedAtIso == null) return ""
+        val askedAt = Instant.parse(askedAtIso).toLocalDateTime(TimeZone.currentSystemDefault())
+        return getString(Res.string.no_coach_asked_at, dayMonthOf(askedAt.date), timeOfDayOf(askedAt))
+    }
+
+    private suspend fun declinedOf(access: CoachAccess): CoachAccessState.Declined {
+        val decidedAt = access.decidedAtIso
+            ?.let { Instant.parse(it).toLocalDateTime(TimeZone.currentSystemDefault()).date }
+        val canAskAgainOn = access.canAskAgainOn?.let(LocalDate::parse)
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        return CoachAccessState.Declined(
+            decidedAtLabel = decidedAt?.let { dayMonthOf(it) }.orEmpty(),
+            canAskAgainLabel = canAskAgainOn?.let { "${it.day} ${monthGenitiveOf(it)}" }.orEmpty(),
+            canAskAgain = canAskAgainOn == null || canAskAgainOn <= today,
+        )
     }
 
     private suspend fun showCodeError(failure: RequestResult.Error) {

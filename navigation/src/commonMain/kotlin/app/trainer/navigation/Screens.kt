@@ -23,6 +23,9 @@ sealed interface Screens : NavKey {
     data object NoCoach : Screens
 
     @Serializable
+    data object CoachApplication : Screens
+
+    @Serializable
     data object ContactLink : Screens
 
     @Serializable

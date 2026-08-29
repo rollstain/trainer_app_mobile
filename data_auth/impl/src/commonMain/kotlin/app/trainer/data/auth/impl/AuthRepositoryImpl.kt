@@ -2,6 +2,7 @@ package app.trainer.data.auth.impl
 
 import app.trainer.data.auth.AuthProvider
 import app.trainer.data.auth.AuthRepository
+import app.trainer.data.auth.CoachAccess
 import app.trainer.data.auth.CoachAccessStatus
 import app.trainer.data.auth.CoachRequest
 import app.trainer.data.auth.CoachRequestsRepository
@@ -121,19 +122,30 @@ class AuthRepositoryImpl(
         }
     }
 
-    override suspend fun coachAccessStatus(): RequestResult<CoachAccessStatus> =
+    override suspend fun coachAccess(): RequestResult<CoachAccess> =
         coachAccessOf { httpClientProvider.client.get("me/coach-request") }
 
-    override suspend fun askCoachAccess(): RequestResult<CoachAccessStatus> =
-        coachAccessOf { httpClientProvider.client.post("me/coach-request") }
+    override suspend fun askCoachAccess(displayName: String, about: String): RequestResult<CoachAccess> =
+        coachAccessOf {
+            httpClientProvider.client.post("me/coach-request") {
+                contentType(ContentType.Application.Json)
+                setBody(AskCoachAccessRequest(displayName = displayName.trim(), about = about.trim()))
+            }
+        }
 
-    private suspend fun coachAccessOf(request: suspend () -> HttpResponse): RequestResult<CoachAccessStatus> {
+    private suspend fun coachAccessOf(request: suspend () -> HttpResponse): RequestResult<CoachAccess> {
         val loaded = safeRequest<CoachAccessStatusResponse> { request() }
         return when (loaded) {
             is RequestResult.Error -> loaded
             is RequestResult.Success -> RequestResult.Success(
-                CoachAccessStatus.entries.firstOrNull { it.name == loaded.data.status }
-                    ?: CoachAccessStatus.NONE
+                CoachAccess(
+                    status = CoachAccessStatus.entries.firstOrNull { it.name == loaded.data.status }
+                        ?: CoachAccessStatus.NONE,
+                    about = loaded.data.about,
+                    askedAtIso = loaded.data.askedAt,
+                    decidedAtIso = loaded.data.decidedAt,
+                    canAskAgainOn = loaded.data.canAskAgainOn,
+                )
             )
         }
     }

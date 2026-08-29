@@ -65,6 +65,22 @@ data class LinkedIdentityResponse(
 data class CoachAccessStatusResponse(
     @SerialName("status")
     val status: String?,
+    @SerialName("about")
+    val about: String?,
+    @SerialName("askedAt")
+    val askedAt: String?,
+    @SerialName("decidedAt")
+    val decidedAt: String?,
+    @SerialName("canAskAgainOn")
+    val canAskAgainOn: String?,
+)
+
+@Serializable
+data class AskCoachAccessRequest(
+    @SerialName("displayName")
+    val displayName: String,
+    @SerialName("about")
+    val about: String,
 )
 
 @Serializable

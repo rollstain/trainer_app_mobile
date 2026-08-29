@@ -133,8 +133,8 @@ private const val WELCOME_WAITING = "Waiting for Telegram…"
 private const val LOGIN_METHODS_LINK = "Link Telegram"
 private const val LOGIN_METHODS_LAST_HINT =
     "One way in must remain — otherwise you cannot get back into the account."
-private const val NO_COACH_TITLE = "One thing left to choose"
-private const val NO_COACH_COACH_ACTION = "I am a coach"
+private const val NO_COACH_SUBTITLE = "One thing left: who you are here."
+private const val NO_COACH_APPLICATION = "Fill in the request"
 private const val NO_COACH_SIGN_OUT = "Sign out"
 private const val GROUP_BOOKED = "booked"
 private const val GROUP_FREE = "free"
@@ -513,8 +513,8 @@ class ScreenRenderTest {
 
         compose.waitForIdle()
 
-        compose.onNodeWithText(NO_COACH_TITLE).assertIsDisplayed()
-        compose.onNodeWithText(NO_COACH_COACH_ACTION).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(NO_COACH_SUBTITLE).assertIsDisplayed()
+        compose.onNodeWithText(NO_COACH_APPLICATION).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(NO_COACH_SIGN_OUT).performScrollTo().assertIsDisplayed()
     }
 

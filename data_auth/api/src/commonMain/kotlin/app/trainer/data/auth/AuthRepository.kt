@@ -14,6 +14,14 @@ data class InvitePreview(
 
 enum class CoachAccessStatus { NONE, PENDING, APPROVED, DECLINED }
 
+data class CoachAccess(
+    val status: CoachAccessStatus,
+    val about: String?,
+    val askedAtIso: String?,
+    val decidedAtIso: String?,
+    val canAskAgainOn: String?,
+)
+
 enum class AuthProvider { YANDEX, VK, APPLE, GOOGLE, TELEGRAM }
 
 data class TelegramLoginStart(
@@ -51,9 +59,9 @@ interface AuthRepository {
 
     suspend fun joinCoach(code: String): RequestResult<Unit>
 
-    suspend fun coachAccessStatus(): RequestResult<CoachAccessStatus>
+    suspend fun coachAccess(): RequestResult<CoachAccess>
 
-    suspend fun askCoachAccess(): RequestResult<CoachAccessStatus>
+    suspend fun askCoachAccess(displayName: String, about: String): RequestResult<CoachAccess>
 
     suspend fun createInvite(): RequestResult<InviteCode>
 

@@ -3,21 +3,23 @@ package app.trainer.feature.account.nocoach.mvi
 import app.trainer.entities.RequestResult
 import app.trainer.uikit.widgets.CODE_LENGTH
 
-sealed interface CoachAccess {
+sealed interface CoachAccessState {
 
-    data object NotAsked : CoachAccess
+    data object NotAsked : CoachAccessState
 
-    data object Asking : CoachAccess
+    data class Pending(val askedAtLabel: String) : CoachAccessState
 
-    data object Pending : CoachAccess
-
-    data object Declined : CoachAccess
+    data class Declined(
+        val decidedAtLabel: String,
+        val canAskAgainLabel: String,
+        val canAskAgain: Boolean,
+    ) : CoachAccessState
 }
 
 data class NoCoachState(
     val displayName: String,
     val code: String,
-    val coachAccess: CoachAccess,
+    val access: CoachAccessState,
     val isJoining: Boolean,
     val codeError: String?,
     val isSignOutDialogVisible: Boolean,
@@ -26,12 +28,15 @@ data class NoCoachState(
     val isSubmitEnabled: Boolean
         get() = code.length == CODE_LENGTH && !isJoining
 
+    val isWaitingDecision: Boolean
+        get() = access is CoachAccessState.Pending
+
     companion object {
 
         fun initial(): NoCoachState = NoCoachState(
             displayName = "",
             code = "",
-            coachAccess = CoachAccess.NotAsked,
+            access = CoachAccessState.NotAsked,
             isJoining = false,
             codeError = null,
             isSignOutDialogVisible = false,
@@ -41,11 +46,13 @@ data class NoCoachState(
 
 sealed interface NoCoachEvent {
 
+    data object OnReloadRequested : NoCoachEvent
+
     data class OnCodeChanged(val code: String) : NoCoachEvent
 
     data object OnJoinClicked : NoCoachEvent
 
-    data object OnCoachAccessClicked : NoCoachEvent
+    data object OnApplicationClicked : NoCoachEvent
 
     data object OnSignOutClicked : NoCoachEvent
 
@@ -57,6 +64,8 @@ sealed interface NoCoachEvent {
 sealed interface NoCoachSideEffect {
 
     data object Joined : NoCoachSideEffect
+
+    data object OpenApplication : NoCoachSideEffect
 
     data class ShowFailure(val failure: RequestResult.Error) : NoCoachSideEffect
 }
