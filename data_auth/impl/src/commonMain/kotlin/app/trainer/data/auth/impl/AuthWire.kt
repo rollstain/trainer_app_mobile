@@ -62,6 +62,16 @@ data class LinkedIdentityResponse(
 )
 
 @Serializable
+data class CoachRequestResponse(
+    @SerialName("id")
+    val id: String?,
+    @SerialName("displayName")
+    val displayName: String?,
+    @SerialName("createdAt")
+    val createdAt: String?,
+)
+
+@Serializable
 data class TelegramStartResponse(
     @SerialName("claimToken")
     val claimToken: String?,

@@ -13,6 +13,9 @@ import app.trainer.data.schedule.SlotStatus
 import app.trainer.feature.account.devices.mvi.DeviceRow
 import app.trainer.feature.account.devices.mvi.DevicesState
 import app.trainer.feature.account.devices.ui.DevicesView
+import app.trainer.feature.account.identities.mvi.LoginMethodRow
+import app.trainer.feature.account.identities.mvi.LoginMethodsState
+import app.trainer.feature.account.identities.ui.LoginMethodsView
 import app.trainer.feature.account.invite.mvi.InviteState
 import app.trainer.feature.account.invite.ui.InviteView
 import app.trainer.feature.account.invitelink.mvi.InviteLinkContent
@@ -127,6 +130,9 @@ private const val WELCOME_TITLE = "Training with your coach"
 private const val WELCOME_TELEGRAM = "Sign in with Telegram"
 private const val WELCOME_CODE = "I have a code from my coach"
 private const val WELCOME_WAITING = "Waiting for Telegram…"
+private const val LOGIN_METHODS_LINK = "Link Telegram"
+private const val LOGIN_METHODS_LAST_HINT =
+    "One way in must remain — otherwise you cannot get back into the account."
 private const val NO_COACH_TITLE = "One step left: reach your coach"
 private const val NO_COACH_KEEPS_DATA = "Your account data stays here — come back when you get a code."
 private const val NO_COACH_SIGN_OUT = "Sign out"
@@ -454,20 +460,6 @@ class ScreenRenderTest {
     }
 
     @Test
-    fun `without a configured provider only the code is offered`() {
-        compose.setContent {
-            TestTheme {
-                WelcomeView(state = WelcomeState.initial(afterSessionExpiry = false), onEvent = {})
-            }
-        }
-
-        compose.waitForIdle()
-
-        compose.onNodeWithText(WELCOME_CODE).assertIsDisplayed()
-        compose.onNodeWithText(WELCOME_TELEGRAM).assertDoesNotExist()
-    }
-
-    @Test
     fun `while telegram is open the screen says what to do`() {
         compose.setContent {
             TestTheme {
@@ -478,6 +470,37 @@ class ScreenRenderTest {
         compose.waitForIdle()
 
         compose.onNodeWithText(WELCOME_WAITING).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the last way in cannot be unlinked`() {
+        compose.setContent {
+            TestTheme {
+                LoginMethodsView(state = onlyTelegramLinked(), onEvent = {}, onBackClick = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(LOGIN_METHODS_LAST_HINT).assertIsDisplayed()
+        compose.onNodeWithText(LOGIN_METHODS_LINK).assertDoesNotExist()
+    }
+
+    @Test
+    fun `without a linked account the screen offers telegram`() {
+        compose.setContent {
+            TestTheme {
+                LoginMethodsView(
+                    state = LoginMethodsState.initial().copy(isLoading = false),
+                    onEvent = {},
+                    onBackClick = {},
+                )
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(LOGIN_METHODS_LINK).assertIsDisplayed()
     }
 
     @Test
@@ -806,10 +829,14 @@ private fun coachProfile(): ProfileState = ProfileState.initial().copy(
 
 private const val COACH_NAME = "Dmitry Rogov"
 
-private fun welcomeWithTelegram(): WelcomeState = WelcomeState.initial(afterSessionExpiry = false).copy(
+private fun onlyTelegramLinked(): LoginMethodsState = LoginMethodsState.initial().copy(
     isLoading = false,
-    providers = persistentListOf(AuthProvider.TELEGRAM),
+    methods = persistentListOf(
+        LoginMethodRow(provider = AuthProvider.TELEGRAM, linkedAtLabel = "linked on 29.08"),
+    ),
 )
+
+private fun welcomeWithTelegram(): WelcomeState = WelcomeState.initial(afterSessionExpiry = false)
 
 private fun welcomeWaitingForTelegram(): WelcomeState = welcomeWithTelegram().copy(
     telegram = TelegramLogin.Waiting,

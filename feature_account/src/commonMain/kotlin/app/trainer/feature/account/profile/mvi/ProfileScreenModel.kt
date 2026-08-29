@@ -48,6 +48,12 @@ class ProfileScreenModel(
             ProfileEvent.OnProgramsClicked -> screenModelScope {
                 postSideEffect(ProfileSideEffect.OpenPrograms)
             }
+            ProfileEvent.OnCoachRequestsClicked -> screenModelScope {
+                postSideEffect(ProfileSideEffect.OpenCoachRequests)
+            }
+            ProfileEvent.OnLoginMethodsClicked -> screenModelScope {
+                postSideEffect(ProfileSideEffect.OpenLoginMethods)
+            }
             ProfileEvent.OnDevicesClicked -> screenModelScope {
                 postSideEffect(ProfileSideEffect.OpenDevices)
             }
@@ -94,6 +100,7 @@ class ProfileScreenModel(
                 contactLabel = profile.phone ?: profile.email,
                 policy = policy,
                 isCoach = isCoach,
+                isOwner = profile.isOwner,
                 isLoading = false,
                 failure = null,
             )

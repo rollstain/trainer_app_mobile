@@ -1,9 +1,13 @@
 package app.trainer.feature.account.di
 
+import app.trainer.feature.account.coachrequests.mvi.CoachRequestsScreenModel
+import app.trainer.feature.account.coachrequests.ui.CoachRequestsScreen
 import app.trainer.feature.account.contact.mvi.ContactLinkScreenModel
 import app.trainer.feature.account.contact.ui.ContactLinkScreen
 import app.trainer.feature.account.devices.mvi.DevicesScreenModel
 import app.trainer.feature.account.devices.ui.DevicesScreen
+import app.trainer.feature.account.identities.mvi.LoginMethodsScreenModel
+import app.trainer.feature.account.identities.ui.LoginMethodsScreen
 import app.trainer.feature.account.invite.mvi.InviteScreenModel
 import app.trainer.feature.account.invite.ui.InviteScreen
 import app.trainer.feature.account.invitelink.mvi.InviteLinkScreenModel
@@ -48,6 +52,8 @@ class AccountFeatureModule {
         }
         viewModel { ContactLinkScreenModel(profileRepository = get()) }
         viewModel { DevicesScreenModel(sessionsRepository = get()) }
+        viewModel { LoginMethodsScreenModel(identitiesRepository = get(), authRepository = get()) }
+        viewModel { CoachRequestsScreenModel(requestsRepository = get()) }
         viewModel { NoCoachScreenModel(authRepository = get()) }
         viewModel { parameters ->
             WelcomeScreenModel(
@@ -71,6 +77,8 @@ class AccountFeatureModule {
         screen<Screens.ContactLink> { ContactLinkScreen() }
         screen<Screens.Profile> { ProfileScreen() }
         screen<Screens.Devices> { DevicesScreen() }
+        screen<Screens.LoginMethods> { LoginMethodsScreen() }
+        screen<Screens.CoachRequests> { CoachRequestsScreen() }
         screen<Screens.NoCoach> { NoCoachScreen() }
         screen<Screens.Welcome> { WelcomeScreen(afterSessionExpiry = it.afterSessionExpiry) }
     }

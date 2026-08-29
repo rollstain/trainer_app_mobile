@@ -45,6 +45,8 @@ data class MeResponse(
     val zoneId: String?,
     @SerialName("hasCoach")
     val hasCoach: Boolean?,
+    @SerialName("isOwner")
+    val isOwner: Boolean?,
 )
 
 class ProfileRepositoryImpl(
@@ -94,8 +96,10 @@ class ProfileRepositoryImpl(
         val userId = response.userId
         val displayName = response.displayName
         val hasCoach = response.hasCoach
-        if (userId == null || displayName == null || hasCoach == null) {
-            logger.error(tag = LOG_TAG, message = "В ответе /me нет userId, displayName или hasCoach")
+        val isOwner = response.isOwner
+        val isComplete = userId != null && displayName != null && hasCoach != null && isOwner != null
+        if (!isComplete) {
+            logger.error(tag = LOG_TAG, message = "В ответе /me не хватает полей профиля")
             return RequestResult.Error(
                 kind = RequestFailure.Parsing,
                 statusCode = null,
@@ -105,13 +109,14 @@ class ProfileRepositoryImpl(
         }
         return RequestResult.Success(
             UserProfile(
-                userId = userId,
-                displayName = displayName,
+                userId = requireNotNull(userId),
+                displayName = requireNotNull(displayName),
                 phone = response.phone,
                 email = response.email,
                 coachId = response.coachId,
                 zoneId = response.zoneId,
-                hasCoach = hasCoach,
+                hasCoach = requireNotNull(hasCoach),
+                isOwner = requireNotNull(isOwner),
             )
         )
     }

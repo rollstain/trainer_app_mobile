@@ -2,6 +2,8 @@ package app.trainer.data.auth.impl
 
 import app.trainer.data.auth.AuthProvider
 import app.trainer.data.auth.AuthRepository
+import app.trainer.data.auth.CoachRequest
+import app.trainer.data.auth.CoachRequestsRepository
 import app.trainer.data.auth.DeviceSession
 import app.trainer.data.auth.DeviceSessionsRepository
 import app.trainer.data.auth.IdentitiesRepository
@@ -32,7 +34,7 @@ class AuthRepositoryImpl(
     private val tokenStorage: TokenStorage,
     private val sessionEvents: SessionEvents,
     private val logger: Logger,
-) : AuthRepository, IdentitiesRepository, DeviceSessionsRepository {
+) : AuthRepository, IdentitiesRepository, DeviceSessionsRepository, CoachRequestsRepository {
 
     override suspend fun isAuthorized(): Boolean = tokenStorage.read() != null
 
@@ -66,16 +68,6 @@ class AuthRepositoryImpl(
         return when (redeemed) {
             is RequestResult.Error -> redeemed
             is RequestResult.Success -> storeTokens(redeemed.data)
-        }
-    }
-
-    override suspend fun availableProviders(): RequestResult<List<AuthProvider>> {
-        val loaded = safeRequest<List<String>> { httpClientProvider.client.get("auth/providers") }
-        return when (loaded) {
-            is RequestResult.Error -> loaded
-            is RequestResult.Success -> RequestResult.Success(
-                loaded.data.mapNotNull { name -> AuthProvider.entries.firstOrNull { it.name == name } }
-            )
         }
     }
 
@@ -126,6 +118,45 @@ class AuthRepositoryImpl(
                 RequestResult.Success(Unit)
             }
         }
+    }
+
+    override suspend fun askCoachAccess(): RequestResult<Unit> {
+        val asked = safeRequest<Unit> { httpClientProvider.client.post("me/coach-request") }
+        return when (asked) {
+            is RequestResult.Error -> asked
+            is RequestResult.Success -> RequestResult.Success(Unit)
+        }
+    }
+
+    override suspend fun pending(): RequestResult<List<CoachRequest>> {
+        val loaded = safeRequest<List<CoachRequestResponse>> {
+            httpClientProvider.client.get("owner/coach-requests")
+        }
+        return when (loaded) {
+            is RequestResult.Error -> loaded
+            is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(::toCoachRequest))
+        }
+    }
+
+    override suspend fun approve(requestId: String): RequestResult<Unit> =
+        decided { httpClientProvider.client.post("owner/coach-requests/$requestId/approve") }
+
+    override suspend fun decline(requestId: String): RequestResult<Unit> =
+        decided { httpClientProvider.client.post("owner/coach-requests/$requestId/decline") }
+
+    private suspend fun decided(request: suspend () -> HttpResponse): RequestResult<Unit> {
+        val decided = safeRequest<Unit> { request() }
+        return when (decided) {
+            is RequestResult.Error -> decided
+            is RequestResult.Success -> RequestResult.Success(Unit)
+        }
+    }
+
+    private fun toCoachRequest(response: CoachRequestResponse): CoachRequest? {
+        val id = response.id ?: return null
+        val displayName = response.displayName ?: return null
+        val createdAt = response.createdAt ?: return null
+        return CoachRequest(id = id, displayName = displayName, createdAtIso = createdAt)
     }
 
     override suspend fun linkedIdentities(): RequestResult<List<LinkedIdentity>> {

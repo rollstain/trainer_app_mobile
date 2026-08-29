@@ -8,7 +8,6 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -107,7 +106,6 @@ private fun CodeCells(value: String, state: CodeInputState, activeIndex: Int?) {
                 modifier = Modifier
                     .weight(1f)
                     .height(CELL_HEIGHT)
-                    .aspectRatio(ratio = 1f, matchHeightConstraintsFirst = true)
                     .background(
                         color = if (state == CodeInputState.Error) colors.dangerSoft else colors.bgSurface,
                         shape = RoundedCornerShape(AppTheme.radius.dp8),

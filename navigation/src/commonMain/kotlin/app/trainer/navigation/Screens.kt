@@ -106,4 +106,10 @@ sealed interface Screens : NavKey {
 
     @Serializable
     data object Devices : Screens
+
+    @Serializable
+    data object LoginMethods : Screens
+
+    @Serializable
+    data object CoachRequests : Screens
 }

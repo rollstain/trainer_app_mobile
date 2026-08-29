@@ -35,8 +35,6 @@ interface AuthRepository {
 
     suspend fun isAuthorized(): Boolean
 
-    suspend fun availableProviders(): RequestResult<List<AuthProvider>>
-
     suspend fun previewInvite(code: String): RequestResult<InvitePreview>
 
     suspend fun redeemInvite(code: String, displayName: String, deviceInfo: String): RequestResult<Unit>
@@ -50,6 +48,8 @@ interface AuthRepository {
     ): RequestResult<Unit>
 
     suspend fun joinCoach(code: String): RequestResult<Unit>
+
+    suspend fun askCoachAccess(): RequestResult<Unit>
 
     suspend fun createInvite(): RequestResult<InviteCode>
 
