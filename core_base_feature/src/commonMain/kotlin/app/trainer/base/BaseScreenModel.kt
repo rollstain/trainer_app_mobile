@@ -41,7 +41,7 @@ abstract class BaseScreenModel<STATE : Any, SIDE_EFFECT : Any, EVENT : Any>(
     protected val state: STATE
         get() = mutableState.value
 
-    protected val stateChanges: StateFlow<STATE>
+    val stateChanges: StateFlow<STATE>
         get() = mutableState.asStateFlow()
 
     abstract fun dispatch(event: EVENT)

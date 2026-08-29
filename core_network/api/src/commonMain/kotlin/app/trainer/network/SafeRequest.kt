@@ -8,10 +8,12 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 
 const val NEXT_CURSOR_HEADER = "X-Next-Cursor"
 
@@ -24,18 +26,6 @@ private const val STATUS_GONE = 410
 private const val STATUS_UNPROCESSABLE_ENTITY = 422
 private const val STATUS_TOO_MANY_REQUESTS = 429
 private const val STATUS_SERVER_ERROR_FROM = 500
-
-@Serializable
-data class ApiErrorResponse(
-    @SerialName("status")
-    val status: Int?,
-    @SerialName("message")
-    val message: String?,
-    @SerialName("fieldErrors")
-    val fieldErrors: Map<String, String>?,
-    @SerialName("retryAfterSeconds")
-    val retryAfterSeconds: Long?,
-)
 
 @PublishedApi
 internal val apiErrorJson: Json = Json { ignoreUnknownKeys = true }
@@ -56,14 +46,16 @@ internal fun failureOf(statusCode: Int): RequestFailure = when {
 
 @PublishedApi
 internal fun parseApiError(statusCode: Int, rawBody: String): RequestResult.Error {
-    val parsed = runCatching { apiErrorJson.decodeFromString<ApiErrorResponse>(rawBody) }.getOrNull()
+    val body = runCatching { apiErrorJson.parseToJsonElement(rawBody).jsonObject }.getOrNull()
     return RequestResult.Error(
         kind = failureOf(statusCode),
         statusCode = statusCode,
-        userMessage = parsed?.message.orEmpty(),
+        userMessage = body?.get("message")?.jsonPrimitive?.contentOrNull.orEmpty(),
         devMessage = rawBody,
-        retryAfterSeconds = parsed?.retryAfterSeconds,
-        fieldErrors = parsed?.fieldErrors.orEmpty(),
+        retryAfterSeconds = body?.get("retryAfterSeconds")?.jsonPrimitive?.longOrNull,
+        fieldErrors = body?.get("fieldErrors")?.jsonObject.orEmpty()
+            .mapNotNull { (field, value) -> value.jsonPrimitive.contentOrNull?.let { field to it } }
+            .toMap(),
     )
 }
 
