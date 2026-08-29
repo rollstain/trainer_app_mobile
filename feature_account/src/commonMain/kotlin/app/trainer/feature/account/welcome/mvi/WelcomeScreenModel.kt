@@ -30,8 +30,7 @@ class WelcomeScreenModel(
 
     override fun dispatch(event: WelcomeEvent) {
         when (event) {
-            WelcomeEvent.OnTelegramClicked -> startTelegram(intent = LoginIntent.Client)
-            WelcomeEvent.OnCoachClicked -> startTelegram(intent = LoginIntent.Coach)
+            WelcomeEvent.OnTelegramClicked -> startTelegram()
             WelcomeEvent.OnTelegramCancelled -> cancelTelegram()
             WelcomeEvent.OnCodeClicked -> screenModelScope {
                 postSideEffect(WelcomeSideEffect.OpenCodeEntry)
@@ -45,7 +44,7 @@ class WelcomeScreenModel(
         updateState { it.copy(telegram = TelegramLogin.Idle) }
     }
 
-    private fun startTelegram(intent: LoginIntent) {
+    private fun startTelegram() {
         telegramJob?.cancel()
         telegramJob = screenModelScope {
             updateState { it.copy(telegram = TelegramLogin.Starting) }
@@ -54,13 +53,13 @@ class WelcomeScreenModel(
                 is RequestResult.Success -> {
                     updateState { it.copy(telegram = TelegramLogin.Waiting) }
                     postSideEffect(WelcomeSideEffect.OpenTelegram(deepLink = started.data.deepLink))
-                    awaitConfirmation(claimToken = started.data.claimToken, intent = intent)
+                    awaitConfirmation(claimToken = started.data.claimToken)
                 }
             }
         }
     }
 
-    private suspend fun awaitConfirmation(claimToken: String, intent: LoginIntent) {
+    private suspend fun awaitConfirmation(claimToken: String) {
         repeat(CONFIRMATION_ATTEMPTS) {
             delay(CONFIRMATION_POLL_DELAY)
             val signedIn = authRepository.signInWithProvider(
@@ -69,10 +68,7 @@ class WelcomeScreenModel(
                 deviceInfo = deviceInfo,
             )
             when {
-                signedIn is RequestResult.Success -> {
-                    if (intent == LoginIntent.Coach) askCoachAccess()
-                    return
-                }
+                signedIn is RequestResult.Success -> return
                 signedIn is RequestResult.Error && signedIn.kind == RequestFailure.Conflict -> Unit
                 signedIn is RequestResult.Error -> {
                     showTelegramFailure(signedIn)
@@ -82,13 +78,6 @@ class WelcomeScreenModel(
         }
         val expired = getString(Res.string.welcome_telegram_expired)
         updateState { it.copy(telegram = TelegramLogin.Failed(expired)) }
-    }
-
-    private suspend fun askCoachAccess() {
-        when (val asked = authRepository.askCoachAccess()) {
-            is RequestResult.Error -> postSideEffect(WelcomeSideEffect.ShowFailure(asked))
-            is RequestResult.Success -> postSideEffect(WelcomeSideEffect.ShowCoachRequested)
-        }
     }
 
     private suspend fun showTelegramFailure(failure: RequestResult.Error) {

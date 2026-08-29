@@ -18,7 +18,6 @@ import app.trainer.feature.account.welcome.mvi.WelcomeState
 import app.trainer.strings.Res
 import app.trainer.strings.invite_expired_session_description
 import app.trainer.strings.invite_expired_session_title
-import app.trainer.strings.welcome_coach_action
 import app.trainer.strings.welcome_code_action
 import app.trainer.strings.welcome_or
 import app.trainer.strings.welcome_telegram_action
@@ -105,13 +104,6 @@ fun WelcomeView(
             onClick = { onEvent(WelcomeEvent.OnCodeClicked) },
             tone = ButtonTone.Secondary,
             size = ButtonSize.Large,
-        )
-        AppButton(
-            modifier = Modifier.fillMaxWidth(),
-            text = stringResource(Res.string.welcome_coach_action),
-            onClick = { onEvent(WelcomeEvent.OnCoachClicked) },
-            tone = ButtonTone.Text,
-            size = ButtonSize.Medium,
         )
     }
 }

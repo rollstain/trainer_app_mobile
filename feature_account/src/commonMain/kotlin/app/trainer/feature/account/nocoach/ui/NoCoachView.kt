@@ -13,16 +13,22 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import app.trainer.feature.account.nocoach.mvi.CoachAccess
 import app.trainer.feature.account.nocoach.mvi.NoCoachEvent
 import app.trainer.feature.account.nocoach.mvi.NoCoachState
 import app.trainer.strings.Res
+import app.trainer.strings.no_coach_coach_action
+import app.trainer.strings.no_coach_coach_hint
 import app.trainer.strings.no_coach_code_hint
 import app.trainer.strings.no_coach_code_title
 import app.trainer.strings.no_coach_description
 import app.trainer.strings.no_coach_join_action
-import app.trainer.strings.no_coach_keeps_data
+import app.trainer.strings.no_coach_request_declined_description
+import app.trainer.strings.no_coach_request_declined_title
+import app.trainer.strings.no_coach_request_pending_description
+import app.trainer.strings.no_coach_request_pending_title
 import app.trainer.strings.no_coach_title
-import app.trainer.strings.no_coach_waiting_title
+import app.trainer.strings.no_coach_title_named
 import app.trainer.strings.profile_sign_out_action
 import app.trainer.strings.profile_sign_out_cancel
 import app.trainer.strings.profile_sign_out_confirm
@@ -66,7 +72,11 @@ fun NoCoachView(
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp16),
     ) {
         AppText(
-            text = stringResource(Res.string.no_coach_title),
+            text = if (state.displayName.isBlank()) {
+                stringResource(Res.string.no_coach_title)
+            } else {
+                stringResource(Res.string.no_coach_title_named, state.displayName)
+            },
             style = AppTheme.typography.display,
             color = AppTheme.colors.textPrimary,
         )
@@ -95,21 +105,6 @@ fun NoCoachView(
             style = AppTheme.typography.caption,
             color = if (error == null) AppTheme.colors.textMuted else AppTheme.colors.danger,
         )
-        AppCard {
-            Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
-                AppText(
-                    text = stringResource(Res.string.no_coach_waiting_title),
-                    style = AppTheme.typography.bodyStrong,
-                    color = AppTheme.colors.textPrimary,
-                )
-                AppText(
-                    text = stringResource(Res.string.no_coach_keeps_data),
-                    style = AppTheme.typography.body,
-                    color = AppTheme.colors.textSecondary,
-                )
-            }
-        }
-        Spacer(modifier = Modifier.weight(1f))
         AppButton(
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(Res.string.no_coach_join_action),
@@ -122,6 +117,8 @@ fun NoCoachView(
                 else -> ButtonState.Idle
             },
         )
+        Spacer(modifier = Modifier.weight(1f))
+        CoachAccessBlock(access = state.coachAccess, onEvent = onEvent)
         AppButton(
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(Res.string.profile_sign_out_action),
@@ -143,5 +140,54 @@ fun NoCoachView(
                 onClick = { onEvent(NoCoachEvent.OnSignOutDismissed) },
             ),
         )
+    }
+}
+
+@Composable
+private fun CoachAccessBlock(access: CoachAccess, onEvent: (NoCoachEvent) -> Unit) {
+    when (access) {
+        CoachAccess.Pending -> AccessPlate(
+            title = stringResource(Res.string.no_coach_request_pending_title),
+            description = stringResource(Res.string.no_coach_request_pending_description),
+        )
+        CoachAccess.Declined -> AccessPlate(
+            title = stringResource(Res.string.no_coach_request_declined_title),
+            description = stringResource(Res.string.no_coach_request_declined_description),
+        )
+        CoachAccess.NotAsked, CoachAccess.Asking -> Column(
+            verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4),
+        ) {
+            AppButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = stringResource(Res.string.no_coach_coach_action),
+                onClick = { onEvent(NoCoachEvent.OnCoachAccessClicked) },
+                tone = ButtonTone.Secondary,
+                size = ButtonSize.Large,
+                state = if (access == CoachAccess.Asking) ButtonState.Loading else ButtonState.Idle,
+            )
+            AppText(
+                text = stringResource(Res.string.no_coach_coach_hint),
+                style = AppTheme.typography.caption,
+                color = AppTheme.colors.textMuted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccessPlate(title: String, description: String) {
+    AppCard {
+        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
+            AppText(
+                text = title,
+                style = AppTheme.typography.bodyStrong,
+                color = AppTheme.colors.textPrimary,
+            )
+            AppText(
+                text = description,
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.textSecondary,
+            )
+        }
     }
 }

@@ -54,7 +54,7 @@ class AccountFeatureModule {
         viewModel { DevicesScreenModel(sessionsRepository = get()) }
         viewModel { LoginMethodsScreenModel(identitiesRepository = get(), authRepository = get()) }
         viewModel { CoachRequestsScreenModel(requestsRepository = get()) }
-        viewModel { NoCoachScreenModel(authRepository = get()) }
+        viewModel { NoCoachScreenModel(authRepository = get(), profileRepository = get()) }
         viewModel { parameters ->
             WelcomeScreenModel(
                 afterSessionExpiry = parameters.get(),

@@ -12,11 +12,8 @@ import app.trainer.navigation.Screen
 import app.trainer.navigation.Screens
 import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
-import app.trainer.strings.Res
-import app.trainer.strings.welcome_coach_requested
 import app.trainer.uikit.widgets.LocalToastHost
 import app.trainer.uikit.widgets.ToastHostState
-import org.jetbrains.compose.resources.getString
 import org.koin.core.parameter.parametersOf
 
 class WelcomeScreen(private val afterSessionExpiry: Boolean) : Screen {
@@ -36,8 +33,6 @@ class WelcomeScreen(private val afterSessionExpiry: Boolean) : Screen {
         screenModel.collectSideEffect { effect ->
             when (effect) {
                 is WelcomeSideEffect.OpenTelegram -> uriHandler.openUri(effect.deepLink)
-                WelcomeSideEffect.ShowCoachRequested ->
-                    toastHost.show(getString(Res.string.welcome_coach_requested))
                 WelcomeSideEffect.OpenCodeEntry ->
                     navigator.push(Screens.Invite(afterSessionExpiry = false))
                 is WelcomeSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())

@@ -62,6 +62,12 @@ data class LinkedIdentityResponse(
 )
 
 @Serializable
+data class CoachAccessStatusResponse(
+    @SerialName("status")
+    val status: String?,
+)
+
+@Serializable
 data class CoachRequestResponse(
     @SerialName("id")
     val id: String?,

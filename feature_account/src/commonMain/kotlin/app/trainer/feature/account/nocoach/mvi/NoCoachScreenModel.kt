@@ -2,6 +2,8 @@ package app.trainer.feature.account.nocoach.mvi
 
 import app.trainer.base.BaseScreenModel
 import app.trainer.data.auth.AuthRepository
+import app.trainer.data.auth.CoachAccessStatus
+import app.trainer.data.profile.ProfileRepository
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.strings.Res
@@ -13,16 +15,33 @@ import org.jetbrains.compose.resources.getString
 
 class NoCoachScreenModel(
     private val authRepository: AuthRepository,
+    private val profileRepository: ProfileRepository,
 ) : BaseScreenModel<NoCoachState, NoCoachSideEffect, NoCoachEvent>(
     initialState = NoCoachState.initial(),
 ) {
 
-    override fun onFetchData() = Unit
+    init {
+        onFetchData()
+    }
+
+    override fun onFetchData() {
+        onFetchDataScope {
+            val profile = profileRepository.me()
+            if (profile is RequestResult.Success) {
+                updateState { it.copy(displayName = profile.data.displayName) }
+            }
+            val status = authRepository.coachAccessStatus()
+            if (status is RequestResult.Success) {
+                updateState { it.copy(coachAccess = accessOf(status.data)) }
+            }
+        }
+    }
 
     override fun dispatch(event: NoCoachEvent) {
         when (event) {
             is NoCoachEvent.OnCodeChanged -> changeCode(event.code)
             NoCoachEvent.OnJoinClicked -> join()
+            NoCoachEvent.OnCoachAccessClicked -> askCoachAccess()
             NoCoachEvent.OnSignOutClicked -> updateState { it.copy(isSignOutDialogVisible = true) }
             NoCoachEvent.OnSignOutDismissed -> updateState { it.copy(isSignOutDialogVisible = false) }
             NoCoachEvent.OnSignOutConfirmed -> signOut()
@@ -50,11 +69,32 @@ class NoCoachScreenModel(
         }
     }
 
+    private fun askCoachAccess() {
+        screenModelScope { current ->
+            if (current.coachAccess == CoachAccess.Asking) return@screenModelScope
+            updateState { it.copy(coachAccess = CoachAccess.Asking) }
+            when (val asked = authRepository.askCoachAccess()) {
+                is RequestResult.Error -> {
+                    updateState { it.copy(coachAccess = CoachAccess.NotAsked) }
+                    postSideEffect(NoCoachSideEffect.ShowFailure(asked))
+                }
+                is RequestResult.Success -> updateState { it.copy(coachAccess = accessOf(asked.data)) }
+            }
+        }
+    }
+
     private fun signOut() {
         screenModelScope {
             updateState { it.copy(isSignOutDialogVisible = false) }
             authRepository.logout()
         }
+    }
+
+    private fun accessOf(status: CoachAccessStatus): CoachAccess = when (status) {
+        CoachAccessStatus.NONE -> CoachAccess.NotAsked
+        CoachAccessStatus.PENDING -> CoachAccess.Pending
+        CoachAccessStatus.DECLINED -> CoachAccess.Declined
+        CoachAccessStatus.APPROVED -> CoachAccess.Pending
     }
 
     private suspend fun showCodeError(failure: RequestResult.Error) {

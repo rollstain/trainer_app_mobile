@@ -2,6 +2,7 @@ package app.trainer.data.auth.impl
 
 import app.trainer.data.auth.AuthProvider
 import app.trainer.data.auth.AuthRepository
+import app.trainer.data.auth.CoachAccessStatus
 import app.trainer.data.auth.CoachRequest
 import app.trainer.data.auth.CoachRequestsRepository
 import app.trainer.data.auth.DeviceSession
@@ -120,11 +121,20 @@ class AuthRepositoryImpl(
         }
     }
 
-    override suspend fun askCoachAccess(): RequestResult<Unit> {
-        val asked = safeRequest<Unit> { httpClientProvider.client.post("me/coach-request") }
-        return when (asked) {
-            is RequestResult.Error -> asked
-            is RequestResult.Success -> RequestResult.Success(Unit)
+    override suspend fun coachAccessStatus(): RequestResult<CoachAccessStatus> =
+        coachAccessOf { httpClientProvider.client.get("me/coach-request") }
+
+    override suspend fun askCoachAccess(): RequestResult<CoachAccessStatus> =
+        coachAccessOf { httpClientProvider.client.post("me/coach-request") }
+
+    private suspend fun coachAccessOf(request: suspend () -> HttpResponse): RequestResult<CoachAccessStatus> {
+        val loaded = safeRequest<CoachAccessStatusResponse> { request() }
+        return when (loaded) {
+            is RequestResult.Error -> loaded
+            is RequestResult.Success -> RequestResult.Success(
+                CoachAccessStatus.entries.firstOrNull { it.name == loaded.data.status }
+                    ?: CoachAccessStatus.NONE
+            )
         }
     }
 
