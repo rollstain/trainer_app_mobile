@@ -2,12 +2,8 @@ package app.trainer.data.auth.impl
 
 import app.trainer.data.auth.AuthProvider
 import app.trainer.data.auth.AuthRepository
-import app.trainer.data.auth.DeviceSession
-import app.trainer.data.auth.DeviceSessionsRepository
-import app.trainer.data.auth.IdentitiesRepository
 import app.trainer.data.auth.InviteCode
 import app.trainer.data.auth.InvitePreview
-import app.trainer.data.auth.LinkedIdentity
 import app.trainer.data.auth.TelegramLoginStart
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
@@ -17,7 +13,6 @@ import app.trainer.network.HttpClientProvider
 import app.trainer.network.SessionEvents
 import app.trainer.network.TokenStorage
 import app.trainer.network.safeRequest
-import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -32,7 +27,7 @@ class AuthRepositoryImpl(
     private val tokenStorage: TokenStorage,
     private val sessionEvents: SessionEvents,
     private val logger: Logger,
-) : AuthRepository, IdentitiesRepository, DeviceSessionsRepository {
+) : AuthRepository {
 
     override suspend fun isAuthorized(): Boolean = tokenStorage.read() != null
 
@@ -66,6 +61,107 @@ class AuthRepositoryImpl(
         return when (redeemed) {
             is RequestResult.Error -> redeemed
             is RequestResult.Success -> storeTokens(redeemed.data)
+        }
+    }
+
+    override suspend fun signUpWithPassword(
+        displayName: String,
+        email: String,
+        login: String?,
+        password: String,
+        deviceInfo: String,
+    ): RequestResult<Unit> {
+        return authorizeBy {
+            httpClientProvider.client.post("auth/password/sign-up") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    PasswordSignUpRequest(
+                        displayName = displayName.trim(),
+                        email = email.trim(),
+                        login = login?.trim()?.ifEmpty { null },
+                        password = password,
+                        deviceInfo = deviceInfo,
+                    )
+                )
+            }
+        }
+    }
+
+    override suspend fun signInWithPassword(
+        identifier: String,
+        password: String,
+        deviceInfo: String,
+    ): RequestResult<Unit> {
+        return authorizeBy {
+            httpClientProvider.client.post("auth/password/sign-in") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    PasswordSignInRequest(
+                        identifier = identifier.trim(),
+                        password = password,
+                        deviceInfo = deviceInfo,
+                    )
+                )
+            }
+        }
+    }
+
+    override suspend fun resetPasswordByTelegram(
+        claimToken: String,
+        password: String,
+        deviceInfo: String,
+    ): RequestResult<Unit> {
+        return authorizeBy {
+            httpClientProvider.client.post("auth/password/reset/telegram") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    PasswordResetRequest(
+                        claimToken = claimToken,
+                        password = password,
+                        deviceInfo = deviceInfo,
+                    )
+                )
+            }
+        }
+    }
+
+    override suspend fun requestPasswordReset(email: String): RequestResult<Unit> {
+        val asked = safeRequest<Unit> {
+            httpClientProvider.client.post("auth/password/forgot") {
+                contentType(ContentType.Application.Json)
+                setBody(ForgotPasswordRequest(email = email.trim()))
+            }
+        }
+        return when (asked) {
+            is RequestResult.Error -> asked
+            is RequestResult.Success -> RequestResult.Success(Unit)
+        }
+    }
+
+    override suspend fun resetPasswordByEmail(
+        token: String,
+        password: String,
+        deviceInfo: String,
+    ): RequestResult<Unit> {
+        return authorizeBy {
+            httpClientProvider.client.post("auth/password/reset/email") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    PasswordResetByEmailRequest(
+                        token = token,
+                        password = password,
+                        deviceInfo = deviceInfo,
+                    )
+                )
+            }
+        }
+    }
+
+    private suspend fun authorizeBy(request: suspend () -> HttpResponse): RequestResult<Unit> {
+        val authorized = safeRequest<AuthTokensResponse> { request() }
+        return when (authorized) {
+            is RequestResult.Error -> authorized
+            is RequestResult.Success -> storeTokens(authorized.data)
         }
     }
 
@@ -118,65 +214,6 @@ class AuthRepositoryImpl(
         }
     }
 
-    override suspend fun linkedIdentities(): RequestResult<List<LinkedIdentity>> {
-        return identitiesOf { httpClientProvider.client.get("me/identities") }
-    }
-
-    override suspend fun linkProvider(provider: AuthProvider, token: String): RequestResult<List<LinkedIdentity>> {
-        return identitiesOf {
-            httpClientProvider.client.post("me/identities") {
-                contentType(ContentType.Application.Json)
-                setBody(LinkIdentityRequest(provider = provider.name, token = token))
-            }
-        }
-    }
-
-    override suspend fun unlinkProvider(provider: AuthProvider): RequestResult<List<LinkedIdentity>> {
-        return identitiesOf { httpClientProvider.client.delete("me/identities/${provider.name}") }
-    }
-
-    override suspend fun sessions(): RequestResult<List<DeviceSession>> {
-        val loaded = safeRequest<List<DeviceSessionResponse>> { httpClientProvider.client.get("auth/sessions") }
-        return when (loaded) {
-            is RequestResult.Error -> loaded
-            is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(::toSession))
-        }
-    }
-
-    override suspend fun revokeSession(sessionId: String): RequestResult<Unit> {
-        val revoked = safeRequest<Unit> { httpClientProvider.client.delete("auth/sessions/$sessionId") }
-        return when (revoked) {
-            is RequestResult.Error -> revoked
-            is RequestResult.Success -> RequestResult.Success(Unit)
-        }
-    }
-
-    override suspend fun revokeOtherSessions(): RequestResult<Unit> {
-        val revoked = safeRequest<Unit> { httpClientProvider.client.post("auth/sessions/revoke-others") }
-        return when (revoked) {
-            is RequestResult.Error -> revoked
-            is RequestResult.Success -> RequestResult.Success(Unit)
-        }
-    }
-
-    private suspend fun identitiesOf(request: suspend () -> HttpResponse): RequestResult<List<LinkedIdentity>> {
-        val loaded = safeRequest<List<LinkedIdentityResponse>> { request() }
-        return when (loaded) {
-            is RequestResult.Error -> loaded
-            is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(::toIdentity))
-        }
-    }
-
-    private fun toIdentity(response: LinkedIdentityResponse): LinkedIdentity? {
-        val provider = response.provider?.let { name -> AuthProvider.entries.firstOrNull { it.name == name } }
-        val linkedAt = response.linkedAt
-        if (provider == null || linkedAt == null) {
-            logger.error(tag = LOG_TAG, message = "Пропущена привязка без провайдера или даты")
-            return null
-        }
-        return LinkedIdentity(provider = provider, linkedAtIso = linkedAt)
-    }
-
     private fun telegramStartOf(response: TelegramStartResponse): RequestResult<TelegramLoginStart> {
         val claimToken = response.claimToken
         val deepLink = response.deepLink
@@ -207,24 +244,6 @@ class AuthRepositoryImpl(
         return RequestResult.Success(
             InvitePreview(coachDisplayName = coachDisplayName, needsDisplayName = needsDisplayName)
         )
-    }
-
-    private fun toSession(response: DeviceSessionResponse): DeviceSession? {
-        val id = response.id ?: return skippedSession()
-        val deviceInfo = response.deviceInfo ?: return skippedSession()
-        val lastSeenAt = response.lastSeenAt ?: return skippedSession()
-        val isCurrent = response.isCurrent ?: return skippedSession()
-        return DeviceSession(
-            id = id,
-            deviceInfo = deviceInfo,
-            lastSeenAtIso = lastSeenAt,
-            isCurrent = isCurrent,
-        )
-    }
-
-    private fun skippedSession(): DeviceSession? {
-        logger.error(tag = LOG_TAG, message = "Пропущена сессия без обязательных полей")
-        return null
     }
 
     override suspend fun createInvite(): RequestResult<InviteCode> {
@@ -262,12 +281,12 @@ class AuthRepositoryImpl(
         val accessToken = response.accessToken
         val refreshToken = response.refreshToken
         if (accessToken == null || refreshToken == null) {
-            logger.error(tag = LOG_TAG, message = "В ответе на приглашение нет одного из токенов")
+            logger.error(tag = LOG_TAG, message = "В ответе на вход нет одного из токенов")
             return RequestResult.Error(
                 kind = RequestFailure.Parsing,
                 statusCode = null,
                 userMessage = "",
-                devMessage = "Ответ auth/invites/redeem не содержит пары токенов",
+                devMessage = "Ответ на вход не содержит пары токенов",
             )
         }
         tokenStorage.write(AuthTokens(accessToken = accessToken, refreshToken = refreshToken))

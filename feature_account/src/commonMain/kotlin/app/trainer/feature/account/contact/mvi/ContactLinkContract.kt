@@ -8,10 +8,14 @@ data class ContactLinkState(
     val kind: ContactKind,
     val value: String,
     val isSubmitting: Boolean,
+    val needsCurrentPassword: Boolean,
+    val currentPassword: String,
+    val currentPasswordError: String?,
 ) {
 
     val isSubmitEnabled: Boolean
-        get() = value.isNotBlank() && !isSubmitting
+        get() = value.isNotBlank() && !isSubmitting &&
+            (!needsCurrentPassword || currentPassword.isNotEmpty())
 
     companion object {
 
@@ -19,6 +23,9 @@ data class ContactLinkState(
             kind = ContactKind.Phone,
             value = "",
             isSubmitting = false,
+            needsCurrentPassword = false,
+            currentPassword = "",
+            currentPasswordError = null,
         )
     }
 }
@@ -32,6 +39,8 @@ sealed interface ContactLinkEvent {
     data class OnKindChanged(val kind: ContactKind) : ContactLinkEvent
 
     data class OnValueChanged(val value: String) : ContactLinkEvent
+
+    data class OnCurrentPasswordChanged(val value: String) : ContactLinkEvent
 }
 
 sealed interface ContactLinkSideEffect {

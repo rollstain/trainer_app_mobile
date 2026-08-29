@@ -26,6 +26,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="trainer" android:host="invite" />
+                <data android:scheme="trainer" android:host="reset" />
             </intent-filter>
 
             <intent-filter android:autoVerify="true">
@@ -40,6 +41,14 @@
                     android:scheme="https"
                     android:host="lyashukfit.ru"
                     android:pathPrefix="/i/" />
+                <data
+                    android:scheme="https"
+                    android:host="api.lyashukfit.ru"
+                    android:pathPrefix="/r/" />
+                <data
+                    android:scheme="https"
+                    android:host="lyashukfit.ru"
+                    android:pathPrefix="/r/" />
             </intent-filter>
         </activity>
 

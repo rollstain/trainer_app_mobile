@@ -6,10 +6,12 @@ import app.trainer.data.auth.AuthProvider
 import app.trainer.data.auth.AuthRepository
 import app.trainer.data.auth.IdentitiesRepository
 import app.trainer.data.auth.LinkedIdentity
+import app.trainer.data.profile.ProfileRepository
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.strings.Res
 import app.trainer.strings.login_methods_linked_at
+import app.trainer.strings.login_methods_password_changed
 import app.trainer.strings.welcome_telegram_expired
 import app.trainer.strings.welcome_telegram_failed
 import kotlin.time.Duration.Companion.seconds
@@ -27,6 +29,7 @@ private const val CONFIRMATION_ATTEMPTS = 60
 class LoginMethodsScreenModel(
     private val identitiesRepository: IdentitiesRepository,
     private val authRepository: AuthRepository,
+    private val profileRepository: ProfileRepository,
 ) : BaseScreenModel<LoginMethodsState, LoginMethodsSideEffect, LoginMethodsEvent>(
     initialState = LoginMethodsState.initial(),
 ) {
@@ -42,7 +45,10 @@ class LoginMethodsScreenModel(
             updateState { it.copy(isLoading = true, failure = null) }
             when (val loaded = identitiesRepository.linkedIdentities()) {
                 is RequestResult.Error -> updateState { it.copy(isLoading = false, failure = loaded) }
-                is RequestResult.Success -> show(loaded.data)
+                is RequestResult.Success -> {
+                    show(loaded.data)
+                    showAccount()
+                }
             }
         }
     }
@@ -55,7 +61,32 @@ class LoginMethodsScreenModel(
             is LoginMethodsEvent.OnUnlinkClicked -> updateState { it.copy(confirmedUnlink = event.provider) }
             LoginMethodsEvent.OnUnlinkDismissed -> updateState { it.copy(confirmedUnlink = null) }
             LoginMethodsEvent.OnUnlinkConfirmed -> unlink()
+            LoginMethodsEvent.OnPasswordClicked -> screenModelScope {
+                postSideEffect(LoginMethodsSideEffect.OpenPasswordForm)
+            }
+            LoginMethodsEvent.OnEmailClicked -> screenModelScope {
+                postSideEffect(LoginMethodsSideEffect.OpenContactForm)
+            }
         }
+    }
+
+    private suspend fun showAccount() {
+        val profile = profileRepository.me()
+        if (profile !is RequestResult.Success) return
+        val changedLabel = profile.data.passwordUpdatedAtIso?.let { changedAt(it) }
+        updateState {
+            it.copy(
+                hasPassword = profile.data.hasPassword,
+                passwordChangedLabel = changedLabel,
+                email = profile.data.email,
+            )
+        }
+    }
+
+    private suspend fun changedAt(iso: String): String? {
+        val moment = runCatching { Instant.parse(iso) }.getOrNull() ?: return null
+        val day = moment.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        return getString(Res.string.login_methods_password_changed, dayMonthOf(day))
     }
 
     private fun cancelLink() {

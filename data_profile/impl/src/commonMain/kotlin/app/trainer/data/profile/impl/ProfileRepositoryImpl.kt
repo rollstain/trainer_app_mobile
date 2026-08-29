@@ -29,6 +29,8 @@ data class UpdateContactRequest(
     val phone: String?,
     @SerialName("email")
     val email: String?,
+    @SerialName("currentPassword")
+    val currentPassword: String?,
 )
 
 @Serializable
@@ -41,6 +43,12 @@ data class MeResponse(
     val phone: String?,
     @SerialName("email")
     val email: String?,
+    @SerialName("login")
+    val login: String?,
+    @SerialName("hasPassword")
+    val hasPassword: Boolean?,
+    @SerialName("passwordUpdatedAt")
+    val passwordUpdatedAt: String?,
     @SerialName("coachId")
     val coachId: String?,
     @SerialName("zoneId")
@@ -65,11 +73,21 @@ class ProfileRepositoryImpl(
     private val logger: Logger,
 ) : ProfileRepository {
 
-    override suspend fun updateContact(phone: String?, email: String?): RequestResult<UserProfile> {
+    override suspend fun updateContact(
+        phone: String?,
+        email: String?,
+        currentPassword: String?,
+    ): RequestResult<UserProfile> {
         val updated = safeRequest<MeResponse> {
             httpClientProvider.client.patch("me/contact") {
                 contentType(ContentType.Application.Json)
-                setBody(UpdateContactRequest(phone = phone, email = email))
+                setBody(
+                    UpdateContactRequest(
+                        phone = phone,
+                        email = email,
+                        currentPassword = currentPassword,
+                    )
+                )
             }
         }
         return when (updated) {
@@ -120,7 +138,8 @@ class ProfileRepositoryImpl(
         val userId = response.userId
         val displayName = response.displayName
         val hasCoach = response.hasCoach
-        val isComplete = userId != null && displayName != null && hasCoach != null
+        val hasPassword = response.hasPassword
+        val isComplete = userId != null && displayName != null && hasCoach != null && hasPassword != null
         if (!isComplete) {
             logger.error(tag = LOG_TAG, message = "В ответе /me не хватает полей профиля")
             return RequestResult.Error(
@@ -136,6 +155,9 @@ class ProfileRepositoryImpl(
                 displayName = requireNotNull(displayName),
                 phone = response.phone,
                 email = response.email,
+                login = response.login,
+                hasPassword = requireNotNull(hasPassword),
+                passwordUpdatedAtIso = response.passwordUpdatedAt,
                 coachId = response.coachId,
                 zoneId = response.zoneId,
                 hasCoach = requireNotNull(hasCoach),

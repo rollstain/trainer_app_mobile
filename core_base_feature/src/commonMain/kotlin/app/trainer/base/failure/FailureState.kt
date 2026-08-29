@@ -21,6 +21,8 @@ import app.trainer.strings.failure_retry
 import app.trainer.strings.failure_server_description
 import app.trainer.strings.failure_server_title
 import app.trainer.strings.failure_toast
+import app.trainer.strings.failure_too_many_requests_description
+import app.trainer.strings.failure_too_many_requests_title
 import app.trainer.strings.failure_unauthorized_description
 import app.trainer.strings.failure_unauthorized_title
 import app.trainer.strings.failure_unknown_description
@@ -66,6 +68,7 @@ private fun placeholderKindOf(failure: RequestFailure): PlaceholderKind = when (
     RequestFailure.NotFound,
     RequestFailure.Conflict,
     RequestFailure.Gone,
+    RequestFailure.TooManyRequests,
     RequestFailure.Validation,
     RequestFailure.Server,
     RequestFailure.Parsing,
@@ -74,7 +77,11 @@ private fun placeholderKindOf(failure: RequestFailure): PlaceholderKind = when (
 }
 
 private fun isRetryable(failure: RequestFailure): Boolean = when (failure) {
-    RequestFailure.Forbidden, RequestFailure.Unauthorized, RequestFailure.Gone -> false
+    RequestFailure.Forbidden,
+    RequestFailure.Unauthorized,
+    RequestFailure.Gone,
+    RequestFailure.TooManyRequests,
+    -> false
     RequestFailure.Network,
     RequestFailure.NotFound,
     RequestFailure.Conflict,
@@ -92,6 +99,7 @@ private fun titleOf(failure: RequestFailure): StringResource = when (failure) {
     RequestFailure.NotFound -> Res.string.failure_not_found_title
     RequestFailure.Conflict -> Res.string.failure_conflict_title
     RequestFailure.Gone -> Res.string.failure_gone_title
+    RequestFailure.TooManyRequests -> Res.string.failure_too_many_requests_title
     RequestFailure.Validation -> Res.string.failure_validation_title
     RequestFailure.Server -> Res.string.failure_server_title
     RequestFailure.Parsing -> Res.string.failure_parsing_title
@@ -105,6 +113,7 @@ private fun descriptionOf(failure: RequestFailure): StringResource = when (failu
     RequestFailure.NotFound -> Res.string.failure_not_found_description
     RequestFailure.Conflict -> Res.string.failure_conflict_description
     RequestFailure.Gone -> Res.string.failure_gone_description
+    RequestFailure.TooManyRequests -> Res.string.failure_too_many_requests_description
     RequestFailure.Validation -> Res.string.failure_validation_description
     RequestFailure.Server -> Res.string.failure_server_description
     RequestFailure.Parsing -> Res.string.failure_parsing_description

@@ -7,6 +7,7 @@ enum class RequestFailure {
     NotFound,
     Conflict,
     Gone,
+    TooManyRequests,
     Validation,
     Server,
     Parsing,
@@ -22,5 +23,7 @@ sealed interface RequestResult<out T> {
         val statusCode: Int?,
         val userMessage: String,
         val devMessage: String,
+        val retryAfterSeconds: Long? = null,
+        val fieldErrors: Map<String, String> = emptyMap(),
     ) : RequestResult<Nothing>
 }

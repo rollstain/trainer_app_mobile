@@ -9,7 +9,11 @@ interface ProfileRepository : LocalDataCleaner {
 
     suspend fun lastKnownIsCoach(): Boolean?
 
-    suspend fun updateContact(phone: String?, email: String?): RequestResult<UserProfile>
+    suspend fun updateContact(
+        phone: String?,
+        email: String?,
+        currentPassword: String?,
+    ): RequestResult<UserProfile>
 
     suspend fun becomeCoach(displayName: String, zoneId: String): RequestResult<UserProfile>
 }

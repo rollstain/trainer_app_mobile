@@ -42,7 +42,7 @@
     <string name="welcome_telegram_waiting">Waiting for Telegram…</string>
     <string name="welcome_telegram_hint">Telegram will open — press Start and come back here</string>
     <string name="welcome_telegram_cancel">Cancel</string>
-    <string name="welcome_telegram_failed">Telegram did not answer. Try again or sign in with a code.</string>
+    <string name="welcome_telegram_failed">Telegram did not answer. Try again or sign in with your email.</string>
     <string name="welcome_telegram_expired">The sign-in link expired. Tap Sign in with Telegram again.</string>
     <string name="welcome_or">or</string>
     <string name="welcome_code_action">I have a code from my coach</string>
@@ -237,6 +237,8 @@
     <string name="failure_conflict_title">The data changed</string>
     <string name="failure_gone_title">It has expired</string>
     <string name="failure_gone_description">Ask your coach for a new link or code.</string>
+    <string name="failure_too_many_requests_title">Too many attempts</string>
+    <string name="failure_too_many_requests_description">Wait a few minutes and try again.</string>
     <string name="failure_forbidden_description">This section is not open to you.</string>
     <string name="failure_forbidden_title">No access</string>
     <string name="failure_network_description">Check your internet connection and try again.</string>
@@ -620,4 +622,131 @@
     <string name="form_checks_reply_action">Reply</string>
     <string name="form_checks_replied">Reply sent</string>
     <string name="training_log_count_set">Count the set</string>
+
+    <string name="welcome_sign_in_action">Sign in</string>
+    <string name="welcome_sign_up_action">Create an account</string>
+    <string name="welcome_consent">By continuing you accept %1$s and %2$s</string>
+    <string name="legal_terms_link">the terms of use</string>
+    <string name="legal_privacy_link">the data policy</string>
+    <string name="welcome_continue_as">Continue as %1$s</string>
+    <string name="welcome_other_way">Sign in another way</string>
+
+    <string name="sign_in_title">Sign in</string>
+    <string name="sign_in_identifier_label">Email or username</string>
+    <string name="sign_in_password_label">Password</string>
+    <string name="sign_in_action">Sign in</string>
+    <string name="sign_in_progress">Signing in…</string>
+    <string name="sign_in_forgot">I forgot my password</string>
+    <string name="sign_in_rejected">That email or password does not match. Check them and try again.</string>
+    <string name="sign_in_locked_description">There were five failed attempts. You can wait, sign in with Telegram, or set a new password.</string>
+    <string name="sign_in_remaining">%1$s left</string>
+    <string name="sign_in_offline">No connection to the server. Check the internet — what you typed is kept.</string>
+    <string name="sign_in_retry_action">Try again</string>
+
+    <string name="sign_up_title">Sign up</string>
+    <string name="sign_up_name_label">What should we call you</string>
+    <string name="sign_up_name_placeholder">Name</string>
+    <string name="sign_up_email_label">Email</string>
+    <string name="sign_up_login_add">Add a username instead of email</string>
+    <string name="sign_up_login_label">Username</string>
+    <string name="sign_up_login_optional">optional</string>
+    <string name="sign_up_login_hint">You will be able to sign in with it instead of email</string>
+    <string name="sign_up_password_label">Password</string>
+    <string name="sign_up_password_hint">At least 8 characters. Nothing else required</string>
+    <string name="sign_up_action">Create an account</string>
+    <string name="sign_up_progress">Creating the account…</string>
+    <string name="sign_up_consent">By signing up you accept %1$s and %2$s</string>
+    <string name="sign_up_email_taken">That email is already taken. Sign in or set a new password.</string>
+    <string name="sign_up_email_wrong">Check the email address</string>
+    <string name="sign_up_login_taken">That username is taken. Try another one — %1$s, for instance</string>
+    <string name="sign_up_login_wrong">Latin letters, digits, dot, hyphen or underscore — 3 to 32 characters</string>
+    <string name="sign_up_name_empty">Enter your name — your coach will see it.</string>
+
+    <string name="telegram_link_created">%1$s, the account is ready</string>
+    <string name="telegram_link_heading">Passwords get forgotten</string>
+    <string name="telegram_link_description">A password can be restored by email, but letters depend on mail services and sometimes never arrive. Telegram works right away — linking takes one tap.</string>
+    <string name="telegram_link_action">Link Telegram</string>
+    <string name="telegram_link_later">Not now</string>
+    <string name="telegram_link_waiting">Confirm in Telegram…</string>
+    <string name="telegram_link_waiting_hint">Open the bot and tap “Confirm”. You will come back here automatically</string>
+    <string name="telegram_link_done">Telegram linked</string>
+    <string name="telegram_link_done_hint">Now you can sign in with one tap and restore the password if you forget it.</string>
+    <string name="telegram_link_continue">Continue</string>
+    <string name="telegram_link_failed">Could not link Telegram</string>
+    <string name="telegram_link_failed_hint">The confirmation never came. Try again — or link it later in your profile, the account already works.</string>
+    <string name="telegram_link_retry">Try again</string>
+    <string name="telegram_link_profile_later">Later, in the profile</string>
+
+    <string name="recovery_title">New password</string>
+    <string name="recovery_description">We will send a link to your email — it takes you to a new password.</string>
+    <string name="recovery_email_label">Email</string>
+    <string name="recovery_send_action">Send the link</string>
+    <string name="recovery_sending">Sending…</string>
+    <string name="recovery_telegram_action">Restore with Telegram</string>
+    <string name="recovery_sent_title">Check your email</string>
+    <string name="recovery_sent_description">If we have that address, the letter is already on its way. The link inside works for an hour.</string>
+    <string name="recovery_no_letter_title">No letter?</string>
+    <string name="recovery_no_letter_hint">Look into “Spam” — letters from new addresses often land there. Mail services also delay them by a couple of minutes.</string>
+    <string name="recovery_resend_action">Send again</string>
+    <string name="recovery_too_soon_title">The letter is already sent</string>
+    <string name="recovery_too_soon_hint">The next one can be requested in two minutes — that is how the anti-spam guard works.</string>
+    <string name="recovery_failed_title">The letter could not be sent</string>
+    <string name="recovery_failed_hint">The mail service refused it. Try once more or confirm yourself in Telegram — that is faster.</string>
+    <string name="recovery_telegram_continue">Continue in Telegram</string>
+    <string name="recovery_telegram_waiting_title">Waiting for confirmation</string>
+    <string name="recovery_telegram_waiting_hint">Open the bot and tap “It is me”. The confirmation works for 15 minutes.</string>
+    <string name="recovery_telegram_reopen">Open Telegram again</string>
+    <string name="recovery_cancel">Cancel</string>
+    <string name="recovery_not_confirmed">The confirmation from Telegram has not arrived yet. Tap “It is me” in the bot and try again.</string>
+    <string name="recovery_nothing_title">Nothing left to restore the password with</string>
+    <string name="recovery_nothing_description">The letter could not be sent, and Telegram is not linked to the account. There is no automatic way to confirm it is you.</string>
+    <string name="recovery_role_client">IF YOU ARE A CLIENT</string>
+    <string name="recovery_role_client_hint">Ask your coach for a new invite code — it brings back the diary and the schedule.</string>
+    <string name="recovery_role_coach">IF YOU ARE A COACH</string>
+    <string name="recovery_role_coach_hint">Write to support from the email you signed up with.</string>
+    <string name="recovery_support_action">Write to support</string>
+
+    <string name="new_password_title">It is you, %1$s</string>
+    <string name="new_password_title_unknown">It is you</string>
+    <string name="new_password_description">Set a new password — you will sign in with it.</string>
+    <string name="new_password_label">New password</string>
+    <string name="new_password_devices_warning">Other devices will be signed out — you will have to sign in there again. That is intended: a password is changed when access could have reached someone else.</string>
+    <string name="new_password_action">Save and sign in</string>
+    <string name="link_used_title">The link is already used</string>
+    <string name="link_used_description">A password was already set with it. If that was not you — request a new link and change the password.</string>
+    <string name="link_expired_title">The link has expired</string>
+    <string name="link_expired_description">A link from the letter works for an hour. Request a new one — it comes to the same address.</string>
+    <string name="link_request_new">Request a new link</string>
+    <string name="link_sign_in_action">Sign in with a password</string>
+
+    <string name="login_methods_password">Password</string>
+    <string name="login_methods_password_changed">changed %1$s</string>
+    <string name="login_methods_password_absent">Not set. Set it to sign in without Telegram</string>
+    <string name="login_methods_password_set">Set</string>
+    <string name="login_methods_password_change">Change</string>
+    <string name="login_methods_email">Email</string>
+    <string name="login_methods_email_change">Change</string>
+    <string name="login_methods_last_way">One way in has to remain — otherwise the account becomes unreachable.</string>
+    <string name="login_methods_last_telegram">Telegram is your only way in, so it cannot be unlinked. Set a password and unlinking becomes available.</string>
+    <string name="login_methods_last_password">The password is your only way in, so it cannot be removed.</string>
+    <string name="password_form_title_set">Set a password</string>
+    <string name="password_form_title_change">Change the password</string>
+    <string name="password_form_no_email">You signed in with a coach code, so we have no email yet. It is needed to sign in with a password.</string>
+    <string name="password_form_current">Current password</string>
+    <string name="password_form_current_wrong">The current password does not match. If you do not remember it — set a new one with Telegram</string>
+    <string name="password_form_devices">Other devices will be signed out.</string>
+    <string name="password_form_save">Save</string>
+
+    <plurals name="password_chars_missing">
+        <item quantity="one">%1$d character to go</item>
+        <item quantity="other">%1$d characters to go</item>
+    </plurals>
+    <plurals name="password_chars_enough">
+        <item quantity="one">%1$d character — long enough</item>
+        <item quantity="other">%1$d characters — long enough</item>
+    </plurals>
+    <plurals name="sign_in_locked_title">
+        <item quantity="one">Sign-in is closed for %1$d minute</item>
+        <item quantity="other">Sign-in is closed for %1$d minutes</item>
+    </plurals>
 </resources>

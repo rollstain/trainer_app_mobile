@@ -23,6 +23,7 @@ import app.trainer.strings.contact_link_phone_toggle
 import app.trainer.strings.contact_link_skip_action
 import app.trainer.strings.contact_link_submit_action
 import app.trainer.strings.contact_link_title
+import app.trainer.strings.password_form_current
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
@@ -31,7 +32,9 @@ import app.trainer.uikit.widgets.AppTextField
 import app.trainer.uikit.widgets.ButtonSize
 import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
+import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
+import app.trainer.uikit.widgets.TextFieldMessage
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -95,6 +98,15 @@ fun ContactLinkView(
                 }
             ),
         )
+        if (state.needsCurrentPassword) {
+            AppTextField(
+                value = state.currentPassword,
+                onValueChange = { onEvent(ContactLinkEvent.OnCurrentPasswordChanged(it)) },
+                kind = TextFieldKind.Password,
+                label = TextFieldLabel.Text(stringResource(Res.string.password_form_current)),
+                message = state.currentPasswordError?.let(TextFieldMessage::Error) ?: TextFieldMessage.None,
+            )
+        }
         AppButton(
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(Res.string.contact_link_submit_action),

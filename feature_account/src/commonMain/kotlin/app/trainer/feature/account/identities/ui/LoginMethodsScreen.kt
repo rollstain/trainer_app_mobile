@@ -9,6 +9,7 @@ import app.trainer.feature.account.identities.mvi.LoginMethodsSideEffect
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.Navigator
 import app.trainer.navigation.Screen
+import app.trainer.navigation.Screens
 import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
 import app.trainer.strings.Res
@@ -36,6 +37,8 @@ class LoginMethodsScreen : Screen {
         screenModel.collectSideEffect { effect ->
             when (effect) {
                 is LoginMethodsSideEffect.OpenTelegram -> uriHandler.openUri(effect.deepLink)
+                LoginMethodsSideEffect.OpenPasswordForm -> navigator.push(Screens.PasswordForm)
+                LoginMethodsSideEffect.OpenContactForm -> navigator.push(Screens.ContactLink)
                 LoginMethodsSideEffect.ShowLinked ->
                     toastHost.show(getString(Res.string.login_methods_linked_message))
                 is LoginMethodsSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())

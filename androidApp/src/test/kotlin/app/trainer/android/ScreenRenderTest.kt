@@ -10,6 +10,7 @@ import app.trainer.base.metrics.ProgressMetric
 import app.trainer.data.auth.AuthProvider
 import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.schedule.SlotStatus
+import app.trainer.entities.LegalLinks
 import app.trainer.feature.account.devices.mvi.DeviceRow
 import app.trainer.feature.account.devices.mvi.DevicesState
 import app.trainer.feature.account.devices.ui.DevicesView
@@ -26,7 +27,7 @@ import app.trainer.feature.account.nocoach.mvi.NoCoachState
 import app.trainer.feature.account.nocoach.ui.NoCoachView
 import app.trainer.feature.account.profile.mvi.ProfileState
 import app.trainer.feature.account.profile.ui.ProfileView
-import app.trainer.feature.account.welcome.mvi.TelegramLogin
+import app.trainer.feature.account.telegram.TelegramLoginState
 import app.trainer.feature.account.welcome.mvi.WelcomeState
 import app.trainer.feature.account.welcome.ui.WelcomeView
 import app.trainer.feature.clientcard.presentation.mvi.CheckInReview
@@ -448,7 +449,7 @@ class ScreenRenderTest {
     fun `the welcome screen offers telegram above the code`() {
         compose.setContent {
             TestTheme {
-                WelcomeView(state = welcomeWithTelegram(), onEvent = {})
+                WelcomeView(state = welcomeWithTelegram(), legalLinks = legalLinks(), onEvent = {})
             }
         }
 
@@ -463,7 +464,7 @@ class ScreenRenderTest {
     fun `while telegram is open the screen says what to do`() {
         compose.setContent {
             TestTheme {
-                WelcomeView(state = welcomeWaitingForTelegram(), onEvent = {})
+                WelcomeView(state = welcomeWaitingForTelegram(), legalLinks = legalLinks(), onEvent = {})
             }
         }
 
@@ -836,10 +837,14 @@ private fun onlyTelegramLinked(): LoginMethodsState = LoginMethodsState.initial(
     ),
 )
 
+private const val TELEGRAM_WINDOW_SECONDS = 900L
+
+private fun legalLinks(): LegalLinks = LegalLinks(baseUrl = "https://api.lyashukfit.ru/")
+
 private fun welcomeWithTelegram(): WelcomeState = WelcomeState.initial(afterSessionExpiry = false)
 
 private fun welcomeWaitingForTelegram(): WelcomeState = welcomeWithTelegram().copy(
-    telegram = TelegramLogin.Waiting,
+    telegram = TelegramLoginState.Waiting(secondsLeft = TELEGRAM_WINDOW_SECONDS),
 )
 
 private fun nextWithFailedHabits(): NextState = NextState.initial().copy(

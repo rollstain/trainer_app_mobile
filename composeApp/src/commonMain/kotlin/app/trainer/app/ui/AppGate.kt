@@ -10,9 +10,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import app.trainer.app.PendingInvite
+import app.trainer.app.PendingPasswordReset
 import app.trainer.app.SessionController
 import app.trainer.app.SessionStatus
 import app.trainer.base.failure.AppFailureState
+import app.trainer.data.auth.FreshSignUp
 import app.trainer.entities.RequestResult
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.NavContainer
@@ -53,13 +55,20 @@ fun AppGate() {
 @Composable
 private fun SignedInRoot(isCoach: Boolean) {
     val pendingInvite: PendingInvite = koinInject()
-    LaunchedEffect(Unit) { pendingInvite.consume() }
+    val pendingPasswordReset: PendingPasswordReset = koinInject()
+    LaunchedEffect(Unit) {
+        pendingInvite.consume()
+        pendingPasswordReset.consume()
+    }
     AppRoot(isCoach = isCoach)
 }
 
 @Composable
 private fun NoCoachRoot() {
-    val navigator = rememberNavigator(startKey = Screens.NoCoach)
+    val freshSignUp: FreshSignUp = koinInject()
+    val freshName by freshSignUp.name.collectAsState()
+    val startKey = if (freshName == null) Screens.NoCoach else Screens.TelegramLink
+    val navigator = rememberNavigator(startKey = startKey)
     CompositionLocalProvider(LocalNavigator provides navigator) {
         Box(modifier = Modifier.fillMaxSize().screenBackground()) {
             NavContainer(
@@ -75,8 +84,11 @@ private fun NoCoachRoot() {
 @Composable
 private fun OnboardingRoot(afterSessionExpiry: Boolean) {
     val pendingInvite: PendingInvite = koinInject()
+    val pendingPasswordReset: PendingPasswordReset = koinInject()
     val invitedCode by pendingInvite.code.collectAsState()
-    val startKey = invitedCode?.let { Screens.InviteLink(code = it) }
+    val resetToken by pendingPasswordReset.token.collectAsState()
+    val startKey = resetToken?.let { Screens.NewPassword(resetToken = it, claimToken = null) }
+        ?: invitedCode?.let { Screens.InviteLink(code = it) }
         ?: Screens.Welcome(afterSessionExpiry = afterSessionExpiry)
     val navigator = rememberNavigator(startKey = startKey)
     CompositionLocalProvider(LocalNavigator provides navigator) {

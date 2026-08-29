@@ -20,6 +20,24 @@ sealed interface Screens : NavKey {
     data class Onboarding(val code: String) : Screens
 
     @Serializable
+    data object SignIn : Screens
+
+    @Serializable
+    data object SignUp : Screens
+
+    @Serializable
+    data object TelegramLink : Screens
+
+    @Serializable
+    data class PasswordRecovery(val email: String) : Screens
+
+    @Serializable
+    data class NewPassword(val resetToken: String?, val claimToken: String?) : Screens
+
+    @Serializable
+    data object PasswordForm : Screens
+
+    @Serializable
     data object NoCoach : Screens
 
     @Serializable

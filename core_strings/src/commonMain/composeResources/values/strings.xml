@@ -168,6 +168,8 @@
     <string name="failure_conflict_title">Данные изменились</string>
     <string name="failure_gone_title">Срок истёк</string>
     <string name="failure_gone_description">Попросите тренера прислать новую ссылку или код.</string>
+    <string name="failure_too_many_requests_title">Слишком много попыток</string>
+    <string name="failure_too_many_requests_description">Подождите несколько минут и попробуйте снова.</string>
     <string name="failure_forbidden_description">Этот раздел вам не открыт.</string>
     <string name="failure_forbidden_title">Нет доступа</string>
     <string name="failure_network_description">Проверьте интернет и попробуйте ещё раз.</string>
@@ -222,7 +224,7 @@
     <string name="welcome_telegram_waiting">Ждём Telegram…</string>
     <string name="welcome_telegram_hint">Откроется Telegram — нажмите «Старт» и вернитесь сюда</string>
     <string name="welcome_telegram_cancel">Отменить</string>
-    <string name="welcome_telegram_failed">Telegram не ответил. Попробуйте снова или войдите по коду.</string>
+    <string name="welcome_telegram_failed">Telegram не ответил. Попробуйте снова или войдите по почте.</string>
     <string name="welcome_telegram_expired">Ссылка входа истекла. Нажмите «Войти через Telegram» ещё раз.</string>
     <string name="welcome_or">или</string>
     <string name="welcome_code_action">У меня код от тренера</string>
@@ -620,4 +622,137 @@
     <string name="form_checks_reply_action">Ответить</string>
     <string name="form_checks_replied">Ответ отправлен</string>
     <string name="training_log_count_set">Засчитать подход</string>
+
+    <string name="welcome_sign_in_action">Войти</string>
+    <string name="welcome_sign_up_action">Зарегистрироваться</string>
+    <string name="welcome_consent">Продолжая, вы принимаете %1$s и %2$s</string>
+    <string name="legal_terms_link">пользовательское соглашение</string>
+    <string name="legal_privacy_link">политику обработки данных</string>
+    <string name="welcome_continue_as">Продолжить как %1$s</string>
+    <string name="welcome_other_way">Войти другим способом</string>
+
+    <string name="sign_in_title">Вход</string>
+    <string name="sign_in_identifier_label">Почта или логин</string>
+    <string name="sign_in_password_label">Пароль</string>
+    <string name="sign_in_action">Войти</string>
+    <string name="sign_in_progress">Входим…</string>
+    <string name="sign_in_forgot">Не помню пароль</string>
+    <string name="sign_in_rejected">Почта или пароль не подходят. Проверьте и попробуйте ещё раз.</string>
+    <string name="sign_in_locked_description">Было пять неудачных попыток. Можно подождать, войти через Telegram или задать новый пароль.</string>
+    <string name="sign_in_remaining">осталось %1$s</string>
+    <string name="sign_in_offline">Нет связи с сервером. Проверьте интернет — введённое сохранено.</string>
+    <string name="sign_in_retry_action">Повторить</string>
+
+    <string name="sign_up_title">Регистрация</string>
+    <string name="sign_up_name_label">Как к вам обращаться</string>
+    <string name="sign_up_name_placeholder">Имя</string>
+    <string name="sign_up_email_label">Почта</string>
+    <string name="sign_up_login_add">Добавить логин вместо почты</string>
+    <string name="sign_up_login_label">Логин</string>
+    <string name="sign_up_login_optional">необязательно</string>
+    <string name="sign_up_login_hint">Сможете входить по логину вместо почты</string>
+    <string name="sign_up_password_label">Пароль</string>
+    <string name="sign_up_password_hint">От 8 символов. Других требований нет</string>
+    <string name="sign_up_action">Зарегистрироваться</string>
+    <string name="sign_up_progress">Создаём аккаунт…</string>
+    <string name="sign_up_consent">Регистрируясь, вы принимаете %1$s и %2$s</string>
+    <string name="sign_up_email_taken">Такая почта уже занята. Войдите или задайте новый пароль.</string>
+    <string name="sign_up_email_wrong">Проверьте адрес почты</string>
+    <string name="sign_up_login_taken">Логин занят. Попробуйте другой — например, %1$s</string>
+    <string name="sign_up_login_wrong">Латинские буквы, цифры, точка, дефис или подчёркивание — от 3 до 32 символов</string>
+    <string name="sign_up_name_empty">Введите имя — его увидит тренер.</string>
+
+    <string name="telegram_link_created">%1$s, аккаунт создан</string>
+    <string name="telegram_link_heading">Пароль можно забыть</string>
+    <string name="telegram_link_description">Восстановить пароль можно письмом, но письма зависят от почтовых служб и иногда не доходят. Telegram работает сразу и всегда — привязка занимает один тап.</string>
+    <string name="telegram_link_action">Привязать Telegram</string>
+    <string name="telegram_link_later">Не сейчас</string>
+    <string name="telegram_link_waiting">Подтвердите в Telegram…</string>
+    <string name="telegram_link_waiting_hint">Откройте бот и нажмите «Подтвердить». Вернётесь сюда автоматически</string>
+    <string name="telegram_link_done">Telegram привязан</string>
+    <string name="telegram_link_done_hint">Теперь им можно войти в один тап и восстановить пароль, если забудете.</string>
+    <string name="telegram_link_continue">Продолжить</string>
+    <string name="telegram_link_failed">Не удалось привязать Telegram</string>
+    <string name="telegram_link_failed_hint">Подтверждение не пришло. Попробуйте снова — или привяжите позже в профиле, аккаунт уже работает.</string>
+    <string name="telegram_link_retry">Попробовать снова</string>
+    <string name="telegram_link_profile_later">Позже, в профиле</string>
+
+    <string name="recovery_title">Новый пароль</string>
+    <string name="recovery_description">Пришлём ссылку на почту — по ней зададите новый пароль.</string>
+    <string name="recovery_email_label">Почта</string>
+    <string name="recovery_send_action">Прислать ссылку</string>
+    <string name="recovery_sending">Отправляем…</string>
+    <string name="recovery_telegram_action">Восстановить через Telegram</string>
+    <string name="recovery_sent_title">Проверьте почту</string>
+    <string name="recovery_sent_description">Если такой адрес у нас есть, письмо уже в пути. Ссылка в нём действует час.</string>
+    <string name="recovery_no_letter_title">Письма нет?</string>
+    <string name="recovery_no_letter_hint">Загляните в «Спам» — письма от новых адресов часто попадают туда. Иногда почта задерживает их на пару минут.</string>
+    <string name="recovery_resend_action">Прислать снова</string>
+    <string name="recovery_too_soon_title">Письмо уже отправлено</string>
+    <string name="recovery_too_soon_hint">Следующее можно запросить через две минуты — так устроена защита от рассылки.</string>
+    <string name="recovery_failed_title">Письмо отправить не удалось</string>
+    <string name="recovery_failed_hint">Почтовая служба не приняла письмо. Попробуйте ещё раз или подтвердите себя в Telegram — так быстрее.</string>
+    <string name="recovery_telegram_continue">Продолжить в Telegram</string>
+    <string name="recovery_telegram_waiting_title">Ждём подтверждения</string>
+    <string name="recovery_telegram_waiting_hint">Откройте бот и нажмите «Это я». Подтверждение действует 15 минут.</string>
+    <string name="recovery_telegram_reopen">Открыть Telegram снова</string>
+    <string name="recovery_cancel">Отменить</string>
+    <string name="recovery_not_confirmed">Подтверждение из Telegram ещё не пришло. Нажмите «Это я» в боте и попробуйте снова.</string>
+    <string name="recovery_nothing_title">Пароль восстановить нечем</string>
+    <string name="recovery_nothing_description">Письмо не удалось отправить, а Telegram к аккаунту не привязан. Автоматически подтвердить, что это вы, не получится.</string>
+    <string name="recovery_role_client">ЕСЛИ ВЫ ПОДОПЕЧНЫЙ</string>
+    <string name="recovery_role_client_hint">Попросите тренера прислать новый код-приглашение — он вернёт доступ к дневнику и расписанию.</string>
+    <string name="recovery_role_coach">ЕСЛИ ВЫ ТРЕНЕР</string>
+    <string name="recovery_role_coach_hint">Напишите в поддержку с той почты, на которую регистрировались.</string>
+    <string name="recovery_support_action">Написать в поддержку</string>
+
+    <string name="new_password_title">Это вы, %1$s</string>
+    <string name="new_password_title_unknown">Это вы</string>
+    <string name="new_password_description">Задайте новый пароль — им и войдёте.</string>
+    <string name="new_password_label">Новый пароль</string>
+    <string name="new_password_devices_warning">Другие устройства выйдут из аккаунта — на них придётся войти заново. Так надо: пароль меняют, когда доступ мог попасть к другому человеку.</string>
+    <string name="new_password_action">Сохранить и войти</string>
+    <string name="link_used_title">Ссылка уже использована</string>
+    <string name="link_used_description">По ней уже задали пароль. Если это были не вы — запросите новую ссылку и смените пароль.</string>
+    <string name="link_expired_title">Срок ссылки истёк</string>
+    <string name="link_expired_description">Ссылка из письма действует час. Запросите новую — придёт на ту же почту.</string>
+    <string name="link_request_new">Запросить новую ссылку</string>
+    <string name="link_sign_in_action">Войти с паролем</string>
+
+    <string name="login_methods_password">Пароль</string>
+    <string name="login_methods_password_changed">изменён %1$s</string>
+    <string name="login_methods_password_absent">Не задан. Задайте, чтобы входить без Telegram</string>
+    <string name="login_methods_password_set">Задать</string>
+    <string name="login_methods_password_change">Сменить</string>
+    <string name="login_methods_email">Почта</string>
+    <string name="login_methods_email_change">Изменить</string>
+    <string name="login_methods_last_way">Один способ входа должен остаться — иначе в аккаунт будет не попасть.</string>
+    <string name="login_methods_last_telegram">Telegram — ваш единственный способ входа, поэтому отвязать его нельзя. Задайте пароль, и отвязка станет доступна.</string>
+    <string name="login_methods_last_password">Пароль — ваш единственный способ входа, поэтому убрать его нельзя.</string>
+    <string name="password_form_title_set">Задать пароль</string>
+    <string name="password_form_title_change">Сменить пароль</string>
+    <string name="password_form_no_email">Вы вошли по коду от тренера, поэтому почты у нас пока нет. Она нужна, чтобы входить по паролю.</string>
+    <string name="password_form_current">Текущий пароль</string>
+    <string name="password_form_current_wrong">Текущий пароль не подходит. Если не помните — задайте новый через Telegram</string>
+    <string name="password_form_devices">Другие устройства выйдут из аккаунта.</string>
+    <string name="password_form_save">Сохранить</string>
+
+    <plurals name="password_chars_missing">
+        <item quantity="one">Ещё %1$d символ</item>
+        <item quantity="few">Ещё %1$d символа</item>
+        <item quantity="many">Ещё %1$d символов</item>
+        <item quantity="other">Ещё %1$d символа</item>
+    </plurals>
+    <plurals name="password_chars_enough">
+        <item quantity="one">%1$d символ — подходит</item>
+        <item quantity="few">%1$d символа — подходит</item>
+        <item quantity="many">%1$d символов — подходит</item>
+        <item quantity="other">%1$d символа — подходит</item>
+    </plurals>
+    <plurals name="sign_in_locked_title">
+        <item quantity="one">Вход закрыт на %1$d минуту</item>
+        <item quantity="few">Вход закрыт на %1$d минуты</item>
+        <item quantity="many">Вход закрыт на %1$d минут</item>
+        <item quantity="other">Вход закрыт на %1$d минуты</item>
+    </plurals>
 </resources>

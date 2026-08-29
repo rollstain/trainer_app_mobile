@@ -17,9 +17,15 @@ import app.trainer.feature.account.identities.mvi.LoginMethodRow
 import app.trainer.feature.account.identities.mvi.LoginMethodsEvent
 import app.trainer.feature.account.identities.mvi.LoginMethodsState
 import app.trainer.strings.Res
+import app.trainer.strings.login_methods_email
+import app.trainer.strings.login_methods_email_change
 import app.trainer.strings.login_methods_empty
 import app.trainer.strings.login_methods_last_hint
 import app.trainer.strings.login_methods_link_telegram
+import app.trainer.strings.login_methods_password
+import app.trainer.strings.login_methods_password_absent
+import app.trainer.strings.login_methods_password_change
+import app.trainer.strings.login_methods_password_set
 import app.trainer.strings.login_methods_title
 import app.trainer.strings.login_methods_unlink
 import app.trainer.strings.login_methods_unlink_cancel
@@ -90,6 +96,72 @@ fun LoginMethodsView(
 }
 
 @Composable
+private fun PasswordCard(state: LoginMethodsState, onEvent: (LoginMethodsEvent) -> Unit) {
+    AppCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                AppText(
+                    text = stringResource(Res.string.login_methods_password),
+                    style = AppTheme.typography.bodyStrong,
+                    color = AppTheme.colors.textPrimary,
+                )
+                AppText(
+                    text = state.passwordChangedLabel
+                        ?: stringResource(Res.string.login_methods_password_absent),
+                    style = AppTheme.typography.caption,
+                    color = AppTheme.colors.textSecondary,
+                )
+            }
+            AppButton(
+                text = if (state.hasPassword) {
+                    stringResource(Res.string.login_methods_password_change)
+                } else {
+                    stringResource(Res.string.login_methods_password_set)
+                },
+                onClick = { onEvent(LoginMethodsEvent.OnPasswordClicked) },
+                tone = if (state.hasPassword) ButtonTone.Secondary else ButtonTone.Primary,
+                size = ButtonSize.Small,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmailCard(state: LoginMethodsState, onEvent: (LoginMethodsEvent) -> Unit) {
+    val email = state.email ?: return
+    AppCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                AppText(
+                    text = stringResource(Res.string.login_methods_email),
+                    style = AppTheme.typography.bodyStrong,
+                    color = AppTheme.colors.textPrimary,
+                )
+                AppText(
+                    text = email,
+                    style = AppTheme.typography.caption,
+                    color = AppTheme.colors.textSecondary,
+                )
+            }
+            AppButton(
+                text = stringResource(Res.string.login_methods_email_change),
+                onClick = { onEvent(LoginMethodsEvent.OnEmailClicked) },
+                tone = ButtonTone.Secondary,
+                size = ButtonSize.Small,
+            )
+        }
+    }
+}
+
+@Composable
 private fun MethodsContent(state: LoginMethodsState, onEvent: (LoginMethodsEvent) -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(AppTheme.spacing.dp16),
@@ -115,6 +187,8 @@ private fun MethodsContent(state: LoginMethodsState, onEvent: (LoginMethodsEvent
                 onEvent = onEvent,
             )
         }
+        PasswordCard(state = state, onEvent = onEvent)
+        EmailCard(state = state, onEvent = onEvent)
         val link = state.link
         if (link is LinkProgress.Failed) {
             AppCard(

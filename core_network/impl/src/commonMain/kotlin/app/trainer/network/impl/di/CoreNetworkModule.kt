@@ -1,5 +1,6 @@
 package app.trainer.network.impl.di
 
+import app.trainer.entities.LegalLinks
 import app.trainer.network.HttpClientProvider
 import app.trainer.network.PresignedUploader
 import app.trainer.network.SessionEvents
@@ -30,6 +31,9 @@ class CoreNetworkModule(private val config: NetworkConfig) {
         single<SessionEvents> { SessionEventsImpl() }
         single<TokenRefresher> {
             HttpTokenRefresher(baseUrl = config.baseUrl, json = get(), logger = get())
+        }
+        single {
+            LegalLinks(baseUrl = config.baseUrl)
         }
         single<PresignedUploader> { PlainPresignedUploader(httpClientProvider = get()) }
         single<HttpClientProvider> {

@@ -1,33 +1,27 @@
 package app.trainer.feature.account.welcome.mvi
 
 import app.trainer.entities.RequestResult
-
-sealed interface TelegramLogin {
-
-    data object Idle : TelegramLogin
-
-    data object Starting : TelegramLogin
-
-    data object Waiting : TelegramLogin
-
-    data class Failed(val message: String) : TelegramLogin
-}
+import app.trainer.feature.account.telegram.TelegramLoginState
 
 data class WelcomeState(
     val afterSessionExpiry: Boolean,
-    val telegram: TelegramLogin,
+    val telegram: TelegramLoginState,
 ) {
 
     companion object {
 
         fun initial(afterSessionExpiry: Boolean): WelcomeState = WelcomeState(
             afterSessionExpiry = afterSessionExpiry,
-            telegram = TelegramLogin.Idle,
+            telegram = TelegramLoginState.Idle,
         )
     }
 }
 
 sealed interface WelcomeEvent {
+
+    data object OnSignInClicked : WelcomeEvent
+
+    data object OnSignUpClicked : WelcomeEvent
 
     data object OnTelegramClicked : WelcomeEvent
 
@@ -37,6 +31,10 @@ sealed interface WelcomeEvent {
 }
 
 sealed interface WelcomeSideEffect {
+
+    data object OpenSignIn : WelcomeSideEffect
+
+    data object OpenSignUp : WelcomeSideEffect
 
     data class OpenTelegram(val deepLink: String) : WelcomeSideEffect
 

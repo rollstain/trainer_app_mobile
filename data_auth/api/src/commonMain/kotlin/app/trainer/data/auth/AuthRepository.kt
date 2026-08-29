@@ -39,6 +39,34 @@ interface AuthRepository {
 
     suspend fun redeemInvite(code: String, displayName: String, deviceInfo: String): RequestResult<Unit>
 
+    suspend fun signUpWithPassword(
+        displayName: String,
+        email: String,
+        login: String?,
+        password: String,
+        deviceInfo: String,
+    ): RequestResult<Unit>
+
+    suspend fun signInWithPassword(
+        identifier: String,
+        password: String,
+        deviceInfo: String,
+    ): RequestResult<Unit>
+
+    suspend fun resetPasswordByTelegram(
+        claimToken: String,
+        password: String,
+        deviceInfo: String,
+    ): RequestResult<Unit>
+
+    suspend fun requestPasswordReset(email: String): RequestResult<Unit>
+
+    suspend fun resetPasswordByEmail(
+        token: String,
+        password: String,
+        deviceInfo: String,
+    ): RequestResult<Unit>
+
     suspend fun startTelegramLogin(): RequestResult<TelegramLoginStart>
 
     suspend fun signInWithProvider(
@@ -61,6 +89,13 @@ interface IdentitiesRepository {
     suspend fun linkProvider(provider: AuthProvider, token: String): RequestResult<List<LinkedIdentity>>
 
     suspend fun unlinkProvider(provider: AuthProvider): RequestResult<List<LinkedIdentity>>
+
+    suspend fun setPassword(
+        email: String?,
+        login: String?,
+        currentPassword: String?,
+        newPassword: String,
+    ): RequestResult<Unit>
 }
 
 interface DeviceSessionsRepository {

@@ -26,10 +26,16 @@ data class LoginMethodsState(
     val confirmedUnlink: AuthProvider?,
     val isLoading: Boolean,
     val failure: RequestResult.Error?,
+    val hasPassword: Boolean,
+    val passwordChangedLabel: String?,
+    val email: String?,
 ) {
 
+    val waysIn: Int
+        get() = methods.size + if (hasPassword) 1 else 0
+
     val isLastMethod: Boolean
-        get() = methods.size == 1
+        get() = waysIn == 1
 
     val canLinkTelegram: Boolean
         get() = methods.none { it.provider == AuthProvider.TELEGRAM }
@@ -43,6 +49,9 @@ data class LoginMethodsState(
             confirmedUnlink = null,
             isLoading = true,
             failure = null,
+            hasPassword = false,
+            passwordChangedLabel = null,
+            email = null,
         )
     }
 }
@@ -60,6 +69,10 @@ sealed interface LoginMethodsEvent {
     data object OnUnlinkConfirmed : LoginMethodsEvent
 
     data object OnUnlinkDismissed : LoginMethodsEvent
+
+    data object OnPasswordClicked : LoginMethodsEvent
+
+    data object OnEmailClicked : LoginMethodsEvent
 }
 
 sealed interface LoginMethodsSideEffect {
@@ -67,6 +80,10 @@ sealed interface LoginMethodsSideEffect {
     data class OpenTelegram(val deepLink: String) : LoginMethodsSideEffect
 
     data object ShowLinked : LoginMethodsSideEffect
+
+    data object OpenPasswordForm : LoginMethodsSideEffect
+
+    data object OpenContactForm : LoginMethodsSideEffect
 
     data class ShowFailure(val failure: RequestResult.Error) : LoginMethodsSideEffect
 }

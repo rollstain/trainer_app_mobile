@@ -88,3 +88,65 @@ data class DeviceSessionResponse(
     @SerialName("isCurrent")
     val isCurrent: Boolean?,
 )
+
+@Serializable
+data class PasswordSignUpRequest(
+    @SerialName("displayName")
+    val displayName: String,
+    @SerialName("email")
+    val email: String,
+    @SerialName("login")
+    val login: String?,
+    @SerialName("password")
+    val password: String,
+    @SerialName("deviceInfo")
+    val deviceInfo: String,
+)
+
+@Serializable
+data class PasswordSignInRequest(
+    @SerialName("identifier")
+    val identifier: String,
+    @SerialName("password")
+    val password: String,
+    @SerialName("deviceInfo")
+    val deviceInfo: String,
+)
+
+@Serializable
+data class PasswordResetRequest(
+    @SerialName("claimToken")
+    val claimToken: String,
+    @SerialName("password")
+    val password: String,
+    @SerialName("deviceInfo")
+    val deviceInfo: String,
+)
+
+@Serializable
+data class SetPasswordRequest(
+    @SerialName("email")
+    val email: String?,
+    @SerialName("login")
+    val login: String?,
+    @SerialName("currentPassword")
+    val currentPassword: String?,
+    @SerialName("newPassword")
+    val newPassword: String,
+)
+
+@Serializable
+data class ForgotPasswordRequest(
+    @SerialName("email")
+    val email: String,
+)
+
+@Serializable
+data class PasswordResetByEmailRequest(
+    @SerialName("token")
+    val token: String,
+    @SerialName("password")
+    val password: String,
+    @SerialName("deviceInfo")
+    val deviceInfo: String,
+)

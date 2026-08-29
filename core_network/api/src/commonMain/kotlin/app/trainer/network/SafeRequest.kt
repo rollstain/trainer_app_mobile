@@ -22,6 +22,7 @@ private const val STATUS_NOT_FOUND = 404
 private const val STATUS_CONFLICT = 409
 private const val STATUS_GONE = 410
 private const val STATUS_UNPROCESSABLE_ENTITY = 422
+private const val STATUS_TOO_MANY_REQUESTS = 429
 private const val STATUS_SERVER_ERROR_FROM = 500
 
 @Serializable
@@ -32,6 +33,8 @@ data class ApiErrorResponse(
     val message: String?,
     @SerialName("fieldErrors")
     val fieldErrors: Map<String, String>?,
+    @SerialName("retryAfterSeconds")
+    val retryAfterSeconds: Long?,
 )
 
 @PublishedApi
@@ -46,6 +49,7 @@ internal fun failureOf(statusCode: Int): RequestFailure = when {
     statusCode == STATUS_GONE -> RequestFailure.Gone
     statusCode == STATUS_BAD_REQUEST -> RequestFailure.Validation
     statusCode == STATUS_UNPROCESSABLE_ENTITY -> RequestFailure.Validation
+    statusCode == STATUS_TOO_MANY_REQUESTS -> RequestFailure.TooManyRequests
     statusCode >= STATUS_SERVER_ERROR_FROM -> RequestFailure.Server
     else -> RequestFailure.Unknown
 }
@@ -58,6 +62,8 @@ internal fun parseApiError(statusCode: Int, rawBody: String): RequestResult.Erro
         statusCode = statusCode,
         userMessage = parsed?.message.orEmpty(),
         devMessage = rawBody,
+        retryAfterSeconds = parsed?.retryAfterSeconds,
+        fieldErrors = parsed?.fieldErrors.orEmpty(),
     )
 }
 

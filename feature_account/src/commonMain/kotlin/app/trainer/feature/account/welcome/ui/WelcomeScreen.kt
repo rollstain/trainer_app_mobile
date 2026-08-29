@@ -14,6 +14,7 @@ import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
 import app.trainer.uikit.widgets.LocalToastHost
 import app.trainer.uikit.widgets.ToastHostState
+import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 class WelcomeScreen(private val afterSessionExpiry: Boolean) : Screen {
@@ -28,10 +29,16 @@ class WelcomeScreen(private val afterSessionExpiry: Boolean) : Screen {
         )
         val state by screenModel.collectAsState()
 
-        WelcomeView(state = state, onEvent = { screenModel.dispatch(event = it) })
+        WelcomeView(
+            state = state,
+            legalLinks = koinInject(),
+            onEvent = { screenModel.dispatch(event = it) },
+        )
 
         screenModel.collectSideEffect { effect ->
             when (effect) {
+                WelcomeSideEffect.OpenSignIn -> navigator.push(Screens.SignIn)
+                WelcomeSideEffect.OpenSignUp -> navigator.push(Screens.SignUp)
                 is WelcomeSideEffect.OpenTelegram -> uriHandler.openUri(effect.deepLink)
                 WelcomeSideEffect.OpenCodeEntry ->
                     navigator.push(Screens.Invite(afterSessionExpiry = false))

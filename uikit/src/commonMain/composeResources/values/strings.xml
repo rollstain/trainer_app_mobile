@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="top_bar_back">Назад</string>
+    <string name="field_show">Показать</string>
+    <string name="field_hide">Скрыть</string>
+    <string name="field_clear">Очистить</string>
     <string name="toast_default_action">Понятно</string>
 
     <string name="message_photo_description">Фото в сообщении</string>

@@ -26,6 +26,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":core_entities"))
+            implementation(libs.kotlinx.coroutines)
         }
     }
 }
