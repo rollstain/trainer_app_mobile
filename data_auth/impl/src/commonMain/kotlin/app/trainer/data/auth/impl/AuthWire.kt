@@ -62,38 +62,6 @@ data class LinkedIdentityResponse(
 )
 
 @Serializable
-data class CoachAccessStatusResponse(
-    @SerialName("status")
-    val status: String?,
-    @SerialName("about")
-    val about: String?,
-    @SerialName("askedAt")
-    val askedAt: String?,
-    @SerialName("decidedAt")
-    val decidedAt: String?,
-    @SerialName("canAskAgainOn")
-    val canAskAgainOn: String?,
-)
-
-@Serializable
-data class AskCoachAccessRequest(
-    @SerialName("displayName")
-    val displayName: String,
-    @SerialName("about")
-    val about: String,
-)
-
-@Serializable
-data class CoachRequestResponse(
-    @SerialName("id")
-    val id: String?,
-    @SerialName("displayName")
-    val displayName: String?,
-    @SerialName("createdAt")
-    val createdAt: String?,
-)
-
-@Serializable
 data class TelegramStartResponse(
     @SerialName("claimToken")
     val claimToken: String?,

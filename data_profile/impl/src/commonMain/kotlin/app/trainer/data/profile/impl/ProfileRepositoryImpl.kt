@@ -6,10 +6,12 @@ import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.logger.Logger
 import app.trainer.network.HttpClientProvider
+import app.trainer.network.SessionEvents
 import app.trainer.network.safeRequest
 import com.russhwolf.settings.Settings
 import io.ktor.client.request.get
 import io.ktor.client.request.patch
+import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
@@ -45,14 +47,21 @@ data class MeResponse(
     val zoneId: String?,
     @SerialName("hasCoach")
     val hasCoach: Boolean?,
-    @SerialName("isOwner")
-    val isOwner: Boolean?,
+)
+
+@Serializable
+data class BecomeCoachRequest(
+    @SerialName("displayName")
+    val displayName: String,
+    @SerialName("zoneId")
+    val zoneId: String,
 )
 
 class ProfileRepositoryImpl(
     private val settings: Settings,
     private val ioDispatcher: CoroutineDispatcher,
     private val httpClientProvider: HttpClientProvider,
+    private val sessionEvents: SessionEvents,
     private val logger: Logger,
 ) : ProfileRepository {
 
@@ -66,6 +75,21 @@ class ProfileRepositoryImpl(
         return when (updated) {
             is RequestResult.Error -> updated
             is RequestResult.Success -> toProfile(updated.data)
+        }
+    }
+
+    override suspend fun becomeCoach(displayName: String, zoneId: String): RequestResult<UserProfile> {
+        val created = safeRequest<MeResponse> {
+            httpClientProvider.client.post("me/coach") {
+                contentType(ContentType.Application.Json)
+                setBody(BecomeCoachRequest(displayName = displayName, zoneId = zoneId))
+            }
+        }
+        return when (created) {
+            is RequestResult.Error -> created
+            is RequestResult.Success -> toProfile(created.data)
+                .also(::rememberRole)
+                .also { sessionEvents.notifyProfileChanged() }
         }
     }
 
@@ -96,8 +120,7 @@ class ProfileRepositoryImpl(
         val userId = response.userId
         val displayName = response.displayName
         val hasCoach = response.hasCoach
-        val isOwner = response.isOwner
-        val isComplete = userId != null && displayName != null && hasCoach != null && isOwner != null
+        val isComplete = userId != null && displayName != null && hasCoach != null
         if (!isComplete) {
             logger.error(tag = LOG_TAG, message = "В ответе /me не хватает полей профиля")
             return RequestResult.Error(
@@ -116,7 +139,6 @@ class ProfileRepositoryImpl(
                 coachId = response.coachId,
                 zoneId = response.zoneId,
                 hasCoach = requireNotNull(hasCoach),
-                isOwner = requireNotNull(isOwner),
             )
         )
     }

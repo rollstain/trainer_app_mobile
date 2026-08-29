@@ -48,7 +48,7 @@ private suspend fun handleSideEffect(
 ) {
     when (effect) {
         ProfileSideEffect.OpenContactLink -> navigator.push(Screens.ContactLink)
-        ProfileSideEffect.OpenCoachRequests -> navigator.push(Screens.CoachRequests)
+        ProfileSideEffect.OpenCoachSetup -> navigator.push(Screens.CoachSetup)
         ProfileSideEffect.OpenLoginMethods -> navigator.push(Screens.LoginMethods)
         ProfileSideEffect.OpenDevices -> navigator.push(Screens.Devices)
         ProfileSideEffect.OpenExerciseLibrary -> navigator.push(Screens.ExerciseLibrary)

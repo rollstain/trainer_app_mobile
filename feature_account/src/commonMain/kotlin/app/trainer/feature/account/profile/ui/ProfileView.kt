@@ -19,9 +19,9 @@ import app.trainer.data.clients.CoachPolicy
 import app.trainer.feature.account.profile.mvi.ProfileEvent
 import app.trainer.feature.account.profile.mvi.ProfileState
 import app.trainer.strings.Res
-import app.trainer.strings.coach_requests_title
 import app.trainer.strings.login_methods_title
 import app.trainer.strings.profile_add_contact_action
+import app.trainer.strings.profile_become_coach_action
 import app.trainer.strings.profile_cancellation_description
 import app.trainer.strings.profile_cancellation_hours
 import app.trainer.strings.profile_cancellation_title
@@ -202,10 +202,10 @@ private fun ProfileContent(state: ProfileState, onEvent: (ProfileEvent) -> Unit)
                 onSelect = { seconds -> onEvent(ProfileEvent.OnRestSecondsSelected(seconds)) },
             )
         }
-        if (state.isOwner) {
-            AppCard(action = CardAction.Click { onEvent(ProfileEvent.OnCoachRequestsClicked) }) {
+        if (!state.isCoach) {
+            AppCard(action = CardAction.Click { onEvent(ProfileEvent.OnBecomeCoachClicked) }) {
                 AppText(
-                    text = stringResource(Res.string.coach_requests_title),
+                    text = stringResource(Res.string.profile_become_coach_action),
                     style = AppTheme.typography.body,
                     color = AppTheme.colors.textPrimary,
                 )

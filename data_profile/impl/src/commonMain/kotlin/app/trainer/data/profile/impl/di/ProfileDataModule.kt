@@ -14,6 +14,7 @@ class ProfileDataModule {
                 settings = get(),
                 ioDispatcher = get(),
                 httpClientProvider = get(),
+                sessionEvents = get(),
                 logger = get(),
             )
         } bind LocalDataCleaner::class

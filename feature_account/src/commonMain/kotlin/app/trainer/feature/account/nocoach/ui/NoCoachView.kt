@@ -12,27 +12,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import app.trainer.feature.account.nocoach.mvi.CoachAccessState
 import app.trainer.feature.account.nocoach.mvi.NoCoachEvent
 import app.trainer.feature.account.nocoach.mvi.NoCoachState
 import app.trainer.strings.Res
-import app.trainer.strings.no_coach_application_action
-import app.trainer.strings.no_coach_application_description
-import app.trainer.strings.no_coach_application_title
+import app.trainer.strings.no_coach_coach_action
+import app.trainer.strings.no_coach_coach_description
+import app.trainer.strings.no_coach_coach_title
 import app.trainer.strings.no_coach_code_description
 import app.trainer.strings.no_coach_code_title
-import app.trainer.strings.no_coach_code_title_waiting
-import app.trainer.strings.no_coach_declined_description
-import app.trainer.strings.no_coach_declined_retry_from
-import app.trainer.strings.no_coach_declined_retry_now
-import app.trainer.strings.no_coach_declined_title
 import app.trainer.strings.no_coach_join_action
 import app.trainer.strings.no_coach_no_code_divider
-import app.trainer.strings.no_coach_pending_description
-import app.trainer.strings.no_coach_pending_title
 import app.trainer.strings.no_coach_subtitle
 import app.trainer.strings.no_coach_title
-import app.trainer.strings.no_coach_title_asked
 import app.trainer.strings.no_coach_title_named
 import app.trainer.strings.profile_sign_out_action
 import app.trainer.strings.profile_sign_out_cancel
@@ -49,7 +40,6 @@ import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.ButtonSize
 import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
-import app.trainer.uikit.widgets.CardDecoration
 import app.trainer.uikit.widgets.CodeInputState
 import app.trainer.uikit.widgets.ConfirmDialogDismiss
 import app.trainer.uikit.widgets.ConfirmDialogTone
@@ -77,22 +67,10 @@ fun NoCoachView(
             ),
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp24),
     ) {
-        Header(state = state)
-        if (state.access is CoachAccessState.Pending) {
-            PendingPlate(askedAtLabel = state.access.askedAtLabel)
-        }
+        Header(displayName = state.displayName)
         CodeCard(state = state, onEvent = onEvent)
-        when (val access = state.access) {
-            CoachAccessState.NotAsked -> {
-                Divider()
-                ApplicationCard(onEvent = onEvent)
-            }
-            is CoachAccessState.Declined -> {
-                Divider()
-                DeclinedCard(access = access, onEvent = onEvent)
-            }
-            is CoachAccessState.Pending -> Unit
-        }
+        Divider()
+        CoachCard(onEvent = onEvent)
         AppButton(
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(Res.string.profile_sign_out_action),
@@ -118,50 +96,22 @@ fun NoCoachView(
 }
 
 @Composable
-private fun Header(state: NoCoachState) {
+private fun Header(displayName: String) {
     Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
         AppText(
-            text = when {
-                state.displayName.isBlank() -> stringResource(Res.string.no_coach_title)
-                state.isWaitingDecision -> stringResource(Res.string.no_coach_title_asked, state.displayName)
-                else -> stringResource(Res.string.no_coach_title_named, state.displayName)
+            text = if (displayName.isBlank()) {
+                stringResource(Res.string.no_coach_title)
+            } else {
+                stringResource(Res.string.no_coach_title_named, displayName)
             },
             style = AppTheme.typography.display,
             color = AppTheme.colors.textPrimary,
         )
-        if (!state.isWaitingDecision) {
-            AppText(
-                text = stringResource(Res.string.no_coach_subtitle),
-                style = AppTheme.typography.body,
-                color = AppTheme.colors.textSecondary,
-            )
-        }
-    }
-}
-
-@Composable
-private fun PendingPlate(askedAtLabel: String) {
-    AppCard(
-        background = AppTheme.colors.warningSoft,
-        decoration = CardDecoration.Stripe(AppTheme.colors.warning),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4)) {
-            AppText(
-                text = stringResource(Res.string.no_coach_pending_title),
-                style = AppTheme.typography.bodyStrong,
-                color = AppTheme.colors.textPrimary,
-            )
-            AppText(
-                text = askedAtLabel,
-                style = AppTheme.typography.caption,
-                color = AppTheme.colors.textSecondary,
-            )
-            AppText(
-                text = stringResource(Res.string.no_coach_pending_description),
-                style = AppTheme.typography.body,
-                color = AppTheme.colors.textSecondary,
-            )
-        }
+        AppText(
+            text = stringResource(Res.string.no_coach_subtitle),
+            style = AppTheme.typography.body,
+            color = AppTheme.colors.textSecondary,
+        )
     }
 }
 
@@ -170,11 +120,7 @@ private fun CodeCard(state: NoCoachState, onEvent: (NoCoachEvent) -> Unit) {
     AppCard {
         Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12)) {
             AppText(
-                text = if (state.isWaitingDecision) {
-                    stringResource(Res.string.no_coach_code_title_waiting)
-                } else {
-                    stringResource(Res.string.no_coach_code_title)
-                },
+                text = stringResource(Res.string.no_coach_code_title),
                 style = AppTheme.typography.headline,
                 color = AppTheme.colors.textPrimary,
             )
@@ -226,59 +172,25 @@ private fun Divider() {
 }
 
 @Composable
-private fun ApplicationCard(onEvent: (NoCoachEvent) -> Unit) {
+private fun CoachCard(onEvent: (NoCoachEvent) -> Unit) {
     AppCard {
         Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12)) {
             AppText(
-                text = stringResource(Res.string.no_coach_application_title),
+                text = stringResource(Res.string.no_coach_coach_title),
                 style = AppTheme.typography.headline,
                 color = AppTheme.colors.textPrimary,
             )
             AppText(
-                text = stringResource(Res.string.no_coach_application_description),
+                text = stringResource(Res.string.no_coach_coach_description),
                 style = AppTheme.typography.caption,
                 color = AppTheme.colors.textSecondary,
             )
             AppButton(
                 modifier = Modifier.fillMaxWidth(),
-                text = stringResource(Res.string.no_coach_application_action),
-                onClick = { onEvent(NoCoachEvent.OnApplicationClicked) },
+                text = stringResource(Res.string.no_coach_coach_action),
+                onClick = { onEvent(NoCoachEvent.OnBecomeCoachClicked) },
                 tone = ButtonTone.Secondary,
                 size = ButtonSize.Large,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DeclinedCard(access: CoachAccessState.Declined, onEvent: (NoCoachEvent) -> Unit) {
-    AppCard {
-        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12)) {
-            AppText(
-                text = stringResource(Res.string.no_coach_declined_title),
-                style = AppTheme.typography.headline,
-                color = AppTheme.colors.textPrimary,
-            )
-            AppText(
-                text = stringResource(
-                    Res.string.no_coach_declined_description,
-                    access.decidedAtLabel,
-                    access.canAskAgainLabel,
-                ),
-                style = AppTheme.typography.body,
-                color = AppTheme.colors.textSecondary,
-            )
-            AppButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = if (access.canAskAgain) {
-                    stringResource(Res.string.no_coach_declined_retry_now)
-                } else {
-                    stringResource(Res.string.no_coach_declined_retry_from, access.canAskAgainLabel)
-                },
-                onClick = { onEvent(NoCoachEvent.OnApplicationClicked) },
-                tone = ButtonTone.Secondary,
-                size = ButtonSize.Large,
-                state = if (access.canAskAgain) ButtonState.Idle else ButtonState.Disabled,
             )
         }
     }

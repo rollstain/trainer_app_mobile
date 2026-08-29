@@ -1,10 +1,8 @@
 package app.trainer.feature.account.nocoach.ui
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import app.trainer.base.failure.toastMessage
-import app.trainer.feature.account.nocoach.mvi.NoCoachEvent
 import app.trainer.feature.account.nocoach.mvi.NoCoachScreenModel
 import app.trainer.feature.account.nocoach.mvi.NoCoachSideEffect
 import app.trainer.navigation.LocalNavigator
@@ -25,14 +23,12 @@ class NoCoachScreen : Screen {
         val screenModel: NoCoachScreenModel = koinScreenModel()
         val state by screenModel.collectAsState()
 
-        LaunchedEffect(navigator.state) { screenModel.dispatch(NoCoachEvent.OnReloadRequested) }
-
         NoCoachView(state = state, onEvent = { screenModel.dispatch(event = it) })
 
         screenModel.collectSideEffect { effect ->
             when (effect) {
                 NoCoachSideEffect.Joined -> Unit
-                NoCoachSideEffect.OpenApplication -> navigator.push(Screens.CoachApplication)
+                NoCoachSideEffect.OpenCoachSetup -> navigator.push(Screens.CoachSetup)
                 is NoCoachSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
             }
         }

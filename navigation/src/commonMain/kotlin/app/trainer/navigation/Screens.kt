@@ -23,7 +23,7 @@ sealed interface Screens : NavKey {
     data object NoCoach : Screens
 
     @Serializable
-    data object CoachApplication : Screens
+    data object CoachSetup : Screens
 
     @Serializable
     data object ContactLink : Screens
@@ -112,7 +112,4 @@ sealed interface Screens : NavKey {
 
     @Serializable
     data object LoginMethods : Screens
-
-    @Serializable
-    data object CoachRequests : Screens
 }

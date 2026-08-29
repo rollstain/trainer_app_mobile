@@ -8,5 +8,4 @@ data class UserProfile(
     val coachId: String?,
     val zoneId: String?,
     val hasCoach: Boolean,
-    val isOwner: Boolean,
 )

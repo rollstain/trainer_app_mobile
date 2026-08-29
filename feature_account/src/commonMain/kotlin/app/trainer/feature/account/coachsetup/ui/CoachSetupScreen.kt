@@ -1,31 +1,28 @@
-package app.trainer.feature.account.coachrequests.ui
+package app.trainer.feature.account.coachsetup.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import app.trainer.base.failure.toastMessage
-import app.trainer.feature.account.coachrequests.mvi.CoachRequestsScreenModel
-import app.trainer.feature.account.coachrequests.mvi.CoachRequestsSideEffect
+import app.trainer.feature.account.coachsetup.mvi.CoachSetupScreenModel
+import app.trainer.feature.account.coachsetup.mvi.CoachSetupSideEffect
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.Navigator
 import app.trainer.navigation.Screen
 import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
-import app.trainer.strings.Res
-import app.trainer.strings.coach_requests_approved_message
 import app.trainer.uikit.widgets.LocalToastHost
 import app.trainer.uikit.widgets.ToastHostState
-import org.jetbrains.compose.resources.getString
 
-class CoachRequestsScreen : Screen {
+class CoachSetupScreen : Screen {
 
     @Composable
     override fun Content() {
         val navigator: Navigator = LocalNavigator.currentOrThrow
         val toastHost: ToastHostState = LocalToastHost.current
-        val screenModel: CoachRequestsScreenModel = koinScreenModel()
+        val screenModel: CoachSetupScreenModel = koinScreenModel()
         val state by screenModel.collectAsState()
 
-        CoachRequestsView(
+        CoachSetupView(
             state = state,
             onEvent = { screenModel.dispatch(event = it) },
             onBackClick = navigator::pop,
@@ -33,9 +30,8 @@ class CoachRequestsScreen : Screen {
 
         screenModel.collectSideEffect { effect ->
             when (effect) {
-                CoachRequestsSideEffect.ShowApproved ->
-                    toastHost.show(getString(Res.string.coach_requests_approved_message))
-                is CoachRequestsSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
+                CoachSetupSideEffect.Started -> Unit
+                is CoachSetupSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
             }
         }
     }

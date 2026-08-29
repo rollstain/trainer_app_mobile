@@ -134,7 +134,7 @@ private const val LOGIN_METHODS_LINK = "Link Telegram"
 private const val LOGIN_METHODS_LAST_HINT =
     "One way in must remain — otherwise you cannot get back into the account."
 private const val NO_COACH_SUBTITLE = "One thing left: who you are here."
-private const val NO_COACH_APPLICATION = "Fill in the request"
+private const val NO_COACH_BECOME_COACH = "Become a coach"
 private const val NO_COACH_SIGN_OUT = "Sign out"
 private const val GROUP_BOOKED = "booked"
 private const val GROUP_FREE = "free"
@@ -504,7 +504,7 @@ class ScreenRenderTest {
     }
 
     @Test
-    fun `without a role the screen offers both the code and the coach request`() {
+    fun `without a role the screen offers both the code and becoming a coach`() {
         compose.setContent {
             TestTheme {
                 NoCoachView(state = NoCoachState.initial(), onEvent = {})
@@ -514,7 +514,7 @@ class ScreenRenderTest {
         compose.waitForIdle()
 
         compose.onNodeWithText(NO_COACH_SUBTITLE).assertIsDisplayed()
-        compose.onNodeWithText(NO_COACH_APPLICATION).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(NO_COACH_BECOME_COACH).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText(NO_COACH_SIGN_OUT).performScrollTo().assertIsDisplayed()
     }
 
