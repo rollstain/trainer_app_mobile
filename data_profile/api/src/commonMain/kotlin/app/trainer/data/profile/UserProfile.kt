@@ -5,6 +5,7 @@ data class UserProfile(
     val displayName: String,
     val phone: String?,
     val email: String?,
+    val emailConfirmed: Boolean,
     val login: String?,
     val hasPassword: Boolean,
     val passwordUpdatedAtIso: String?,

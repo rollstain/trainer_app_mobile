@@ -754,6 +754,12 @@
     <string name="login_methods_password_change">Сменить</string>
     <string name="login_methods_email">Почта</string>
     <string name="login_methods_email_change">Изменить</string>
+    <string name="login_methods_email_unconfirmed">Не подтверждена — откройте ссылку из письма</string>
+    <string name="login_methods_email_resend">Отправить письмо ещё раз</string>
+    <string name="login_methods_email_sent">Письмо отправлено — откройте ссылку из него</string>
+    <string name="email_confirm_success">Почта подтверждена</string>
+    <string name="email_confirm_used">Ссылка уже использована</string>
+    <string name="email_confirm_expired">Срок ссылки истёк — запросите письмо в профиле заново</string>
     <string name="login_methods_last_way">Один способ входа должен остаться — иначе в аккаунт будет не попасть.</string>
     <string name="login_methods_last_telegram">Telegram — ваш единственный способ входа, поэтому отвязать его нельзя. Задайте пароль, и отвязка станет доступна.</string>
     <string name="login_methods_last_password">Пароль — ваш единственный способ входа, поэтому убрать его нельзя.</string>

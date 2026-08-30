@@ -142,6 +142,12 @@ data class ForgotPasswordRequest(
 )
 
 @Serializable
+data class ConfirmEmailRequest(
+    @SerialName("token")
+    val token: String,
+)
+
+@Serializable
 data class PasswordResetByEmailRequest(
     @SerialName("token")
     val token: String,

@@ -13,6 +13,7 @@ import app.trainer.navigation.Screens
 import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
 import app.trainer.strings.Res
+import app.trainer.strings.login_methods_email_sent
 import app.trainer.strings.login_methods_linked_message
 import app.trainer.uikit.widgets.LocalToastHost
 import app.trainer.uikit.widgets.ToastHostState
@@ -41,6 +42,8 @@ class LoginMethodsScreen : Screen {
                 LoginMethodsSideEffect.OpenContactForm -> navigator.push(Screens.ContactLink)
                 LoginMethodsSideEffect.ShowLinked ->
                     toastHost.show(getString(Res.string.login_methods_linked_message))
+                LoginMethodsSideEffect.ShowConfirmationSent ->
+                    toastHost.show(getString(Res.string.login_methods_email_sent))
                 is LoginMethodsSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
             }
         }

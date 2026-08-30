@@ -19,6 +19,8 @@ import app.trainer.feature.account.providers.providerNameOf
 import app.trainer.strings.Res
 import app.trainer.strings.login_methods_email
 import app.trainer.strings.login_methods_email_change
+import app.trainer.strings.login_methods_email_resend
+import app.trainer.strings.login_methods_email_unconfirmed
 import app.trainer.strings.login_methods_empty
 import app.trainer.strings.login_methods_last_hint
 import app.trainer.strings.login_methods_link_telegram
@@ -134,29 +136,46 @@ private fun PasswordCard(state: LoginMethodsState, onEvent: (LoginMethodsEvent) 
 private fun EmailCard(state: LoginMethodsState, onEvent: (LoginMethodsEvent) -> Unit) {
     val email = state.email ?: return
     AppCard {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                AppText(
-                    text = stringResource(Res.string.login_methods_email),
-                    style = AppTheme.typography.bodyStrong,
-                    color = AppTheme.colors.textPrimary,
-                )
-                AppText(
-                    text = email,
-                    style = AppTheme.typography.caption,
-                    color = AppTheme.colors.textSecondary,
+        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    AppText(
+                        text = stringResource(Res.string.login_methods_email),
+                        style = AppTheme.typography.bodyStrong,
+                        color = AppTheme.colors.textPrimary,
+                    )
+                    AppText(
+                        text = email,
+                        style = AppTheme.typography.caption,
+                        color = AppTheme.colors.textSecondary,
+                    )
+                }
+                AppButton(
+                    text = stringResource(Res.string.login_methods_email_change),
+                    onClick = { onEvent(LoginMethodsEvent.OnEmailClicked) },
+                    tone = ButtonTone.Secondary,
+                    size = ButtonSize.Small,
                 )
             }
-            AppButton(
-                text = stringResource(Res.string.login_methods_email_change),
-                onClick = { onEvent(LoginMethodsEvent.OnEmailClicked) },
-                tone = ButtonTone.Secondary,
-                size = ButtonSize.Small,
-            )
+            if (!state.emailConfirmed) {
+                AppText(
+                    text = stringResource(Res.string.login_methods_email_unconfirmed),
+                    style = AppTheme.typography.caption,
+                    color = AppTheme.colors.warning,
+                )
+                AppButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = stringResource(Res.string.login_methods_email_resend),
+                    onClick = { onEvent(LoginMethodsEvent.OnResendConfirmationClicked) },
+                    tone = ButtonTone.Secondary,
+                    size = ButtonSize.Small,
+                    state = if (state.isResendingConfirmation) ButtonState.Loading else ButtonState.Idle,
+                )
+            }
         }
     }
 }

@@ -65,6 +65,21 @@ class LoginMethodsRepositoryImpl(
         }
     }
 
+    override suspend fun confirmEmail(token: String): RequestResult<Unit> {
+        return safeRequest<Unit> {
+            httpClientProvider.client.post("auth/email/confirm") {
+                contentType(ContentType.Application.Json)
+                setBody(ConfirmEmailRequest(token = token))
+            }
+        }
+    }
+
+    override suspend fun requestEmailConfirmation(): RequestResult<Unit> {
+        return safeRequest<Unit> {
+            httpClientProvider.client.post("me/email/confirm-request")
+        }
+    }
+
     private suspend fun identitiesOf(request: suspend () -> HttpResponse): RequestResult<List<LinkedIdentity>> {
         val loaded = safeRequest<List<LinkedIdentityResponse>> { request() }
         return when (loaded) {

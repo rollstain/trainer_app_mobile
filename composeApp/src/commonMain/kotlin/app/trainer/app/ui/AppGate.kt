@@ -9,24 +9,34 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import app.trainer.app.PendingEmailConfirmation
 import app.trainer.app.PendingInvite
 import app.trainer.app.PendingPasswordReset
 import app.trainer.app.SessionController
 import app.trainer.app.SessionStatus
 import app.trainer.base.failure.AppFailureState
+import app.trainer.base.failure.toastMessage
 import app.trainer.data.auth.FreshSignUp
+import app.trainer.data.auth.IdentitiesRepository
+import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.NavContainer
 import app.trainer.navigation.Screens
 import app.trainer.navigation.rememberNavigator
 import app.trainer.navigation.toEntries
+import app.trainer.strings.Res
+import app.trainer.strings.email_confirm_expired
+import app.trainer.strings.email_confirm_success
+import app.trainer.strings.email_confirm_used
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.backwardScreenTransition
 import app.trainer.uikit.forwardScreenTransition
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppFullScreenProgress
 import app.trainer.uikit.widgets.AppToastHost
+import app.trainer.uikit.widgets.LocalToastHost
+import org.jetbrains.compose.resources.getString
 import org.koin.compose.koinInject
 
 @Composable
@@ -35,6 +45,7 @@ fun AppGate() {
     val status by sessionController.status.collectAsState()
     AppTheme {
         AppToastHost {
+            HandleEmailConfirmation()
             when (val current = status) {
                 SessionStatus.Loading -> AppFullScreenProgress()
                 is SessionStatus.SignedOut -> OnboardingRoot(afterSessionExpiry = current.afterSessionExpiry)
@@ -61,6 +72,29 @@ private fun SignedInRoot(isCoach: Boolean) {
         pendingPasswordReset.consume()
     }
     AppRoot(isCoach = isCoach)
+}
+
+@Composable
+private fun HandleEmailConfirmation() {
+    val pendingEmailConfirmation: PendingEmailConfirmation = koinInject()
+    val identitiesRepository: IdentitiesRepository = koinInject()
+    val toastHost = LocalToastHost.current
+    val token by pendingEmailConfirmation.token.collectAsState()
+    LaunchedEffect(token) {
+        val current = token ?: return@LaunchedEffect
+        val confirmed = identitiesRepository.confirmEmail(current)
+        toastHost.show(confirmationMessage(confirmed))
+        pendingEmailConfirmation.consume()
+    }
+}
+
+private suspend fun confirmationMessage(confirmed: RequestResult<Unit>): String = when (confirmed) {
+    is RequestResult.Success -> getString(Res.string.email_confirm_success)
+    is RequestResult.Error -> when (confirmed.kind) {
+        RequestFailure.Conflict -> getString(Res.string.email_confirm_used)
+        RequestFailure.Gone -> getString(Res.string.email_confirm_expired)
+        else -> confirmed.toastMessage()
+    }
 }
 
 @Composable

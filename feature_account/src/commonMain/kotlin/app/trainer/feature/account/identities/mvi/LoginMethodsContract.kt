@@ -29,6 +29,8 @@ data class LoginMethodsState(
     val hasPassword: Boolean,
     val passwordChangedLabel: String?,
     val email: String?,
+    val emailConfirmed: Boolean,
+    val isResendingConfirmation: Boolean,
 ) {
 
     val waysIn: Int
@@ -52,6 +54,8 @@ data class LoginMethodsState(
             hasPassword = false,
             passwordChangedLabel = null,
             email = null,
+            emailConfirmed = true,
+            isResendingConfirmation = false,
         )
     }
 }
@@ -73,6 +77,8 @@ sealed interface LoginMethodsEvent {
     data object OnPasswordClicked : LoginMethodsEvent
 
     data object OnEmailClicked : LoginMethodsEvent
+
+    data object OnResendConfirmationClicked : LoginMethodsEvent
 }
 
 sealed interface LoginMethodsSideEffect {
@@ -84,6 +90,8 @@ sealed interface LoginMethodsSideEffect {
     data object OpenPasswordForm : LoginMethodsSideEffect
 
     data object OpenContactForm : LoginMethodsSideEffect
+
+    data object ShowConfirmationSent : LoginMethodsSideEffect
 
     data class ShowFailure(val failure: RequestResult.Error) : LoginMethodsSideEffect
 }

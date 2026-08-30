@@ -32,6 +32,8 @@ class FakeAuthRepository : AuthRepository, IdentitiesRepository {
     var resetByEmailAnswers: ArrayDeque<RequestResult<Unit>> = ArrayDeque()
     var resetByTelegramAnswer: RequestResult<Unit> = RequestResult.Success(Unit)
     var setPasswordAnswer: RequestResult<Unit> = RequestResult.Success(Unit)
+    var confirmEmailAnswer: RequestResult<Unit> = RequestResult.Success(Unit)
+    var resendConfirmationAnswer: RequestResult<Unit> = RequestResult.Success(Unit)
 
     var isSignedIn: Boolean = false
         private set
@@ -71,6 +73,10 @@ class FakeAuthRepository : AuthRepository, IdentitiesRepository {
         password: String,
         deviceInfo: String,
     ): RequestResult<Unit> = resetByTelegramAnswer.alsoSignInOnSuccess()
+
+    override suspend fun confirmEmail(token: String): RequestResult<Unit> = confirmEmailAnswer
+
+    override suspend fun requestEmailConfirmation(): RequestResult<Unit> = resendConfirmationAnswer
 
     override suspend fun setPassword(
         email: String?,

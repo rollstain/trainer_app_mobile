@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import app.trainer.app.PendingEmailConfirmation
 import app.trainer.app.PendingInvite
 import app.trainer.app.PendingPasswordReset
 import app.trainer.app.ui.AppGate
@@ -18,6 +19,7 @@ class MainActivity : ComponentActivity() {
 
     private val pendingInvite: PendingInvite by inject()
     private val pendingPasswordReset: PendingPasswordReset by inject()
+    private val pendingEmailConfirmation: PendingEmailConfirmation by inject()
 
     private val notificationsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -39,6 +41,7 @@ class MainActivity : ComponentActivity() {
         val link = intent?.data?.toString() ?: return
         pendingInvite.remember(link)
         pendingPasswordReset.remember(link)
+        pendingEmailConfirmation.remember(link)
     }
 
     private fun requestNotificationsPermissionIfNeeded() {

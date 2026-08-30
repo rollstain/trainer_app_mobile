@@ -1,5 +1,6 @@
 package app.trainer.app.di
 
+import app.trainer.app.PendingEmailConfirmation
 import app.trainer.app.PendingInvite
 import app.trainer.app.PendingPasswordReset
 import app.trainer.app.SessionController
@@ -20,6 +21,7 @@ class AppModule(private val config: NetworkConfig, private val deviceInfo: Strin
         single { WeightInput() }
         single { PendingInvite() }
         single { PendingPasswordReset() }
+        single { PendingEmailConfirmation() }
         single { FreshSignUp() }
         single { ScheduleWeeks() }
         single(named(AccountFeatureModule.DEVICE_INFO_QUALIFIER)) { deviceInfo }

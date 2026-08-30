@@ -754,6 +754,12 @@
     <string name="login_methods_password_change">Change</string>
     <string name="login_methods_email">Email</string>
     <string name="login_methods_email_change">Change</string>
+    <string name="login_methods_email_unconfirmed">Not confirmed — open the link from the letter</string>
+    <string name="login_methods_email_resend">Send the letter again</string>
+    <string name="login_methods_email_sent">Letter sent — open the link inside</string>
+    <string name="email_confirm_success">Email confirmed</string>
+    <string name="email_confirm_used">The link has already been used</string>
+    <string name="email_confirm_expired">The link has expired — ask for a new letter in the profile</string>
     <string name="login_methods_last_way">One way in has to remain — otherwise the account becomes unreachable.</string>
     <string name="login_methods_last_telegram">Telegram is your only way in, so it cannot be unlinked. Set a password and unlinking becomes available.</string>
     <string name="login_methods_last_password">The password is your only way in, so it cannot be removed.</string>

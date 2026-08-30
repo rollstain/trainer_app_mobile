@@ -96,6 +96,10 @@ interface IdentitiesRepository {
         currentPassword: String?,
         newPassword: String,
     ): RequestResult<Unit>
+
+    suspend fun confirmEmail(token: String): RequestResult<Unit>
+
+    suspend fun requestEmailConfirmation(): RequestResult<Unit>
 }
 
 interface DeviceSessionsRepository {

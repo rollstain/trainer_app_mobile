@@ -43,6 +43,8 @@ data class MeResponse(
     val phone: String?,
     @SerialName("email")
     val email: String?,
+    @SerialName("emailConfirmed")
+    val emailConfirmed: Boolean?,
     @SerialName("login")
     val login: String?,
     @SerialName("hasPassword")
@@ -157,6 +159,7 @@ class ProfileRepositoryImpl(
                 displayName = requireNotNull(displayName),
                 phone = response.phone,
                 email = response.email,
+                emailConfirmed = response.emailConfirmed ?: true,
                 login = response.login,
                 hasPassword = requireNotNull(hasPassword),
                 passwordUpdatedAtIso = response.passwordUpdatedAt,

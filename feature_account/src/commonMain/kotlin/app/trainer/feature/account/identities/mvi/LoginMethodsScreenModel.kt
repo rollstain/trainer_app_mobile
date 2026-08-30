@@ -67,6 +67,19 @@ class LoginMethodsScreenModel(
             LoginMethodsEvent.OnEmailClicked -> screenModelScope {
                 postSideEffect(LoginMethodsSideEffect.OpenContactForm)
             }
+            LoginMethodsEvent.OnResendConfirmationClicked -> resendConfirmation()
+        }
+    }
+
+    private fun resendConfirmation() {
+        screenModelScope {
+            updateState { it.copy(isResendingConfirmation = true) }
+            val sent = identitiesRepository.requestEmailConfirmation()
+            updateState { it.copy(isResendingConfirmation = false) }
+            when (sent) {
+                is RequestResult.Error -> postSideEffect(LoginMethodsSideEffect.ShowFailure(sent))
+                is RequestResult.Success -> postSideEffect(LoginMethodsSideEffect.ShowConfirmationSent)
+            }
         }
     }
 
@@ -79,6 +92,7 @@ class LoginMethodsScreenModel(
                 hasPassword = profile.data.hasPassword,
                 passwordChangedLabel = changedLabel,
                 email = profile.data.email,
+                emailConfirmed = profile.data.emailConfirmed,
             )
         }
     }

@@ -227,6 +227,60 @@ class AuthCriticalPathTest {
     }
 
     @Test
+    fun `a confirm link goes to the public endpoint and opens no session`() = runTest {
+        backend.on("POST", "/auth/email/confirm", HttpStatusCode.NoContent, "")
+
+        val confirmed = loginMethods.confirmEmail(token = "letter-token")
+
+        assertTrue(confirmed is RequestResult.Success)
+        assertEquals(listOf("POST /auth/email/confirm"), backend.pathsCalled())
+        assertTrue(backend.bodyOf("POST", "/auth/email/confirm").contains("\"token\":\"letter-token\""))
+        assertNull(tokens.tokens, "подтверждение почты — не вход")
+    }
+
+    @Test
+    fun `a used confirm link and an expired one are told apart`() = runTest {
+        backend.on(
+            method = "POST",
+            path = "/auth/email/confirm",
+            status = HttpStatusCode.Conflict,
+            body = """{"status":409,"message":"Ссылка уже использована","fieldErrors":{}}""",
+        )
+        backend.on(
+            method = "POST",
+            path = "/auth/email/confirm",
+            status = HttpStatusCode.Gone,
+            body = """{"status":410,"message":"Срок ссылки истёк","fieldErrors":{}}""",
+        )
+
+        val used = loginMethods.confirmEmail(token = "used")
+        val expired = loginMethods.confirmEmail(token = "old")
+
+        assertEquals(RequestFailure.Conflict, (used as RequestResult.Error).kind)
+        assertEquals(RequestFailure.Gone, (expired as RequestResult.Error).kind)
+    }
+
+    @Test
+    fun `asking for another confirm letter respects the cooldown`() = runTest {
+        backend.on("POST", "/me/email/confirm-request", HttpStatusCode.NoContent, "")
+        backend.on(
+            method = "POST",
+            path = "/me/email/confirm-request",
+            status = HttpStatusCode.TooManyRequests,
+            body = """{"status":429,"message":"Письмо уже отправлено","fieldErrors":{},"retryAfterSeconds":90}""",
+            headers = mapOf("Retry-After" to "90"),
+        )
+
+        val sent = loginMethods.requestEmailConfirmation()
+        val tooSoon = loginMethods.requestEmailConfirmation()
+
+        assertTrue(sent is RequestResult.Success)
+        val error = tooSoon as RequestResult.Error
+        assertEquals(RequestFailure.TooManyRequests, error.kind)
+        assertEquals(90L, error.retryAfterSeconds)
+    }
+
+    @Test
     fun `logout drops the session`() = runTest {
         backend.on("POST", "/auth/password/sign-in", HttpStatusCode.OK, TOKENS)
         auth.signInWithPassword(identifier = EMAIL, password = PASSWORD, deviceInfo = DEVICE)
