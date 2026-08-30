@@ -71,6 +71,7 @@ fun AppTopBar(
     title: String,
     leading: TopBarLeading = TopBarLeading.None,
     subtitle: TopBarSubtitle = TopBarSubtitle.None,
+    secondaryAction: TopBarAction = TopBarAction.None,
     action: TopBarAction = TopBarAction.None,
     avatarName: String = "",
 ) {
@@ -120,28 +121,34 @@ fun AppTopBar(
                     )
                 }
             }
-            when (action) {
-                TopBarAction.None -> Unit
-                is TopBarAction.Icon -> AppIconButton(
-                    painter = action.painter(),
-                    contentDescription = action.contentDescription,
-                    onClick = action.onClick,
-                )
-                is TopBarAction.Avatar -> AppAvatar(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .clickable(onClick = action.onClick)
-                        .semantics { contentDescription = action.contentDescription },
-                    displayName = action.displayName,
-                    size = AvatarSize.Medium,
-                )
-            }
+            ActionSlot(action = secondaryAction)
+            ActionSlot(action = action)
         }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(AppTheme.borders.hairline)
                 .background(AppTheme.colors.border),
+        )
+    }
+}
+
+@Composable
+private fun ActionSlot(action: TopBarAction) {
+    when (action) {
+        TopBarAction.None -> Unit
+        is TopBarAction.Icon -> AppIconButton(
+            painter = action.painter(),
+            contentDescription = action.contentDescription,
+            onClick = action.onClick,
+        )
+        is TopBarAction.Avatar -> AppAvatar(
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable(onClick = action.onClick)
+                .semantics { contentDescription = action.contentDescription },
+            displayName = action.displayName,
+            size = AvatarSize.Medium,
         )
     }
 }

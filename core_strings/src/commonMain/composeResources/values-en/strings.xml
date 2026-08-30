@@ -168,6 +168,8 @@
     <string name="client_schedule_no_coach_action">Enter a code</string>
     <string name="client_schedule_no_coach_description">Enter the invite code — it is in the message from your coach.</string>
     <string name="client_schedule_no_coach_title">You are not linked to a coach yet</string>
+    <string name="client_schedule_next_week_action">Next week</string>
+    <string name="client_schedule_previous_week_action">Previous week</string>
     <string name="client_schedule_privacy_note">Who took the neighbouring slot is not shown.</string>
     <string name="client_schedule_request_sent_message">Request sent, waiting for the coach</string>
     <string name="client_schedule_title">Booking</string>
@@ -175,6 +177,7 @@
     <string name="coach_schedule_empty_description">Add slots — your clients will see them right away.</string>
     <string name="coach_schedule_empty_title">Nothing this week</string>
     <string name="coach_schedule_next_week_action">Next week</string>
+    <string name="coach_schedule_previous_week_action">Previous week</string>
     <string name="coach_schedule_requests_title">Requests</string>
     <string name="coach_training_log_empty_action">Pick a period</string>
     <string name="coach_training_log_empty_description">They may have trained without the diary. Ask in the chat or pick another period.</string>

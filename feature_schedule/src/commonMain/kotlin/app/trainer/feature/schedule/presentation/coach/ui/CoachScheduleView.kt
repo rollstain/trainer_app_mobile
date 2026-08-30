@@ -48,6 +48,7 @@ import app.trainer.strings.coach_schedule_day_summary_busy
 import app.trainer.strings.coach_schedule_day_summary_free
 import app.trainer.strings.coach_schedule_empty_description
 import app.trainer.strings.coach_schedule_next_week_action
+import app.trainer.strings.coach_schedule_previous_week_action
 import app.trainer.strings.coach_schedule_remove_participant
 import app.trainer.strings.coach_schedule_requests_title
 import app.trainer.strings.coach_schedule_slot_actions_dismiss
@@ -106,6 +107,11 @@ fun CoachScheduleView(
     Column(modifier = modifier.fillMaxSize().screenBackground()) {
         AppTopBar(
             title = state.weekTitle,
+            secondaryAction = TopBarAction.Icon(
+                painter = { AppIcons.previous },
+                contentDescription = stringResource(Res.string.coach_schedule_previous_week_action),
+                onClick = { onEvent(CoachScheduleEvent.OnPreviousWeekClicked) },
+            ),
             action = TopBarAction.Icon(
                 painter = { AppIcons.next },
                 contentDescription = stringResource(Res.string.coach_schedule_next_week_action),

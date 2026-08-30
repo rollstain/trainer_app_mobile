@@ -26,9 +26,11 @@ import app.trainer.strings.client_schedule_day_empty_title
 import app.trainer.strings.client_schedule_empty_action
 import app.trainer.strings.client_schedule_empty_description
 import app.trainer.strings.client_schedule_empty_title
+import app.trainer.strings.client_schedule_next_week_action
 import app.trainer.strings.client_schedule_no_coach_action
 import app.trainer.strings.client_schedule_no_coach_description
 import app.trainer.strings.client_schedule_no_coach_title
+import app.trainer.strings.client_schedule_previous_week_action
 import app.trainer.strings.client_schedule_privacy_note
 import app.trainer.strings.client_schedule_title
 import app.trainer.uikit.AppTheme
@@ -36,6 +38,7 @@ import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppClientSlotCard
 import app.trainer.uikit.widgets.AppConfirmDialog
+import app.trainer.uikit.widgets.AppIcons
 import app.trainer.uikit.widgets.AppSlotShimmerList
 import app.trainer.uikit.widgets.AppStatePlaceholder
 import app.trainer.uikit.widgets.AppText
@@ -49,6 +52,7 @@ import app.trainer.uikit.widgets.ConfirmDialogTone
 import app.trainer.uikit.widgets.PlaceholderAction
 import app.trainer.uikit.widgets.PlaceholderKind
 import app.trainer.uikit.widgets.SlotRequestView
+import app.trainer.uikit.widgets.TopBarAction
 import app.trainer.uikit.widgets.WeekDay
 import app.trainer.uikit.widgets.WeekDayState
 import org.jetbrains.compose.resources.stringResource
@@ -62,8 +66,27 @@ fun ClientScheduleView(
     onEvent: (ClientScheduleEvent) -> Unit,
 ) {
     Column(modifier = modifier.fillMaxSize().screenBackground()) {
+        val isWeekLoaded = state.weekStart != null
         AppTopBar(
             title = state.weekTitle.ifEmpty { stringResource(Res.string.client_schedule_title) },
+            secondaryAction = if (isWeekLoaded) {
+                TopBarAction.Icon(
+                    painter = { AppIcons.previous },
+                    contentDescription = stringResource(Res.string.client_schedule_previous_week_action),
+                    onClick = { onEvent(ClientScheduleEvent.OnPreviousWeekClicked) },
+                )
+            } else {
+                TopBarAction.None
+            },
+            action = if (isWeekLoaded) {
+                TopBarAction.Icon(
+                    painter = { AppIcons.next },
+                    contentDescription = stringResource(Res.string.client_schedule_next_week_action),
+                    onClick = { onEvent(ClientScheduleEvent.OnNextWeekClicked) },
+                )
+            } else {
+                TopBarAction.None
+            },
         )
         if (state.coaches.size > 1) {
             CoachSelector(state = state, onEvent = onEvent)

@@ -77,6 +77,8 @@
     <string name="client_schedule_no_coach_action">Ввести код</string>
     <string name="client_schedule_no_coach_description">Введите код приглашения — он есть в сообщении от тренера.</string>
     <string name="client_schedule_no_coach_title">Вы ещё не связаны с тренером</string>
+    <string name="client_schedule_next_week_action">Следующая неделя</string>
+    <string name="client_schedule_previous_week_action">Предыдущая неделя</string>
     <string name="client_schedule_privacy_note">Кто занял соседнее время, не показывается.</string>
     <string name="client_schedule_request_sent_message">Заявка отправлена, ждём ответа тренера</string>
     <string name="client_schedule_title">Запись</string>
@@ -84,6 +86,7 @@
     <string name="coach_schedule_empty_description">Поставьте слоты — подопечные увидят их сразу.</string>
     <string name="coach_schedule_empty_title">На этой неделе пусто</string>
     <string name="coach_schedule_next_week_action">Следующая неделя</string>
+    <string name="coach_schedule_previous_week_action">Предыдущая неделя</string>
     <string name="coach_schedule_requests_title">Заявки</string>
     <string name="coach_training_log_empty_action">Выбрать период</string>
     <string name="coach_training_log_empty_description">Возможно, человек тренировался без дневника. Спросите в чате или выберите другой период.</string>
