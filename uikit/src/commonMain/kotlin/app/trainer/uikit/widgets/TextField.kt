@@ -91,6 +91,8 @@ sealed interface TextFieldUnit {
     data class Text(val value: String) : TextFieldUnit
 }
 
+enum class TextFieldValueTone { Regular, Muted }
+
 @Composable
 fun AppTextField(
     modifier: Modifier = Modifier,
@@ -102,6 +104,7 @@ fun AppTextField(
     action: TextFieldAction = TextFieldAction.None,
     placeholder: String = "",
     isEnabled: Boolean = true,
+    valueTone: TextFieldValueTone = TextFieldValueTone.Regular,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -175,7 +178,11 @@ fun AppTextField(
                         .autofillOf(kind),
                     enabled = isEnabled,
                     textStyle = textStyleOf(kind).copy(
-                        color = if (isEnabled) colors.textPrimary else colors.textMuted,
+                        color = if (isEnabled && valueTone == TextFieldValueTone.Regular) {
+                            colors.textPrimary
+                        } else {
+                            colors.textMuted
+                        },
                         textAlign = textAlignOf(kind),
                     ),
                     keyboardOptions = KeyboardOptions(

@@ -29,6 +29,7 @@ class ScheduleFeatureModule {
                     Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
                 },
                 scheduleRepository = get(),
+                clientsRepository = get(),
                 profileRepository = get(),
                 weeks = get(),
                 seriesResults = get(),

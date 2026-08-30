@@ -7,6 +7,7 @@ import app.trainer.feature.account.contact.ui.CONTACT_LINK_REQUEST
 import app.trainer.feature.account.profile.mvi.ProfileEvent
 import app.trainer.feature.account.profile.mvi.ProfileScreenModel
 import app.trainer.feature.account.profile.mvi.ProfileSideEffect
+import app.trainer.feature.account.workinghours.ui.WORKING_HOURS_SAVED
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.Navigator
 import app.trainer.navigation.Screen
@@ -26,6 +27,9 @@ class ProfileScreen : Screen {
         val state by screenModel.collectAsState()
 
         navigator.handleResult(CONTACT_LINK_REQUEST) {
+            screenModel.dispatch(event = ProfileEvent.OnReloadRequested)
+        }
+        navigator.handleResult(WORKING_HOURS_SAVED) {
             screenModel.dispatch(event = ProfileEvent.OnReloadRequested)
         }
 
@@ -54,6 +58,7 @@ private suspend fun handleSideEffect(
         ProfileSideEffect.OpenExerciseLibrary -> navigator.push(Screens.ExerciseLibrary)
         ProfileSideEffect.OpenPrograms -> navigator.push(Screens.Programs)
         ProfileSideEffect.OpenCoaches -> navigator.push(Screens.Coaches)
+        ProfileSideEffect.OpenWorkingHours -> navigator.push(Screens.WorkingHours)
         ProfileSideEffect.SignedOut -> Unit
         is ProfileSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
     }

@@ -2,6 +2,7 @@ package app.trainer.feature.schedule.presentation.client.mvi
 
 import app.trainer.base.BaseScreenModel
 import app.trainer.base.date.ScheduleWeeks
+import app.trainer.base.date.formatWorkingSchedule
 import app.trainer.base.date.timeOfDayOf
 import app.trainer.base.date.weekdayShortOf
 import app.trainer.data.clients.CoachSummary
@@ -12,7 +13,9 @@ import app.trainer.data.schedule.ClientSlot
 import app.trainer.data.schedule.SlotChangeKind
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
+import app.trainer.entities.WorkingDay
 import app.trainer.feature.schedule.presentation.formatScheduleWeekTitle
+import app.trainer.feature.schedule.presentation.isDayOff
 import app.trainer.strings.Res
 import app.trainer.strings.client_schedule_cancellation_note
 import app.trainer.strings.slot_duration_minutes
@@ -20,7 +23,6 @@ import app.trainer.strings.slot_seats_left
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -35,6 +37,7 @@ class ClientScheduleScreenModel(
 ) {
 
     private var zonesByCoachId: Map<String, TimeZone> = emptyMap()
+    private var workingHoursByCoachId: Map<String, List<WorkingDay>> = emptyMap()
 
     init {
         onFetchData()
@@ -87,6 +90,7 @@ class ClientScheduleScreenModel(
             val zone = weeks.parseZone(coach.zoneId) ?: return@mapNotNull null
             coach.coachId to zone
         }.toMap()
+        workingHoursByCoachId = coaches.associate { it.coachId to it.workingHours }
 
         val options = coaches.map { CoachOption(coachId = it.coachId, displayName = it.displayName) }
         updateState { it.copy(coaches = options.toImmutableList()) }
@@ -214,13 +218,15 @@ class ClientScheduleScreenModel(
     private suspend fun showWeek(weekStart: LocalDate, zone: TimeZone, schedule: ClientSchedule) {
         val today = weeks.dateOf(Clock.System.now(), zone)
         val slotsByDate = schedule.slots.groupBy { slot -> weeks.dateOf(slot.startsAt, zone) }
+        val workingHours = state.selectedCoachId?.let { workingHoursByCoachId[it] }.orEmpty()
+        val workingDays = workingHours.map { it.dayOfWeek }.toSet()
         val days = weeks.datesOf(weekStart).map { date ->
             ClientScheduleDay(
                 date = date,
                 weekdayLabel = weekdayShortOf(date),
                 dayNumberLabel = date.day.toString(),
                 isToday = date == today,
-                isWeekend = date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY,
+                isDayOff = isDayOff(date = date, workingDays = workingDays),
                 slots = slotsByDate[date]
                     .orEmpty()
                     .sortedBy { it.startsAt }
@@ -235,10 +241,12 @@ class ClientScheduleScreenModel(
             )
         }
         val weekTitle = formatWeekTitle(weekStart = weekStart)
+        val workingScheduleLabel = formatWorkingSchedule(workingHours)
         updateState { current ->
             current.copy(
                 weekStart = weekStart,
                 weekTitle = weekTitle,
+                workingScheduleLabel = workingScheduleLabel,
                 selectedDate = current.selectedDate.takeIf { date -> days.any { it.date == date } } ?: weekStart,
                 days = days.toImmutableList(),
                 isLoading = false,

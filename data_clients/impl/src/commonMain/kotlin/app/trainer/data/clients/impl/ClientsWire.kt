@@ -47,6 +47,18 @@ data class CoachSummaryResponse(
     val zoneId: String?,
     @SerialName("cancellationWindowHours")
     val cancellationWindowHours: Int?,
+    @SerialName("workingHours")
+    val workingHours: List<WorkingDayWire>?,
+)
+
+@Serializable
+data class WorkingDayWire(
+    @SerialName("dayOfWeek")
+    val dayOfWeek: String?,
+    @SerialName("opensAt")
+    val opensAt: String?,
+    @SerialName("closesAt")
+    val closesAt: String?,
 )
 
 @Serializable
@@ -61,6 +73,8 @@ data class CoachPolicyResponse(
     val diaryRemindersEnabled: Boolean?,
     @SerialName("checkInRemindersEnabled")
     val checkInRemindersEnabled: Boolean?,
+    @SerialName("workingHours")
+    val workingHours: List<WorkingDayWire>?,
 )
 
 @Serializable
@@ -75,6 +89,8 @@ data class UpdateCoachPolicyRequest(
     val diaryRemindersEnabled: Boolean,
     @SerialName("checkInRemindersEnabled")
     val checkInRemindersEnabled: Boolean,
+    @SerialName("workingHours")
+    val workingHours: List<WorkingDayWire>,
 )
 
 @Serializable

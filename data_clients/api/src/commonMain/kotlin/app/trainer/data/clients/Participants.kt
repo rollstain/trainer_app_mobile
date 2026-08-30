@@ -1,12 +1,15 @@
 package app.trainer.data.clients
 
+import app.trainer.entities.WorkingDay
 import kotlin.time.Instant
+
 data class CoachSummary(
     val coachId: String,
     val userId: String,
     val displayName: String,
     val zoneId: String,
     val cancellationWindowHours: Int,
+    val workingHours: List<WorkingDay>,
 )
 
 data class CoachClient(
@@ -22,4 +25,5 @@ data class CoachPolicy(
     val sessionRemindersEnabled: Boolean,
     val diaryRemindersEnabled: Boolean,
     val checkInRemindersEnabled: Boolean,
+    val workingHours: List<WorkingDay>,
 )

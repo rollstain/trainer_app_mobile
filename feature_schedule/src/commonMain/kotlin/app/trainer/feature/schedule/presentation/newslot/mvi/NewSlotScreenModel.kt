@@ -2,14 +2,20 @@ package app.trainer.feature.schedule.presentation.newslot.mvi
 
 import app.trainer.base.BaseScreenModel
 import app.trainer.base.date.ScheduleWeeks
+import app.trainer.base.date.normalizeTimeText
+import app.trainer.base.date.parseTimeText
 import app.trainer.base.date.weekdayShortOf
+import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
 import app.trainer.data.schedule.CoachScheduleRepository
 import app.trainer.data.schedule.SlotSeriesDraft
 import app.trainer.entities.RequestResult
+import app.trainer.entities.WorkingDay
 import app.trainer.feature.schedule.domain.SlotSeriesResults
 import app.trainer.feature.schedule.presentation.formatScheduleDate
+import app.trainer.feature.schedule.presentation.isOutsideWorkingHours
 import app.trainer.strings.Res
+import app.trainer.strings.new_slot_outside_schedule
 import app.trainer.strings.new_slot_summary_seats
 import app.trainer.strings.new_slot_summary_series
 import app.trainer.strings.new_slot_summary_single
@@ -26,16 +32,12 @@ import org.jetbrains.compose.resources.getString
 
 private const val SUMMARY_SEPARATOR = ", "
 private const val PERSONAL_CAPACITY = 1
-private const val TIME_SEPARATOR = ':'
-private const val MINUTES_IN_HOUR = 60
-private const val HOUR_DIGITS = 2
-private const val MINUTE_DIGITS = 2
-private const val TIME_PARTS = 2
 
 @OptIn(ExperimentalUuidApi::class)
 class NewSlotScreenModel(
     initialDateIso: String,
     private val scheduleRepository: CoachScheduleRepository,
+    private val clientsRepository: ParticipantsRepository,
     private val profileRepository: ProfileRepository,
     private val weeks: ScheduleWeeks,
     private val seriesResults: SlotSeriesResults,
@@ -44,6 +46,7 @@ class NewSlotScreenModel(
 ) {
 
     private var coachZone: TimeZone? = null
+    private var workingHours: List<WorkingDay> = emptyList()
 
     init {
         onFetchData()
@@ -52,6 +55,7 @@ class NewSlotScreenModel(
     override fun onFetchData() {
         onFetchDataScope { state ->
             coachZone = resolveZone()
+            workingHours = loadWorkingHours()
             val dateLabel = formatDate(state.date)
             val weekDays = defaultWeekDays(state.date)
             updateState { current ->
@@ -64,12 +68,18 @@ class NewSlotScreenModel(
         }
     }
 
+    private suspend fun loadWorkingHours(): List<WorkingDay> {
+        val policy = clientsRepository.coachPolicy()
+        if (policy !is RequestResult.Success) return emptyList()
+        return policy.data.workingHours
+    }
+
     override fun dispatch(event: NewSlotEvent) {
         when (event) {
             NewSlotEvent.OnSubmitClicked -> submit()
             is NewSlotEvent.OnModeChanged -> updateStateAndSummary { it.copy(mode = event.mode) }
             is NewSlotEvent.OnTimeChanged -> updateStateAndSummary {
-                it.copy(timeText = normalizeTime(event.text))
+                it.copy(timeText = normalizeTimeText(event.text))
             }
             is NewSlotEvent.OnDurationChanged -> updateStateAndSummary {
                 it.copy(durationMinutes = event.minutes)
@@ -101,7 +111,28 @@ class NewSlotScreenModel(
 
     private suspend fun refreshSummary() {
         val summaryLabel = buildSummary(state)
-        updateState { current -> current.copy(summaryLabel = summaryLabel) }
+        val outsideScheduleWarning = outsideScheduleWarning(state)
+        updateState { current ->
+            current.copy(summaryLabel = summaryLabel, outsideScheduleWarning = outsideScheduleWarning)
+        }
+    }
+
+    private suspend fun outsideScheduleWarning(state: NewSlotState): String? {
+        if (workingHours.isEmpty()) return null
+        val time = parseTimeText(state.timeText) ?: return null
+        val outside = when (state.mode) {
+            SlotMode.Single -> isOutsideWorkingHours(
+                dayOfWeek = state.date.dayOfWeek,
+                time = time,
+                workingHours = workingHours,
+            )
+            SlotMode.Series ->
+                state.weekDays
+                    .filter { it.isSelected }
+                    .any { isOutsideWorkingHours(dayOfWeek = it.dayOfWeek, time = time, workingHours = workingHours) }
+        }
+        if (!outside) return null
+        return getString(Res.string.new_slot_outside_schedule)
     }
 
     private suspend fun buildSummary(state: NewSlotState): String {
@@ -131,7 +162,7 @@ class NewSlotScreenModel(
         screenModelScope { state ->
             if (!state.isSubmitEnabled) return@screenModelScope
             val zone = coachZone ?: return@screenModelScope
-            val time = parseTime(state.timeText) ?: return@screenModelScope
+            val time = parseTimeText(state.timeText) ?: return@screenModelScope
 
             updateState { it.copy(isSubmitting = true) }
             when (state.mode) {
@@ -186,30 +217,14 @@ class NewSlotScreenModel(
     }
 
     private suspend fun defaultWeekDays(date: LocalDate): List<WeekDayToggle> {
+        val workingDays = workingHours.map { it.dayOfWeek }.toSet()
         return DayOfWeek.entries.map { dayOfWeek ->
             WeekDayToggle(
                 dayOfWeek = dayOfWeek,
                 label = weekdayShortOf(dayOfWeek.ordinal),
-                isSelected = dayOfWeek == date.dayOfWeek,
+                isSelected = if (workingDays.isEmpty()) dayOfWeek == date.dayOfWeek else dayOfWeek in workingDays,
             )
         }
-    }
-
-    private fun normalizeTime(raw: String): String {
-        val digits = raw.filter(Char::isDigit).take(HOUR_DIGITS + MINUTE_DIGITS)
-        return when {
-            digits.length <= HOUR_DIGITS -> digits
-            else -> "${digits.take(HOUR_DIGITS)}$TIME_SEPARATOR${digits.drop(HOUR_DIGITS)}"
-        }
-    }
-
-    private fun parseTime(text: String): LocalTime? {
-        val parts = text.split(TIME_SEPARATOR)
-        if (parts.size != TIME_PARTS) return null
-        val hours = parts[0].toIntOrNull() ?: return null
-        val minutes = parts[1].toIntOrNull() ?: return null
-        if (hours !in 0..23 || minutes !in 0 until MINUTES_IN_HOUR) return null
-        return LocalTime(hour = hours, minute = minutes)
     }
 
     private suspend fun formatDate(date: LocalDate): String = formatScheduleDate(date)

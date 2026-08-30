@@ -14,6 +14,7 @@ import app.trainer.data.schedule.SlotStatus
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.feature.schedule.presentation.formatScheduleWeekTitle
+import app.trainer.feature.schedule.presentation.isDayOff
 import app.trainer.strings.Res
 import app.trainer.strings.slot_duration_minutes
 import app.trainer.strings.slot_seats_taken
@@ -41,6 +42,7 @@ class CoachScheduleScreenModel(
 ) {
 
     private var coachZone: TimeZone? = null
+    private var workingDays: Set<DayOfWeek> = emptySet()
 
     init {
         onFetchData()
@@ -48,6 +50,7 @@ class CoachScheduleScreenModel(
 
     override fun onFetchData() {
         onFetchDataScope {
+            workingDays = loadWorkingDays()
             val zone = resolveCoachZone() ?: return@onFetchDataScope
             val weekStart = weeks.weekStartOf(weeks.dateOf(Clock.System.now(), zone))
             loadWeek(weekStart = weekStart, zone = zone)
@@ -295,7 +298,7 @@ class CoachScheduleScreenModel(
                 weekdayLabel = weekdayShortOf(date),
                 dayNumberLabel = date.day.toString(),
                 isToday = date == today,
-                isWeekend = date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY,
+                isDayOff = isDayOff(date = date, workingDays = workingDays),
                 slots = slotsByDate[date]
                     .orEmpty()
                     .sortedBy { it.startsAt }
@@ -328,6 +331,12 @@ class CoachScheduleScreenModel(
                 failure = null,
             )
         }
+    }
+
+    private suspend fun loadWorkingDays(): Set<DayOfWeek> {
+        val policy = clientsRepository.coachPolicy()
+        if (policy !is RequestResult.Success) return emptySet()
+        return policy.data.workingHours.map { it.dayOfWeek }.toSet()
     }
 
     private fun nextSlotIdOf(days: List<ScheduleDay>, today: LocalDate, zone: TimeZone): String? {

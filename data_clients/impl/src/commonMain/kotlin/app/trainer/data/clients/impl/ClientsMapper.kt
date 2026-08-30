@@ -5,8 +5,11 @@ import app.trainer.data.clients.ClientNoteKind
 import app.trainer.data.clients.CoachClient
 import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.clients.CoachSummary
+import app.trainer.entities.WorkingDay
 import app.trainer.logger.Logger
 import kotlin.time.Instant
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalTime
 
 private const val LOG_TAG = "clients-mapper"
 
@@ -48,7 +51,24 @@ class ClientsMapper(private val logger: Logger) {
             displayName = displayName,
             zoneId = zoneId,
             cancellationWindowHours = cancellationWindowHours,
+            workingHours = toWorkingDays(response.workingHours),
         )
+    }
+
+    fun toWorkingDays(wire: List<WorkingDayWire>?): List<WorkingDay> =
+        wire.orEmpty().mapNotNull(::toWorkingDay)
+
+    private fun toWorkingDay(wire: WorkingDayWire): WorkingDay? {
+        val dayOfWeek = DayOfWeek.entries.firstOrNull { it.name == wire.dayOfWeek }
+            ?: return skipped(entity = "WorkingDay", field = "dayOfWeek")
+        val opensAt = parseTime(wire.opensAt) ?: return skipped(entity = "WorkingDay", field = "opensAt")
+        val closesAt = parseTime(wire.closesAt) ?: return skipped(entity = "WorkingDay", field = "closesAt")
+        return WorkingDay(dayOfWeek = dayOfWeek, opensAt = opensAt, closesAt = closesAt)
+    }
+
+    private fun parseTime(raw: String?): LocalTime? {
+        if (raw == null) return null
+        return runCatching { LocalTime.parse(raw) }.getOrNull()
     }
 
     fun toCoachPolicy(response: CoachPolicyResponse): CoachPolicy? {
@@ -67,6 +87,7 @@ class ClientsMapper(private val logger: Logger) {
             sessionRemindersEnabled = sessionRemindersEnabled,
             diaryRemindersEnabled = diaryRemindersEnabled,
             checkInRemindersEnabled = checkInRemindersEnabled,
+            workingHours = toWorkingDays(response.workingHours),
         )
     }
 

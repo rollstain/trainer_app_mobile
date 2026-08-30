@@ -457,7 +457,7 @@ private fun toWeekDay(day: ScheduleDay, isSelected: Boolean): WeekDay = WeekDay(
     state = when {
         isSelected -> WeekDayState.Selected
         day.isToday -> WeekDayState.Today
-        day.isWeekend -> WeekDayState.Weekend
+        day.isDayOff -> WeekDayState.Weekend
         else -> WeekDayState.Rest
     },
     hasSlots = day.slots.isNotEmpty(),

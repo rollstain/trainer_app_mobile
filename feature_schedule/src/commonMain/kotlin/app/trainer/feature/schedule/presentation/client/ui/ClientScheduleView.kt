@@ -23,6 +23,8 @@ import app.trainer.strings.client_schedule_cancel_dialog_description
 import app.trainer.strings.client_schedule_cancel_dialog_title
 import app.trainer.strings.client_schedule_day_empty_description
 import app.trainer.strings.client_schedule_day_empty_title
+import app.trainer.strings.client_schedule_day_off_description
+import app.trainer.strings.client_schedule_day_off_title
 import app.trainer.strings.client_schedule_empty_action
 import app.trainer.strings.client_schedule_empty_description
 import app.trainer.strings.client_schedule_empty_title
@@ -33,6 +35,7 @@ import app.trainer.strings.client_schedule_no_coach_title
 import app.trainer.strings.client_schedule_previous_week_action
 import app.trainer.strings.client_schedule_privacy_note
 import app.trainer.strings.client_schedule_title
+import app.trainer.strings.client_schedule_working_hours
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
@@ -99,6 +102,14 @@ fun ClientScheduleView(
                 }
             },
         )
+        if (state.workingScheduleLabel.isNotEmpty()) {
+            AppText(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = AppTheme.spacing.dp16),
+                text = stringResource(Res.string.client_schedule_working_hours, state.workingScheduleLabel),
+                style = AppTheme.typography.caption,
+                color = AppTheme.colors.textSecondary,
+            )
+        }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             when {
                 state.failure != null -> AppFailureState(
@@ -123,6 +134,12 @@ fun ClientScheduleView(
                         text = stringResource(Res.string.client_schedule_empty_action),
                         onClick = { onEvent(ClientScheduleEvent.OnWriteCoachClicked) },
                     ),
+                )
+                selectedSlots(state).isEmpty() && isSelectedDayOff(state) -> AppStatePlaceholder(
+                    kind = PlaceholderKind.Empty,
+                    title = stringResource(Res.string.client_schedule_day_off_title),
+                    description = stringResource(Res.string.client_schedule_day_off_description),
+                    action = PlaceholderAction.None,
                 )
                 selectedSlots(state).isEmpty() -> AppStatePlaceholder(
                     kind = PlaceholderKind.Empty,
@@ -226,6 +243,9 @@ private fun toAction(
 private fun selectedSlots(state: ClientScheduleState): List<ClientSlotRow> =
     state.days.firstOrNull { it.date == state.selectedDate }?.slots.orEmpty()
 
+private fun isSelectedDayOff(state: ClientScheduleState): Boolean =
+    state.days.firstOrNull { it.date == state.selectedDate }?.isDayOff == true
+
 private fun toWeekDay(day: ClientScheduleDay, isSelected: Boolean): WeekDay = WeekDay(
     id = day.date.toString(),
     weekdayLabel = day.weekdayLabel,
@@ -233,7 +253,7 @@ private fun toWeekDay(day: ClientScheduleDay, isSelected: Boolean): WeekDay = We
     state = when {
         isSelected -> WeekDayState.Selected
         day.isToday -> WeekDayState.Today
-        day.isWeekend -> WeekDayState.Weekend
+        day.isDayOff -> WeekDayState.Weekend
         else -> WeekDayState.Rest
     },
     hasSlots = day.slots.isNotEmpty(),

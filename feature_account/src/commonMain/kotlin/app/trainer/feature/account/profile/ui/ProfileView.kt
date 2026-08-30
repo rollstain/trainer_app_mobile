@@ -48,6 +48,8 @@ import app.trainer.strings.profile_sign_out_confirm
 import app.trainer.strings.profile_sign_out_description
 import app.trainer.strings.profile_sign_out_title
 import app.trainer.strings.profile_title
+import app.trainer.strings.profile_working_hours_not_set
+import app.trainer.strings.profile_working_hours_title
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppAvatar
@@ -120,6 +122,24 @@ fun ProfileView(
 }
 
 @Composable
+private fun WorkingHoursCard(label: String?, onEvent: (ProfileEvent) -> Unit) {
+    AppCard(action = CardAction.Click { onEvent(ProfileEvent.OnWorkingHoursClicked) }) {
+        Column(verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4)) {
+            AppText(
+                text = stringResource(Res.string.profile_working_hours_title),
+                style = AppTheme.typography.body,
+                color = AppTheme.colors.textPrimary,
+            )
+            AppText(
+                text = label ?: stringResource(Res.string.profile_working_hours_not_set),
+                style = AppTheme.typography.caption,
+                color = if (label != null) AppTheme.colors.textSecondary else AppTheme.colors.warning,
+            )
+        }
+    }
+}
+
+@Composable
 private fun ProfileContent(state: ProfileState, onEvent: (ProfileEvent) -> Unit) {
     Column(
         modifier = Modifier
@@ -175,6 +195,7 @@ private fun ProfileContent(state: ProfileState, onEvent: (ProfileEvent) -> Unit)
             }
         }
         if (state.policy != null) {
+            WorkingHoursCard(label = state.workingHoursLabel, onEvent = onEvent)
             CancellationWindowSection(
                 selectedHours = state.policy.cancellationWindowHours,
                 onSelect = { hours -> onEvent(ProfileEvent.OnCancellationWindowSelected(hours)) },

@@ -135,6 +135,9 @@ sealed interface Screens : NavKey {
     data object LoginMethods : Screens
 
     @Serializable
+    data object WorkingHours : Screens
+
+    @Serializable
     data object Coaches : Screens
 
     @Serializable

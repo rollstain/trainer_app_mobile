@@ -1,6 +1,7 @@
 package app.trainer.feature.account.profile.mvi
 
 import app.trainer.base.BaseScreenModel
+import app.trainer.base.date.formatWorkingSchedule
 import app.trainer.data.auth.AuthRepository
 import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.clients.ParticipantsRepository
@@ -63,6 +64,9 @@ class ProfileScreenModel(
             ProfileEvent.OnCoachesClicked -> screenModelScope {
                 postSideEffect(ProfileSideEffect.OpenCoaches)
             }
+            ProfileEvent.OnWorkingHoursClicked -> screenModelScope {
+                postSideEffect(ProfileSideEffect.OpenWorkingHours)
+            }
             is ProfileEvent.OnCancellationWindowSelected -> changePolicy { policy ->
                 policy.copy(cancellationWindowHours = event.hours)
             }
@@ -96,12 +100,14 @@ class ProfileScreenModel(
         } else {
             getString(Res.string.profile_client_role)
         }
+        val workingHoursLabel = workingHoursLabelOf(policy)
         updateState { current ->
             current.copy(
                 displayName = profile.displayName,
                 roleLabel = roleLabel,
                 contactLabel = profile.phone ?: profile.email,
                 policy = policy,
+                workingHoursLabel = workingHoursLabel,
                 isCoach = isCoach,
                 isOwner = profile.isOwner,
                 isLoading = false,
@@ -109,6 +115,9 @@ class ProfileScreenModel(
             )
         }
     }
+
+    private suspend fun workingHoursLabelOf(policy: CoachPolicy?): String? =
+        policy?.workingHours?.takeIf { it.isNotEmpty() }?.let { formatWorkingSchedule(it) }
 
     private suspend fun loadPolicy(): CoachPolicy? {
         return when (val loaded = participantsRepository.coachPolicy()) {

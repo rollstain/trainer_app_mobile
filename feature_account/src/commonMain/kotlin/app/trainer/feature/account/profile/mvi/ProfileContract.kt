@@ -9,6 +9,7 @@ data class ProfileState(
     val roleLabel: String,
     val contactLabel: String?,
     val policy: CoachPolicy?,
+    val workingHoursLabel: String?,
     val isCoach: Boolean,
     val isOwner: Boolean,
     val isSignOutDialogVisible: Boolean,
@@ -27,6 +28,7 @@ data class ProfileState(
             roleLabel = "",
             contactLabel = null,
             policy = null,
+            workingHoursLabel = null,
             isCoach = false,
             isOwner = false,
             isSignOutDialogVisible = false,
@@ -51,6 +53,8 @@ sealed interface ProfileEvent {
     data object OnExerciseLibraryClicked : ProfileEvent
 
     data object OnCoachesClicked : ProfileEvent
+
+    data object OnWorkingHoursClicked : ProfileEvent
 
     data object OnProgramsClicked : ProfileEvent
 
@@ -88,6 +92,8 @@ sealed interface ProfileSideEffect {
     data object OpenCoaches : ProfileSideEffect
 
     data object OpenPrograms : ProfileSideEffect
+
+    data object OpenWorkingHours : ProfileSideEffect
 
     data object SignedOut : ProfileSideEffect
 

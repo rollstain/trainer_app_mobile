@@ -29,7 +29,7 @@ data class ClientScheduleDay(
     val weekdayLabel: String,
     val dayNumberLabel: String,
     val isToday: Boolean,
-    val isWeekend: Boolean,
+    val isDayOff: Boolean,
     val slots: ImmutableList<ClientSlotRow>,
 )
 
@@ -40,6 +40,7 @@ data class ClientScheduleState(
     val weekTitle: String,
     val selectedDate: LocalDate?,
     val days: ImmutableList<ClientScheduleDay>,
+    val workingScheduleLabel: String,
     val slotPendingCancel: String?,
     val isLoading: Boolean,
     val failure: RequestResult.Error?,
@@ -54,6 +55,7 @@ data class ClientScheduleState(
             weekTitle = "",
             selectedDate = null,
             days = persistentListOf(),
+            workingScheduleLabel = "",
             slotPendingCancel = null,
             isLoading = true,
             failure = null,

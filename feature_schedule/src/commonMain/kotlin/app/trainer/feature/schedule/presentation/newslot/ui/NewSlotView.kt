@@ -104,6 +104,13 @@ fun NewSlotView(
             if (state.mode == SlotMode.Series) {
                 SeriesFields(state = state, onEvent = onEvent)
             }
+            state.outsideScheduleWarning?.let { warning ->
+                AppText(
+                    text = warning,
+                    style = AppTheme.typography.caption,
+                    color = AppTheme.colors.warning,
+                )
+            }
             SummaryCard(summary = state.summaryLabel)
         }
         AppButton(

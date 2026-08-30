@@ -30,7 +30,7 @@ data class ScheduleDay(
     val weekdayLabel: String,
     val dayNumberLabel: String,
     val isToday: Boolean,
-    val isWeekend: Boolean,
+    val isDayOff: Boolean,
     val slots: ImmutableList<CoachSlotRow>,
 )
 

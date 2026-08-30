@@ -915,6 +915,7 @@ private fun coachProfile(): ProfileState = ProfileState.initial().copy(
         sessionRemindersEnabled = true,
         diaryRemindersEnabled = true,
         checkInRemindersEnabled = false,
+        workingHours = emptyList(),
     ),
     isCoach = true,
     isLoading = false,
@@ -1084,7 +1085,7 @@ private fun coachScheduleWithGroupSession(): CoachScheduleState = CoachScheduleS
             weekdayLabel = "ПН",
             dayNumberLabel = MONDAY.day.toString(),
             isToday = true,
-            isWeekend = false,
+            isDayOff = false,
             slots = persistentListOf(
                 slotAt(
                     hour = 19,
@@ -1110,7 +1111,7 @@ private fun clientScheduleWithGroupSession(): ClientScheduleState = ClientSchedu
             weekdayLabel = "ПН",
             dayNumberLabel = MONDAY.day.toString(),
             isToday = true,
-            isWeekend = false,
+            isDayOff = false,
             slots = persistentListOf(
                 ClientSlotRow(
                     slotId = "slot-group",
@@ -1138,7 +1139,7 @@ private fun coachScheduleWithSlots(): CoachScheduleState {
             weekdayLabel = listOf("ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС")[offset],
             dayNumberLabel = date.day.toString(),
             isToday = offset == 0,
-            isWeekend = offset >= 5,
+            isDayOff = offset >= 5,
             slots = persistentListOf(
                 slotAt(hour = 8, index = offset, status = SlotStatus.BOOKED, client = "Мария"),
                 slotAt(hour = 12, index = offset, status = SlotStatus.FREE, client = null),

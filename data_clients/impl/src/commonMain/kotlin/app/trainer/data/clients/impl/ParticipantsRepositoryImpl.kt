@@ -48,6 +48,13 @@ class ParticipantsRepositoryImpl(
                         sessionRemindersEnabled = policy.sessionRemindersEnabled,
                         diaryRemindersEnabled = policy.diaryRemindersEnabled,
                         checkInRemindersEnabled = policy.checkInRemindersEnabled,
+                        workingHours = policy.workingHours.map { day ->
+                            WorkingDayWire(
+                                dayOfWeek = day.dayOfWeek.name,
+                                opensAt = day.opensAt.toString(),
+                                closesAt = day.closesAt.toString(),
+                            )
+                        },
                     )
                 )
             }

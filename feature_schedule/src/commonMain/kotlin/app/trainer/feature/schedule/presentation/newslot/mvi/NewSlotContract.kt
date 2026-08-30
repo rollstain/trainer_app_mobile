@@ -24,6 +24,7 @@ data class NewSlotState(
     val weeksCount: Int,
     val weekDays: ImmutableList<WeekDayToggle>,
     val summaryLabel: String,
+    val outsideScheduleWarning: String?,
     val isSubmitting: Boolean,
 ) {
 
@@ -46,6 +47,7 @@ data class NewSlotState(
             weeksCount = DEFAULT_WEEKS,
             weekDays = persistentListOf(),
             summaryLabel = "",
+            outsideScheduleWarning = null,
             isSubmitting = false,
         )
 

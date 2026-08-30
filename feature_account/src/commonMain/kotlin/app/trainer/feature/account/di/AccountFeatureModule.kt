@@ -37,6 +37,8 @@ import app.trainer.feature.account.telegramlink.mvi.TelegramLinkScreenModel
 import app.trainer.feature.account.telegramlink.ui.TelegramLinkScreen
 import app.trainer.feature.account.welcome.mvi.WelcomeScreenModel
 import app.trainer.feature.account.welcome.ui.WelcomeScreen
+import app.trainer.feature.account.workinghours.mvi.WorkingHoursScreenModel
+import app.trainer.feature.account.workinghours.ui.WorkingHoursScreen
 import app.trainer.navigation.Screens
 import app.trainer.navigation.screen
 import org.koin.core.module.dsl.viewModel
@@ -119,6 +121,7 @@ class AccountFeatureModule {
             )
         }
         viewModel { PasswordFormScreenModel(identitiesRepository = get(), profileRepository = get()) }
+        viewModel { WorkingHoursScreenModel(participantsRepository = get()) }
         viewModel { NoCoachScreenModel(authRepository = get(), profileRepository = get()) }
         viewModel { CoachSetupScreenModel(profileRepository = get()) }
         viewModel { CoachesScreenModel(ownerRepository = get()) }
@@ -155,6 +158,7 @@ class AccountFeatureModule {
         screen<Screens.Profile> { ProfileScreen() }
         screen<Screens.Devices> { DevicesScreen() }
         screen<Screens.LoginMethods> { LoginMethodsScreen() }
+        screen<Screens.WorkingHours> { WorkingHoursScreen() }
         screen<Screens.PasswordForm> { PasswordFormScreen() }
         screen<Screens.NoCoach> { NoCoachScreen() }
         screen<Screens.CoachSetup> { CoachSetupScreen() }
