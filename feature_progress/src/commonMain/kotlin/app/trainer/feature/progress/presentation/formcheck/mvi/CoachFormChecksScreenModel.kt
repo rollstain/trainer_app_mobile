@@ -9,6 +9,8 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
+private const val PAGE_SIZE = 20
+
 class CoachFormChecksScreenModel(
     private val formCheckRepository: FormCheckRepository,
 ) : BaseScreenModel<CoachFormChecksState, CoachFormChecksSideEffect, CoachFormChecksEvent>(
@@ -22,14 +24,33 @@ class CoachFormChecksScreenModel(
     override fun onFetchData() {
         onFetchDataScope {
             updateState { it.copy(isLoading = true, failure = null) }
-            when (val loaded = formCheckRepository.awaitingReview()) {
+            when (val loaded = formCheckRepository.awaitingReview(limit = PAGE_SIZE, after = null)) {
                 is RequestResult.Error -> {
                     updateState { it.copy(isLoading = false, failure = loaded) }
                     postSideEffect(CoachFormChecksSideEffect.ShowFailure(loaded))
                 }
-                is RequestResult.Success -> {
-                    val rows = loaded.data.map(::toRow)
-                    updateState { it.copy(checks = rows.toImmutableList(), isLoading = false, failure = null) }
+                is RequestResult.Success -> updateState {
+                    it.withFirstPage(
+                        rows = loaded.data.items.map(::toRow),
+                        nextCursor = loaded.data.nextCursor,
+                    )
+                }
+            }
+        }
+    }
+
+    private fun loadMore() {
+        screenModelScope { state ->
+            val cursor = state.nextCursor ?: return@screenModelScope
+            if (state.isLoadingMore) return@screenModelScope
+            updateState { it.copy(isLoadingMore = true) }
+            when (val page = formCheckRepository.awaitingReview(limit = PAGE_SIZE, after = cursor)) {
+                is RequestResult.Error -> {
+                    updateState { it.copy(isLoadingMore = false) }
+                    postSideEffect(CoachFormChecksSideEffect.ShowFailure(page))
+                }
+                is RequestResult.Success -> updateState {
+                    it.withNextPage(rows = page.data.items.map(::toRow), nextCursor = page.data.nextCursor)
                 }
             }
         }
@@ -38,6 +59,7 @@ class CoachFormChecksScreenModel(
     override fun dispatch(event: CoachFormChecksEvent) {
         when (event) {
             CoachFormChecksEvent.OnReloadRequested -> onFetchData()
+            CoachFormChecksEvent.OnEndReached -> loadMore()
             is CoachFormChecksEvent.OnDraftChanged -> updateDraft(
                 formCheckId = event.formCheckId,
                 text = event.text,

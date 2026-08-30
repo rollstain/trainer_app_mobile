@@ -39,7 +39,6 @@ class ChatMapper(private val logger: Logger) {
         val clientUserId = response.clientUserId ?: return skipped(field = "clientUserId")
         val peerUserId = response.peerUserId ?: return skipped(field = "peerUserId")
         val peerDisplayName = response.peerDisplayName ?: return skipped(field = "peerDisplayName")
-        val lastMessage = response.lastMessage?.let(::toMessage)
         return Dialog(
             id = id,
             coachId = coachId,
@@ -50,8 +49,8 @@ class ChatMapper(private val logger: Logger) {
             readSeq = response.readSeq ?: 0,
             peerReadSeq = response.peerReadSeq ?: 0,
             unreadCount = response.unreadCount ?: 0,
-            lastMessagePreview = lastMessage?.body,
-            lastMessageAt = lastMessage?.createdAt,
+            lastMessagePreview = response.lastMessagePreview,
+            lastMessageAt = response.lastMessageAt?.let(::parseInstant),
         )
     }
 

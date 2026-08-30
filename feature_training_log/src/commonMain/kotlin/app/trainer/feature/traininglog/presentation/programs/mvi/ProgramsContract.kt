@@ -3,6 +3,7 @@ package app.trainer.feature.traininglog.presentation.programs.mvi
 import app.trainer.entities.RequestResult
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 
 private const val MIN_WEEKS = 1
 private const val MAX_WEEKS = 12
@@ -37,16 +38,40 @@ data class NewProgramDraft(
 data class ProgramsState(
     val programs: ImmutableList<ProgramRow>,
     val draft: NewProgramDraft?,
+    val nextCursor: String?,
     val isLoading: Boolean,
+    val isLoadingMore: Boolean,
     val failure: RequestResult.Error?,
 ) {
+
+    val hasMore: Boolean
+        get() = nextCursor != null
+
+    fun withFirstPage(rows: List<ProgramRow>, nextCursor: String?): ProgramsState = copy(
+        programs = rows.toImmutableList(),
+        nextCursor = nextCursor,
+        isLoading = false,
+        isLoadingMore = false,
+        failure = null,
+    )
+
+    fun withNextPage(rows: List<ProgramRow>, nextCursor: String?): ProgramsState {
+        val known = programs.mapTo(mutableSetOf(), ProgramRow::programId)
+        return copy(
+            programs = (programs + rows.filterNot { it.programId in known }).toImmutableList(),
+            nextCursor = nextCursor,
+            isLoadingMore = false,
+        )
+    }
 
     companion object {
 
         fun initial(): ProgramsState = ProgramsState(
             programs = persistentListOf(),
             draft = null,
+            nextCursor = null,
             isLoading = true,
+            isLoadingMore = false,
             failure = null,
         )
     }
@@ -55,6 +80,8 @@ data class ProgramsState(
 sealed interface ProgramsEvent {
 
     data object OnRetryClicked : ProgramsEvent
+
+    data object OnEndReached : ProgramsEvent
 
     data object OnCreateClicked : ProgramsEvent
 

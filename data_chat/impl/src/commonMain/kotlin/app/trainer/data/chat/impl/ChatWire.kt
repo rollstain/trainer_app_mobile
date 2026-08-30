@@ -95,6 +95,8 @@ data class DialogResponse(
     val peerReadSeq: Long?,
     @SerialName("unreadCount")
     val unreadCount: Long?,
-    @SerialName("lastMessage")
-    val lastMessage: MessageResponse?,
+    @SerialName("lastMessagePreview")
+    val lastMessagePreview: String?,
+    @SerialName("lastMessageAt")
+    val lastMessageAt: String?,
 )

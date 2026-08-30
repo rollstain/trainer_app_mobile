@@ -100,9 +100,8 @@ class PeopleScreenModel(
         updateState { it.copy(isLoading = true, failure = null) }
         val query = state.search.trim().takeIf { it.isNotEmpty() }
         val sessions = nextSessionsByClient()
-        val lapses = attentionByClient()
-        val booked = if (query == null) bookedRowsOf(sessions = sessions, lapses = lapses) else emptyList()
-        if (booked == null) return
+        val bookedClients = if (query == null) bookedClientsOf(sessions) else emptyList()
+        if (bookedClients == null) return
 
         val loaded = participantsRepository.clientsOfCoach(limit = PAGE_SIZE, after = null, query = query)
         when (val page = loaded) {
@@ -111,21 +110,23 @@ class PeopleScreenModel(
                 postSideEffect(PeopleSideEffect.ShowFailure(page))
             }
             is RequestResult.Success -> {
-                val bookedIds = booked.mapTo(mutableSetOf(), PersonRow::userId)
-                val others = page.data.items
-                    .filterNot { it.userId in bookedIds }
-                    .map { client -> toRow(client = client, sessions = sessions, lapses = lapses) }
+                val bookedIds = bookedClients.mapTo(mutableSetOf(), CoachClient::userId)
+                val shown = page.data.items.filterNot { it.userId in bookedIds }
+                val lapses = attentionByClient(bookedIds + shown.map { it.userId })
                 updateState {
-                    it.withFirstPage(booked = booked, others = others, nextCursor = page.data.nextCursor)
+                    it.withFirstPage(
+                        booked = bookedClients
+                            .map { client -> toRow(client = client, sessions = sessions, lapses = lapses) }
+                            .sortedBy { row -> row.displayName },
+                        others = shown.map { client -> toRow(client = client, sessions = sessions, lapses = lapses) },
+                        nextCursor = page.data.nextCursor,
+                    )
                 }
             }
         }
     }
 
-    private suspend fun bookedRowsOf(
-        sessions: Map<String, NextSession>,
-        lapses: Map<String, String>,
-    ): List<PersonRow>? {
+    private suspend fun bookedClientsOf(sessions: Map<String, NextSession>): List<CoachClient>? {
         if (sessions.isEmpty()) return emptyList()
         return when (val loaded = participantsRepository.clientsByIds(sessions.keys.toList())) {
             is RequestResult.Error -> {
@@ -133,10 +134,7 @@ class PeopleScreenModel(
                 postSideEffect(PeopleSideEffect.ShowFailure(loaded))
                 null
             }
-            is RequestResult.Success ->
-                loaded.data
-                    .map { client -> toRow(client = client, sessions = sessions, lapses = lapses) }
-                    .sortedBy { it.displayName }
+            is RequestResult.Success -> loaded.data
         }
     }
 
@@ -146,7 +144,6 @@ class PeopleScreenModel(
             if (state.isLoadingMore) return@screenModelScope
             updateState { it.copy(isLoadingMore = true) }
             val sessions = nextSessionsByClient()
-            val lapses = attentionByClient()
             val loaded = participantsRepository.clientsOfCoach(
                 limit = PAGE_SIZE,
                 after = cursor,
@@ -158,6 +155,7 @@ class PeopleScreenModel(
                     postSideEffect(PeopleSideEffect.ShowFailure(page))
                 }
                 is RequestResult.Success -> {
+                    val lapses = attentionByClient(page.data.items.map { it.userId })
                     val rows = page.data.items.map { client ->
                         toRow(client = client, sessions = sessions, lapses = lapses)
                     }
@@ -206,14 +204,14 @@ class PeopleScreenModel(
         )
     }
 
-    private suspend fun attentionByClient(): Map<String, String> {
-        val missed = missedSessionsByClient()
+    private suspend fun attentionByClient(clientUserIds: Collection<String>): Map<String, String> {
+        val missed = missedSessionsByClient(clientUserIds)
         val lapsed = diaryLapsesByClient()
         return lapsed + missed
     }
 
-    private suspend fun missedSessionsByClient(): Map<String, String> {
-        val loaded = participantsRepository.missedSessions()
+    private suspend fun missedSessionsByClient(clientUserIds: Collection<String>): Map<String, String> {
+        val loaded = participantsRepository.missedSessions(clientUserIds.toList())
         if (loaded !is RequestResult.Success) return emptyMap()
         return loaded.data
             .filterValues { it >= MISSED_SESSIONS_THRESHOLD }

@@ -60,6 +60,7 @@ import app.trainer.strings.client_card_program_change
 import app.trainer.strings.client_card_program_none
 import app.trainer.strings.client_card_program_picker_dismiss
 import app.trainer.strings.client_card_program_picker_empty
+import app.trainer.strings.client_card_program_picker_more
 import app.trainer.strings.client_card_program_picker_title
 import app.trainer.strings.client_card_program_remove
 import app.trainer.strings.client_card_program_section
@@ -485,6 +486,16 @@ private fun ProgramPickerSheet(picker: ProgramPicker, onEvent: (ClientCardEvent)
                 tone = ButtonTone.Secondary,
                 size = ButtonSize.Large,
                 state = if (picker.isSaving) ButtonState.Disabled else ButtonState.Idle,
+            )
+        }
+        if (picker.hasMore) {
+            AppButton(
+                modifier = Modifier.fillMaxWidth(),
+                text = stringResource(Res.string.client_card_program_picker_more),
+                onClick = { onEvent(ClientCardEvent.OnProgramPickerMoreClicked) },
+                tone = ButtonTone.Text,
+                size = ButtonSize.Large,
+                state = if (picker.isLoadingMore) ButtonState.Disabled else ButtonState.Idle,
             )
         }
         AppButton(

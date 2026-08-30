@@ -15,7 +15,7 @@ interface ParticipantsRepository {
 
     suspend fun clientsByIds(userIds: List<String>): RequestResult<List<CoachClient>>
 
-    suspend fun missedSessions(): RequestResult<Map<String, Int>>
+    suspend fun missedSessions(clientUserIds: List<String>): RequestResult<Map<String, Int>>
 
     suspend fun archiveClient(clientUserId: String): RequestResult<Unit>
 

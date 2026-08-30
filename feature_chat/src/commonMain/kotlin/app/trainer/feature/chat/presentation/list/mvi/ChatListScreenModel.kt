@@ -53,6 +53,7 @@ class ChatListScreenModel(
         when (event) {
             ChatListEvent.OnRetryClicked -> refresh(isPullToRefresh = false)
             ChatListEvent.OnRefreshRequested -> refresh(isPullToRefresh = true)
+            ChatListEvent.OnEndReached -> loadMore()
             ChatListEvent.OnCreateInviteClicked -> openPeople()
             is ChatListEvent.OnDialogClicked -> openDialog(event.dialogId)
         }
@@ -84,7 +85,23 @@ class ChatListScreenModel(
                     postSideEffect(ChatListSideEffect.ShowFailure(refreshed))
                 }
                 is RequestResult.Success -> {
-                    updateState { it.copy(isRefreshing = false, failure = null) }
+                    updateState { it.copy(isRefreshing = false, failure = null, hasMore = refreshed.data) }
+                }
+            }
+        }
+    }
+
+    private fun loadMore() {
+        screenModelScope { state ->
+            if (state.isLoadingMore || !state.hasMore) return@screenModelScope
+            updateState { it.copy(isLoadingMore = true) }
+            when (val loaded = chatRepository.loadMoreDialogs()) {
+                is RequestResult.Error -> {
+                    updateState { it.copy(isLoadingMore = false) }
+                    postSideEffect(ChatListSideEffect.ShowFailure(loaded))
+                }
+                is RequestResult.Success -> updateState {
+                    it.copy(isLoadingMore = false, hasMore = loaded.data)
                 }
             }
         }

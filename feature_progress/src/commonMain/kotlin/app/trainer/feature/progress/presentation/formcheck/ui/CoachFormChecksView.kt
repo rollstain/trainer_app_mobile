@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,7 @@ import app.trainer.uikit.widgets.TopBarLeading
 import org.jetbrains.compose.resources.stringResource
 
 private const val SHIMMER_CARDS = 3
+private const val LOAD_MORE_CARDS = 1
 private const val SHIMMER_CARD_LINES = 3
 private const val VIDEO_ASPECT_RATIO = 16f / 9f
 
@@ -77,6 +79,12 @@ fun CoachFormChecksView(
                 ) {
                     items(items = state.checks, key = AwaitingFormCheck::formCheckId) { check ->
                         AwaitingCard(modifier = Modifier.animateItem(), check = check, onEvent = onEvent)
+                    }
+                    if (state.hasMore) {
+                        item(key = "load-more") {
+                            LaunchedEffect(state.nextCursor) { onEvent(CoachFormChecksEvent.OnEndReached) }
+                            AppCardShimmerList(count = LOAD_MORE_CARDS, lines = SHIMMER_CARD_LINES)
+                        }
                     }
                 }
             }

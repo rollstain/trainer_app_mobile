@@ -11,12 +11,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import app.trainer.base.failure.AppFailureState
 import app.trainer.feature.traininglog.presentation.programs.mvi.NewProgramDraft
-import app.trainer.feature.traininglog.presentation.programs.mvi.ProgramRow
 import app.trainer.feature.traininglog.presentation.programs.mvi.ProgramsEvent
 import app.trainer.feature.traininglog.presentation.programs.mvi.ProgramsState
 import app.trainer.strings.Res
@@ -52,6 +52,7 @@ import app.trainer.uikit.widgets.TopBarLeading
 import org.jetbrains.compose.resources.stringResource
 
 private const val SHIMMER_CARDS = 3
+private const val LOAD_MORE_CARDS = 1
 private const val SHIMMER_CARD_LINES = 2
 
 @Composable
@@ -81,7 +82,7 @@ fun ProgramsView(
                         onClick = { onEvent(ProgramsEvent.OnCreateClicked) },
                     ),
                 )
-                else -> ProgramList(programs = state.programs, onEvent = onEvent)
+                else -> ProgramList(state = state, onEvent = onEvent)
             }
         }
         if (state.programs.isNotEmpty()) {
@@ -107,12 +108,12 @@ fun ProgramsView(
 }
 
 @Composable
-private fun ProgramList(programs: List<ProgramRow>, onEvent: (ProgramsEvent) -> Unit) {
+private fun ProgramList(state: ProgramsState, onEvent: (ProgramsEvent) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(AppTheme.spacing.dp16),
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
     ) {
-        items(items = programs, key = { it.programId }) { program ->
+        items(items = state.programs, key = { it.programId }) { program ->
             AppCard(
                 action = CardAction.Click(
                     onClick = { onEvent(ProgramsEvent.OnProgramClicked(program.programId)) }
@@ -144,6 +145,12 @@ private fun ProgramList(programs: List<ProgramRow>, onEvent: (ProgramsEvent) -> 
                         )
                     }
                 }
+            }
+        }
+        if (state.hasMore) {
+            item(key = "load-more") {
+                LaunchedEffect(state.nextCursor) { onEvent(ProgramsEvent.OnEndReached) }
+                AppCardShimmerList(count = LOAD_MORE_CARDS, lines = SHIMMER_CARD_LINES)
             }
         }
     }

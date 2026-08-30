@@ -2,13 +2,16 @@ package app.trainer.data.progress.impl
 
 import app.trainer.data.progress.FormCheck
 import app.trainer.data.progress.FormCheckRepository
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.logger.Logger
 import app.trainer.network.HttpClientProvider
 import app.trainer.network.PresignedUploader
+import app.trainer.network.safePagedRequest
 import app.trainer.network.safeRequest
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -26,12 +29,22 @@ class FormCheckRepositoryImpl(
 
     private val client get() = httpClientProvider.client
 
-    override suspend fun ownFormChecks(): RequestResult<List<FormCheck>> {
-        return formChecksOf { client.get("me/form-checks") }
+    override suspend fun ownFormChecks(limit: Int, after: String?): RequestResult<Paged<List<FormCheck>>> {
+        return formChecksPageOf {
+            client.get("me/form-checks") {
+                parameter("limit", limit)
+                after?.let { parameter("after", it) }
+            }
+        }
     }
 
-    override suspend fun awaitingReview(): RequestResult<List<FormCheck>> {
-        return formChecksOf { client.get("coach/form-checks/awaiting") }
+    override suspend fun awaitingReview(limit: Int, after: String?): RequestResult<Paged<List<FormCheck>>> {
+        return formChecksPageOf {
+            client.get("coach/form-checks/awaiting") {
+                parameter("limit", limit)
+                after?.let { parameter("after", it) }
+            }
+        }
     }
 
     override suspend fun submit(
@@ -93,11 +106,18 @@ class FormCheckRepositoryImpl(
         }
     }
 
-    private suspend fun formChecksOf(request: suspend () -> HttpResponse): RequestResult<List<FormCheck>> {
-        val loaded = safeRequest<List<FormCheckResponse>> { request() }
+    private suspend fun formChecksPageOf(
+        request: suspend () -> HttpResponse,
+    ): RequestResult<Paged<List<FormCheck>>> {
+        val loaded = safePagedRequest<List<FormCheckResponse>> { request() }
         return when (loaded) {
             is RequestResult.Error -> loaded
-            is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(mapper::toFormCheck))
+            is RequestResult.Success -> RequestResult.Success(
+                Paged(
+                    items = loaded.data.items.mapNotNull(mapper::toFormCheck),
+                    nextCursor = loaded.data.nextCursor,
+                )
+            )
         }
     }
 

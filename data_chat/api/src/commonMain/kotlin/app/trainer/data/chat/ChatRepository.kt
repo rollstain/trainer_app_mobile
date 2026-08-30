@@ -12,7 +12,9 @@ interface ChatRepository : LocalDataCleaner {
 
     fun observeMessages(dialogId: String): Flow<List<Message>>
 
-    suspend fun refreshDialogs(): RequestResult<Unit>
+    suspend fun refreshDialogs(): RequestResult<Boolean>
+
+    suspend fun loadMoreDialogs(): RequestResult<Boolean>
 
     suspend fun syncMessages(dialogId: String): RequestResult<Unit>
 

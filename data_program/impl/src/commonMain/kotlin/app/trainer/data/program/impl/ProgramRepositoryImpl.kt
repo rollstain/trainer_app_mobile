@@ -7,9 +7,11 @@ import app.trainer.data.program.ProgramDayDraft
 import app.trainer.data.program.ProgramRepository
 import app.trainer.data.program.ProgramSummary
 import app.trainer.data.program.TrainingProgram
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.network.HttpClientProvider
+import app.trainer.network.safePagedRequest
 import app.trainer.network.safeRequest
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -26,13 +28,21 @@ class ProgramRepositoryImpl(
     private val mapper: ProgramMapper,
 ) : ProgramRepository {
 
-    override suspend fun programs(): RequestResult<List<ProgramSummary>> {
-        val loaded = safeRequest<List<ProgramSummaryResponse>> {
-            httpClientProvider.client.get("coach/programs")
+    override suspend fun programs(limit: Int, after: String?): RequestResult<Paged<List<ProgramSummary>>> {
+        val loaded = safePagedRequest<List<ProgramSummaryResponse>> {
+            httpClientProvider.client.get("coach/programs") {
+                parameter("limit", limit)
+                after?.let { parameter("after", it) }
+            }
         }
         return when (loaded) {
             is RequestResult.Error -> loaded
-            is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(mapper::toSummary))
+            is RequestResult.Success -> RequestResult.Success(
+                Paged(
+                    items = loaded.data.items.mapNotNull(mapper::toSummary),
+                    nextCursor = loaded.data.nextCursor,
+                )
+            )
         }
     }
 

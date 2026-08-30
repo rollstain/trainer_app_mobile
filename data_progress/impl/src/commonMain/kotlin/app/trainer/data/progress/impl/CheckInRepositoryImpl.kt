@@ -5,10 +5,12 @@ import app.trainer.data.progress.CheckIn
 import app.trainer.data.progress.CheckInDraft
 import app.trainer.data.progress.CheckInRepository
 import app.trainer.data.progress.PreparedPhotoUpload
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.network.HttpClientProvider
 import app.trainer.network.PresignedUploader
+import app.trainer.network.safePagedRequest
 import app.trainer.network.safeRequest
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -79,14 +81,20 @@ class CheckInRepositoryImpl(
         }
     }
 
-    override suspend fun awaitingReview(): RequestResult<List<AwaitingCheckIn>> {
-        val loaded = safeRequest<List<AwaitingCheckInResponse>> {
-            client.get("coach/check-ins/awaiting")
+    override suspend fun awaitingReview(limit: Int, after: String?): RequestResult<Paged<List<AwaitingCheckIn>>> {
+        val loaded = safePagedRequest<List<AwaitingCheckInResponse>> {
+            client.get("coach/check-ins/awaiting") {
+                parameter("limit", limit)
+                after?.let { parameter("after", it) }
+            }
         }
         return when (loaded) {
             is RequestResult.Error -> loaded
             is RequestResult.Success -> RequestResult.Success(
-                loaded.data.mapNotNull(mapper::toAwaitingCheckIn)
+                Paged(
+                    items = loaded.data.items.mapNotNull(mapper::toAwaitingCheckIn),
+                    nextCursor = loaded.data.nextCursor,
+                )
             )
         }
     }

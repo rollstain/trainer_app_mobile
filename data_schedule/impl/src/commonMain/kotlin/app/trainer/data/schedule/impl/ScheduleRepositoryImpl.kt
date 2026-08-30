@@ -10,9 +10,11 @@ import app.trainer.data.schedule.SlotChangeKind
 import app.trainer.data.schedule.SlotChangeRequest
 import app.trainer.data.schedule.SlotSeriesDraft
 import app.trainer.data.schedule.SlotSeriesResult
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.network.HttpClientProvider
+import app.trainer.network.safePagedRequest
 import app.trainer.network.safeRequest
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
@@ -187,13 +189,40 @@ class ScheduleRepositoryImpl(
         return changeRequestOrError(requested)
     }
 
-    override suspend fun pendingChangeRequests(): RequestResult<List<SlotChangeRequest>> {
+    override suspend fun pendingChangeRequestsBetween(
+        from: Instant,
+        to: Instant,
+    ): RequestResult<List<SlotChangeRequest>> {
         val loaded = safeRequest<List<SlotChangeRequestResponse>> {
-            client.get("schedule/change-requests/pending")
+            client.get("schedule/change-requests/pending") {
+                parameter("from", from.toString())
+                parameter("to", to.toString())
+            }
         }
         return when (loaded) {
             is RequestResult.Error -> loaded
             is RequestResult.Success -> RequestResult.Success(loaded.data.mapNotNull(mapper::toChangeRequest))
+        }
+    }
+
+    override suspend fun pendingChangeRequests(
+        limit: Int,
+        after: String?,
+    ): RequestResult<Paged<List<SlotChangeRequest>>> {
+        val loaded = safePagedRequest<List<SlotChangeRequestResponse>> {
+            client.get("schedule/change-requests/pending") {
+                parameter("limit", limit)
+                after?.let { parameter("after", it) }
+            }
+        }
+        return when (loaded) {
+            is RequestResult.Error -> loaded
+            is RequestResult.Success -> RequestResult.Success(
+                Paged(
+                    items = loaded.data.items.mapNotNull(mapper::toChangeRequest),
+                    nextCursor = loaded.data.nextCursor,
+                )
+            )
         }
     }
 

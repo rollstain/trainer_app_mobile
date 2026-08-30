@@ -32,7 +32,9 @@ import app.trainer.strings.home_profile_action
 import app.trainer.strings.today_add_slot_action
 import app.trainer.strings.today_block_failed
 import app.trainer.strings.today_block_retry
+import app.trainer.strings.today_check_ins_all
 import app.trainer.strings.today_check_ins_title
+import app.trainer.strings.today_form_checks_all
 import app.trainer.strings.today_form_checks_title
 import app.trainer.strings.today_lapsed_title
 import app.trainer.strings.today_more_dialogs
@@ -257,7 +259,7 @@ private fun LazyListScope.checkInsBlock(
     item(key = "check-ins-title") {
         AppSectionHeader(
             title = stringResource(Res.string.today_check_ins_title),
-            count = if (hasFailed) SectionCount.None else SectionCount.Value(rows.size),
+            count = if (hasFailed || state.hasMoreCheckIns) SectionCount.None else SectionCount.Value(rows.size),
         )
     }
     if (hasFailed) {
@@ -272,6 +274,15 @@ private fun LazyListScope.checkInsBlock(
             trailing = ListCellTrailing.Time(value = row.dateLabel),
         )
     }
+    if (state.hasMoreCheckIns) {
+        item(key = "check-ins-all") {
+            AppListCell(
+                title = stringResource(Res.string.today_check_ins_all),
+                onClick = { onEvent(TodayEvent.OnAllCheckInsClicked) },
+                size = ListCellSize.Small,
+            )
+        }
+    }
 }
 
 private fun LazyListScope.formChecksBlock(
@@ -284,7 +295,11 @@ private fun LazyListScope.formChecksBlock(
     item(key = "form-checks-title") {
         AppSectionHeader(
             title = stringResource(Res.string.today_form_checks_title),
-            count = if (hasFailed) SectionCount.None else SectionCount.Value(rows.size),
+            count = if (hasFailed || state.hasMoreFormChecks) {
+                SectionCount.None
+            } else {
+                SectionCount.Value(rows.size)
+            },
         )
     }
     if (hasFailed) {
@@ -298,6 +313,15 @@ private fun LazyListScope.formChecksBlock(
             size = ListCellSize.Small,
             trailing = ListCellTrailing.Time(value = row.dateLabel),
         )
+    }
+    if (state.hasMoreFormChecks) {
+        item(key = "form-checks-all") {
+            AppListCell(
+                title = stringResource(Res.string.today_form_checks_all),
+                onClick = { onEvent(TodayEvent.OnFormChecksClicked) },
+                size = ListCellSize.Small,
+            )
+        }
     }
 }
 

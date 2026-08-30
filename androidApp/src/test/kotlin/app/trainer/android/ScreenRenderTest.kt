@@ -65,6 +65,9 @@ import app.trainer.feature.home.presentation.today.mvi.TodaySessionRow
 import app.trainer.feature.home.presentation.today.mvi.TodayState
 import app.trainer.feature.home.presentation.today.mvi.TodayTomorrow
 import app.trainer.feature.home.presentation.today.ui.TodayView
+import app.trainer.feature.progress.presentation.checkin.mvi.AwaitingCheckInRow
+import app.trainer.feature.progress.presentation.checkin.mvi.CoachCheckInsState
+import app.trainer.feature.progress.presentation.checkin.ui.CoachCheckInsView
 import app.trainer.feature.progress.presentation.formcheck.mvi.AwaitingFormCheck
 import app.trainer.feature.progress.presentation.formcheck.mvi.CoachAnswer
 import app.trainer.feature.progress.presentation.formcheck.mvi.CoachFormChecksState
@@ -765,6 +768,37 @@ class ScreenRenderTest {
     }
 
     @Test
+    fun `the awaiting check-ins queue lists who is waiting for an answer`() {
+        compose.setContent {
+            TestTheme {
+                CoachCheckInsView(state = awaitingCheckIns(), onEvent = {}, onBackClick = {})
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(AWAITING_CLIENT_NAME).assertIsDisplayed()
+        compose.onNodeWithText(AWAITING_CHECK_IN_DATE).assertIsDisplayed()
+    }
+
+    @Test
+    fun `an empty check-ins queue says everything is answered`() {
+        compose.setContent {
+            TestTheme {
+                CoachCheckInsView(
+                    state = CoachCheckInsState.initial().withFirstPage(rows = listOf(), nextCursor = null),
+                    onEvent = {},
+                    onBackClick = {},
+                )
+            }
+        }
+
+        compose.waitForIdle()
+
+        compose.onNodeWithText(CHECK_INS_EMPTY_TITLE).assertIsDisplayed()
+    }
+
+    @Test
     fun `the coach roster marks the owner and counts the clients`() {
         compose.setContent {
             TestTheme {
@@ -887,6 +921,21 @@ private fun coachProfile(): ProfileState = ProfileState.initial().copy(
 )
 
 private const val COACH_NAME = "Dmitry Rogov"
+private const val AWAITING_CLIENT_NAME = "Vera"
+private const val AWAITING_CHECK_IN_DATE = "3 March"
+private const val CHECK_INS_EMPTY_TITLE = "Every check-in answered"
+
+private fun awaitingCheckIns(): CoachCheckInsState = CoachCheckInsState.initial().withFirstPage(
+    rows = listOf(
+        AwaitingCheckInRow(
+            checkInId = "check-in-1",
+            clientUserId = "client-1",
+            clientDisplayName = AWAITING_CLIENT_NAME,
+            dateLabel = AWAITING_CHECK_IN_DATE,
+        ),
+    ),
+    nextCursor = null,
+)
 
 private fun coaches(): CoachesState = CoachesState.initial().withFirstPage(
     rows = listOf(

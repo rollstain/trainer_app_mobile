@@ -17,6 +17,8 @@ data class ChatListState(
     val isCoach: Boolean,
     val isLoading: Boolean,
     val isRefreshing: Boolean,
+    val hasMore: Boolean,
+    val isLoadingMore: Boolean,
     val failure: RequestResult.Error?,
 ) {
 
@@ -27,6 +29,8 @@ data class ChatListState(
             isCoach = false,
             isLoading = true,
             isRefreshing = false,
+            hasMore = false,
+            isLoadingMore = false,
             failure = null,
         )
     }
@@ -39,6 +43,8 @@ sealed interface ChatListEvent {
     data object OnRefreshRequested : ChatListEvent
 
     data object OnCreateInviteClicked : ChatListEvent
+
+    data object OnEndReached : ChatListEvent
 
     data class OnDialogClicked(val dialogId: String) : ChatListEvent
 }

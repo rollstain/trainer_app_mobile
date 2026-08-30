@@ -1,5 +1,6 @@
 package app.trainer.data.program
 
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestResult
 import kotlinx.datetime.LocalDate
 
@@ -12,7 +13,7 @@ sealed interface AssignedProgram {
 
 interface ProgramRepository {
 
-    suspend fun programs(): RequestResult<List<ProgramSummary>>
+    suspend fun programs(limit: Int, after: String?): RequestResult<Paged<List<ProgramSummary>>>
 
     suspend fun create(title: String, weeksCount: Int): RequestResult<TrainingProgram>
 

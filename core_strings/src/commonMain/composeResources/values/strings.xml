@@ -583,6 +583,7 @@
     <string name="client_card_program_start_today">С сегодня</string>
     <string name="client_card_program_start_monday">С понедельника</string>
     <string name="client_card_program_picker_empty">Программ пока нет — соберите их в профиле.</string>
+    <string name="client_card_program_picker_more">Показать ещё</string>
     <string name="client_card_program_picker_dismiss">Закрыть</string>
     <string name="training_log_planned_title">По плану: %1$s</string>
     <string name="training_log_planned_summary">%1$d упр · %2$d подходов</string>
@@ -600,6 +601,7 @@
     <string name="client_card_review_dismiss">Закрыть</string>
     <string name="progress_coach_reply_title">Ответ тренера</string>
     <string name="today_check_ins_title">Чек-ины без ответа</string>
+    <string name="today_check_ins_all">Все чек-ины без ответа</string>
     <string name="today_block_failed">Не удалось загрузить</string>
     <string name="today_block_retry">Повторить</string>
     <string name="today_quiet_no_check_ins">Все чек-ины разобраны</string>
@@ -637,7 +639,11 @@
     <string name="form_checks_sent">Видео отправлено тренеру</string>
     <string name="progress_form_checks_action">Разбор техники</string>
     <string name="today_form_checks_title">Видео на разбор</string>
+    <string name="today_form_checks_all">Все видео на разбор</string>
     <string name="form_checks_coach_title">Разборы техники</string>
+    <string name="check_ins_coach_title">Чек-ины без ответа</string>
+    <string name="check_ins_coach_empty_title">Все чек-ины разобраны</string>
+    <string name="check_ins_coach_empty_description">Новые чек-ины подопечных появятся здесь.</string>
     <string name="form_checks_coach_empty_title">Всё разобрано</string>
     <string name="form_checks_coach_empty_description">Новые видео от подопечных появятся здесь.</string>
     <string name="form_checks_reply_hint">Что поправить</string>

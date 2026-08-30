@@ -1,5 +1,6 @@
 package app.trainer.data.progress
 
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestResult
 import kotlinx.datetime.LocalDate
 
@@ -15,7 +16,7 @@ interface CheckInRepository {
 
     suspend fun save(checkInDate: LocalDate, draft: CheckInDraft): RequestResult<CheckIn>
 
-    suspend fun awaitingReview(): RequestResult<List<AwaitingCheckIn>>
+    suspend fun awaitingReview(limit: Int, after: String?): RequestResult<Paged<List<AwaitingCheckIn>>>
 
     suspend fun review(
         clientUserId: String,
@@ -59,9 +60,9 @@ interface HabitsRepository {
 
 interface FormCheckRepository {
 
-    suspend fun ownFormChecks(): RequestResult<List<FormCheck>>
+    suspend fun ownFormChecks(limit: Int, after: String?): RequestResult<Paged<List<FormCheck>>>
 
-    suspend fun awaitingReview(): RequestResult<List<FormCheck>>
+    suspend fun awaitingReview(limit: Int, after: String?): RequestResult<Paged<List<FormCheck>>>
 
     suspend fun submit(
         fileName: String,

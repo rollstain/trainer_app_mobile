@@ -110,9 +110,12 @@ class ParticipantsRepositoryImpl(
         }
     }
 
-    override suspend fun missedSessions(): RequestResult<Map<String, Int>> {
+    override suspend fun missedSessions(clientUserIds: List<String>): RequestResult<Map<String, Int>> {
+        if (clientUserIds.isEmpty()) return RequestResult.Success(emptyMap())
         val loaded = safeRequest<List<MissedSessionsResponse>> {
-            httpClientProvider.client.get("coach/clients/missed-sessions")
+            httpClientProvider.client.get("coach/clients/missed-sessions") {
+                clientUserIds.forEach { parameter("clientUserIds", it) }
+            }
         }
         return when (loaded) {
             is RequestResult.Error -> loaded

@@ -44,6 +44,7 @@ private suspend fun handleSideEffect(
         TodaySideEffect.OpenSlotCreation -> navigator.push(Screens.NewSlot(dateIso = null))
         is TodaySideEffect.OpenClientCard -> navigator.push(Screens.ClientCard(effect.clientUserId))
         TodaySideEffect.OpenFormChecks -> navigator.push(Screens.CoachFormChecks)
+        TodaySideEffect.OpenCheckIns -> navigator.push(Screens.CoachCheckIns)
         is TodaySideEffect.OpenDialog -> navigator.push(Screens.Chat(dialogId = effect.dialogId))
         is TodaySideEffect.OpenDiary -> navigator.push(
             Screens.CoachClientDiary(clientUserId = effect.clientUserId, period = DiaryPeriod.Month)

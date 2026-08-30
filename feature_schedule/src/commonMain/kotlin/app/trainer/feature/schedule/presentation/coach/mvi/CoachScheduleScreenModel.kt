@@ -261,7 +261,10 @@ class CoachScheduleScreenModel(
             return
         }
 
-        val requests = scheduleRepository.pendingChangeRequests()
+        val requests = scheduleRepository.pendingChangeRequestsBetween(
+            from = weeks.startInstant(weekStart = weekStart, zone = zone),
+            to = weeks.endInstant(weekStart = weekStart, zone = zone),
+        )
         if (requests is RequestResult.Error) {
             updateState { it.copy(isLoading = false, failure = requests) }
             postSideEffect(CoachScheduleSideEffect.ShowFailure(requests))

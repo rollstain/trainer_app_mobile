@@ -1,5 +1,6 @@
 package app.trainer.data.schedule
 
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestResult
 import kotlin.time.Instant
 import kotlinx.datetime.DayOfWeek
@@ -33,7 +34,9 @@ interface CoachScheduleRepository {
 
     suspend fun completeSlot(slotId: String): RequestResult<CoachSlot>
 
-    suspend fun pendingChangeRequests(): RequestResult<List<SlotChangeRequest>>
+    suspend fun pendingChangeRequests(limit: Int, after: String?): RequestResult<Paged<List<SlotChangeRequest>>>
+
+    suspend fun pendingChangeRequestsBetween(from: Instant, to: Instant): RequestResult<List<SlotChangeRequest>>
 
     suspend fun resolveChangeRequest(requestId: String, approve: Boolean): RequestResult<SlotChangeRequest>
 }

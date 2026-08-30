@@ -97,7 +97,9 @@ data class TodayState(
     val moreUnreadCount: Int,
     val lapsed: ImmutableList<TodayLapsedRow>,
     val awaitingCheckIns: ImmutableList<TodayCheckInRow>,
+    val hasMoreCheckIns: Boolean,
     val awaitingFormChecks: ImmutableList<TodayFormCheckRow>,
+    val hasMoreFormChecks: Boolean,
     val tomorrow: TodayTomorrow,
     val nextSession: TodayNextSession,
     val freeSlots: TodayFreeSlots,
@@ -127,7 +129,9 @@ data class TodayState(
             moreUnreadCount = 0,
             lapsed = persistentListOf(),
             awaitingCheckIns = persistentListOf(),
+            hasMoreCheckIns = false,
             awaitingFormChecks = persistentListOf(),
+            hasMoreFormChecks = false,
             tomorrow = TodayTomorrow.None,
             nextSession = TodayNextSession.NoneThisWeek,
             freeSlots = TodayFreeSlots.None,
@@ -164,6 +168,8 @@ sealed interface TodayEvent {
     data class OnCheckInClicked(val clientUserId: String) : TodayEvent
 
     data object OnFormChecksClicked : TodayEvent
+
+    data object OnAllCheckInsClicked : TodayEvent
 }
 
 sealed interface TodaySideEffect {
@@ -179,6 +185,8 @@ sealed interface TodaySideEffect {
     data class OpenClientCard(val clientUserId: String) : TodaySideEffect
 
     data object OpenFormChecks : TodaySideEffect
+
+    data object OpenCheckIns : TodaySideEffect
 
     data class OpenDialog(val dialogId: String) : TodaySideEffect
 

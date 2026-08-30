@@ -21,6 +21,7 @@ import app.trainer.data.schedule.SlotChangeRequest
 import app.trainer.data.schedule.SlotStatus
 import app.trainer.data.traininglog.ClientDiarySummary
 import app.trainer.data.traininglog.TrainingLogRepository
+import app.trainer.entities.Paged
 import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.feature.home.presentation.startsInLabelOf
@@ -44,6 +45,9 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.getString
 
 private const val UNREAD_PREVIEW_COUNT = 3
+private const val QUEUE_PREVIEW_COUNT = 5
+private const val ANY_CLIENT_PAGE_SIZE = 1
+private const val CHANGE_REQUESTS_HORIZON_DAYS = 30
 private const val NAME_SEPARATOR = ", "
 private const val DIARY_HISTORY_DAYS = 90
 
@@ -55,8 +59,8 @@ private data class TodaySources(
     val requests: List<SlotChangeRequest>,
     val dialogs: List<Dialog>,
     val lapsed: RequestResult<List<TodayLapsedRow>>,
-    val awaiting: RequestResult<List<AwaitingCheckIn>>,
-    val awaitingFormChecks: RequestResult<List<FormCheck>>,
+    val awaiting: RequestResult<Paged<List<AwaitingCheckIn>>>,
+    val awaitingFormChecks: RequestResult<Paged<List<FormCheck>>>,
     val hasClients: Boolean,
 )
 
@@ -94,6 +98,7 @@ class TodayScreenModel(
             is TodayEvent.OnLapsedClicked -> post(TodaySideEffect.OpenDiary(event.userId))
             is TodayEvent.OnCheckInClicked -> post(TodaySideEffect.OpenClientCard(event.clientUserId))
             TodayEvent.OnFormChecksClicked -> post(TodaySideEffect.OpenFormChecks)
+            TodayEvent.OnAllCheckInsClicked -> post(TodaySideEffect.OpenCheckIns)
             is TodayEvent.OnRequestResolved -> resolveRequest(
                 requestId = event.requestId,
                 approve = event.approve,
@@ -132,10 +137,16 @@ class TodayScreenModel(
         )
         if (schedule is RequestResult.Error) return showFailure(schedule)
 
-        val requests = scheduleRepository.pendingChangeRequests()
+        val requests = scheduleRepository.pendingChangeRequestsBetween(
+            from = weeks.startInstant(weekStart = weekStart, zone = zone),
+            to = weeks.endInstant(
+                weekStart = weekStart.plus(DatePeriod(days = CHANGE_REQUESTS_HORIZON_DAYS)),
+                zone = zone,
+            ),
+        )
         if (requests is RequestResult.Error) return showFailure(requests)
 
-        val clients = participantsRepository.clientsOfCoach()
+        val clients = participantsRepository.clientsOfCoach(limit = ANY_CLIENT_PAGE_SIZE)
         if (clients is RequestResult.Error) return showFailure(clients)
 
         val slots = (schedule as RequestResult.Success).data.slots
@@ -151,8 +162,11 @@ class TodayScreenModel(
                 requests = (requests as RequestResult.Success).data,
                 dialogs = dialogs,
                 lapsed = lapsedRowsOf(today = today, zone = zone),
-                awaiting = checkInRepository.awaitingReview(),
-                awaitingFormChecks = formCheckRepository.awaitingReview(),
+                awaiting = checkInRepository.awaitingReview(limit = QUEUE_PREVIEW_COUNT, after = null),
+                awaitingFormChecks = formCheckRepository.awaitingReview(
+                    limit = QUEUE_PREVIEW_COUNT,
+                    after = null,
+                ),
                 hasClients = roster.isNotEmpty(),
             )
         )
@@ -184,13 +198,8 @@ class TodayScreenModel(
         val freeSlots = slots.filter { it.status == SlotStatus.FREE && it.startsAt >= now }
 
         val requestRows = requestRowsOf(requests = sources.requests, zone = zone)
-        val awaitingRows = awaitingRowsOf(sources.awaiting.itemsOrEmpty())
-        val formCheckRows = formCheckRowsOf(sources.awaitingFormChecks.itemsOrEmpty())
-        val failedBlocks = buildSet {
-            if (sources.awaiting is RequestResult.Error) add(TodayBlock.CheckIns)
-            if (sources.awaitingFormChecks is RequestResult.Error) add(TodayBlock.FormChecks)
-            if (sources.lapsed is RequestResult.Error) add(TodayBlock.Lapsed)
-        }
+        val awaitingCheckIns = sources.awaiting.pageOrEmpty()
+        val awaitingFormChecks = sources.awaitingFormChecks.pageOrEmpty()
         val dateLabel = getString(
             Res.string.home_date,
             weekdayShortOf(today).lowercase(),
@@ -209,12 +218,14 @@ class TodayScreenModel(
                 unread = unreadDialogs.take(UNREAD_PREVIEW_COUNT).map(::dialogRowOf).toImmutableList(),
                 moreUnreadCount = (unreadDialogs.size - UNREAD_PREVIEW_COUNT).coerceAtLeast(0),
                 lapsed = sources.lapsed.itemsOrEmpty().toImmutableList(),
-                awaitingCheckIns = awaitingRows.toImmutableList(),
-                awaitingFormChecks = formCheckRows.toImmutableList(),
+                awaitingCheckIns = awaitingRowsOf(awaitingCheckIns.items).toImmutableList(),
+                hasMoreCheckIns = awaitingCheckIns.hasMore,
+                awaitingFormChecks = formCheckRowsOf(awaitingFormChecks.items).toImmutableList(),
+                hasMoreFormChecks = awaitingFormChecks.hasMore,
                 tomorrow = tomorrow,
                 nextSession = nextSession,
                 freeSlots = freeSlotsOffer,
-                failedBlocks = failedBlocks.toImmutableSet(),
+                failedBlocks = failedBlocksOf(sources).toImmutableSet(),
                 hasClients = sources.hasClients,
                 isLoading = false,
                 failure = null,
@@ -240,6 +251,12 @@ class TodayScreenModel(
             displayName = formCheck.clientDisplayName,
             dateLabel = dayMonthOf(formCheck.createdAt.toLocalDateTime(TimeZone.currentSystemDefault()).date),
         )
+    }
+
+    private fun failedBlocksOf(sources: TodaySources): Set<TodayBlock> = buildSet {
+        if (sources.awaiting is RequestResult.Error) add(TodayBlock.CheckIns)
+        if (sources.awaitingFormChecks is RequestResult.Error) add(TodayBlock.FormChecks)
+        if (sources.lapsed is RequestResult.Error) add(TodayBlock.Lapsed)
     }
 
     private fun awaitingRowsOf(awaiting: List<AwaitingCheckIn>): List<TodayCheckInRow> = awaiting.map { checkIn ->
@@ -368,6 +385,11 @@ class TodayScreenModel(
         userMessage = "",
         devMessage = "У пользователя нет часового пояса тренера: zoneId=$zoneId",
     )
+}
+
+private fun <T> RequestResult<Paged<List<T>>>.pageOrEmpty(): Paged<List<T>> = when (this) {
+    is RequestResult.Error -> Paged(items = emptyList(), nextCursor = null)
+    is RequestResult.Success -> data
 }
 
 private fun <T> RequestResult<List<T>>.itemsOrEmpty(): List<T> = when (this) {

@@ -7,8 +7,9 @@ import app.trainer.entities.RequestResult
 import app.trainer.strings.Res
 import app.trainer.strings.programs_copy_title
 import app.trainer.strings.programs_summary
-import kotlinx.collections.immutable.toImmutableList
 import org.jetbrains.compose.resources.getString
+
+private const val PAGE_SIZE = 20
 
 class ProgramsScreenModel(
     private val programRepository: ProgramRepository,
@@ -27,6 +28,7 @@ class ProgramsScreenModel(
     override fun dispatch(event: ProgramsEvent) {
         when (event) {
             ProgramsEvent.OnRetryClicked -> onFetchData()
+            ProgramsEvent.OnEndReached -> loadMore()
             ProgramsEvent.OnCreateClicked -> updateState { it.copy(draft = NewProgramDraft.empty()) }
             ProgramsEvent.OnDraftDismissed -> updateState { it.copy(draft = null) }
             ProgramsEvent.OnDraftSaveClicked -> createProgram()
@@ -94,14 +96,32 @@ class ProgramsScreenModel(
 
     private suspend fun load() {
         updateState { it.copy(isLoading = true, failure = null) }
-        when (val loaded = programRepository.programs()) {
+        when (val loaded = programRepository.programs(limit = PAGE_SIZE, after = null)) {
             is RequestResult.Error -> {
                 updateState { it.copy(isLoading = false, failure = loaded) }
                 postSideEffect(ProgramsSideEffect.ShowFailure(loaded))
             }
             is RequestResult.Success -> {
-                val rows = loaded.data.map { toRow(it) }
-                updateState { it.copy(programs = rows.toImmutableList(), isLoading = false, failure = null) }
+                val rows = loaded.data.items.map { toRow(it) }
+                updateState { it.withFirstPage(rows = rows, nextCursor = loaded.data.nextCursor) }
+            }
+        }
+    }
+
+    private fun loadMore() {
+        screenModelScope { state ->
+            val cursor = state.nextCursor ?: return@screenModelScope
+            if (state.isLoadingMore) return@screenModelScope
+            updateState { it.copy(isLoadingMore = true) }
+            when (val page = programRepository.programs(limit = PAGE_SIZE, after = cursor)) {
+                is RequestResult.Error -> {
+                    updateState { it.copy(isLoadingMore = false) }
+                    postSideEffect(ProgramsSideEffect.ShowFailure(page))
+                }
+                is RequestResult.Success -> {
+                    val rows = page.data.items.map { toRow(it) }
+                    updateState { it.withNextPage(rows = rows, nextCursor = page.data.nextCursor) }
+                }
             }
         }
     }

@@ -56,6 +56,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.getString
 
+private const val PROGRAM_PICKER_PAGE_SIZE = 20
 private const val CHECK_IN_HISTORY_DAYS = 90
 private const val HABIT_HISTORY_DAYS = 6
 private const val HABIT_WEEK_DAYS = 7
@@ -119,6 +120,7 @@ class ClientCardScreenModel(
                 current.copy(reviewEditor = current.reviewEditor?.copy(comment = event.comment))
             }
             ClientCardEvent.OnAssignProgramClicked -> openProgramPicker()
+            ClientCardEvent.OnProgramPickerMoreClicked -> loadMorePrograms()
             ClientCardEvent.OnProgramPickerDismissed -> updateState { it.copy(programPicker = null) }
             ClientCardEvent.OnProgramRemoved -> removeProgram()
             is ClientCardEvent.OnProgramStartSelected -> updateState { current ->
@@ -403,23 +405,56 @@ class ClientCardScreenModel(
                     programPicker = ProgramPicker(
                         programs = persistentListOf(),
                         startsOn = ProgramStart.Today,
+                        nextCursor = null,
                         isLoading = true,
+                        isLoadingMore = false,
                         isSaving = false,
                     )
                 )
             }
-            when (val loaded = programRepository.programs()) {
+            when (val loaded = programRepository.programs(limit = PROGRAM_PICKER_PAGE_SIZE, after = null)) {
                 is RequestResult.Error -> {
                     updateState { it.copy(programPicker = null) }
                     postSideEffect(ClientCardSideEffect.ShowFailure(loaded))
                 }
                 is RequestResult.Success -> {
-                    val rows = loaded.data.map { toPickRow(it) }
+                    val rows = loaded.data.items.map { toPickRow(it) }
                     updateState { current ->
                         current.copy(
                             programPicker = current.programPicker?.copy(
                                 programs = rows.toImmutableList(),
+                                nextCursor = loaded.data.nextCursor,
                                 isLoading = false,
+                            )
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun loadMorePrograms() {
+        screenModelScope { state ->
+            val picker = state.programPicker ?: return@screenModelScope
+            val cursor = picker.nextCursor ?: return@screenModelScope
+            if (picker.isLoadingMore) return@screenModelScope
+            updateState { it.copy(programPicker = it.programPicker?.copy(isLoadingMore = true)) }
+            when (val page = programRepository.programs(limit = PROGRAM_PICKER_PAGE_SIZE, after = cursor)) {
+                is RequestResult.Error -> {
+                    updateState { it.copy(programPicker = it.programPicker?.copy(isLoadingMore = false)) }
+                    postSideEffect(ClientCardSideEffect.ShowFailure(page))
+                }
+                is RequestResult.Success -> {
+                    val rows = page.data.items.map { toPickRow(it) }
+                    updateState { current ->
+                        val shown = current.programPicker ?: return@updateState current
+                        val known = shown.programs.mapTo(mutableSetOf(), ProgramPickRow::programId)
+                        current.copy(
+                            programPicker = shown.copy(
+                                programs = (shown.programs + rows.filterNot { it.programId in known })
+                                    .toImmutableList(),
+                                nextCursor = page.data.nextCursor,
+                                isLoadingMore = false,
                             )
                         )
                     }

@@ -1,7 +1,9 @@
 package app.trainer.feature.progress.di
 
 import app.trainer.feature.progress.presentation.checkin.mvi.CheckInScreenModel
+import app.trainer.feature.progress.presentation.checkin.mvi.CoachCheckInsScreenModel
 import app.trainer.feature.progress.presentation.checkin.ui.CheckInScreen
+import app.trainer.feature.progress.presentation.checkin.ui.CoachCheckInsScreen
 import app.trainer.feature.progress.presentation.formcheck.mvi.CoachFormChecksScreenModel
 import app.trainer.feature.progress.presentation.formcheck.mvi.FormChecksScreenModel
 import app.trainer.feature.progress.presentation.formcheck.ui.CoachFormChecksScreen
@@ -28,8 +30,10 @@ class ProgressFeatureModule {
         }
         screen<Screens.FormChecks> { FormChecksScreen() }
         screen<Screens.CoachFormChecks> { CoachFormChecksScreen() }
+        screen<Screens.CoachCheckIns> { CoachCheckInsScreen() }
         viewModel { FormChecksScreenModel(formCheckRepository = get()) }
         viewModel { CoachFormChecksScreenModel(formCheckRepository = get()) }
+        viewModel { CoachCheckInsScreenModel(checkInRepository = get()) }
         viewModel {
             ProgressScreenModel(
                 checkInRepository = get(),

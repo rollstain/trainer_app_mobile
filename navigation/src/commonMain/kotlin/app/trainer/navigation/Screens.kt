@@ -123,6 +123,9 @@ sealed interface Screens : NavKey {
     data object CoachFormChecks : Screens
 
     @Serializable
+    data object CoachCheckIns : Screens
+
+    @Serializable
     data object Profile : Screens
 
     @Serializable

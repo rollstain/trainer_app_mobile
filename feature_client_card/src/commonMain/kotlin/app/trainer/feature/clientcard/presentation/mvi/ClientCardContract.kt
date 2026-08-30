@@ -94,9 +94,15 @@ data class ProgramPickRow(
 data class ProgramPicker(
     val programs: ImmutableList<ProgramPickRow>,
     val startsOn: ProgramStart,
+    val nextCursor: String?,
     val isLoading: Boolean,
+    val isLoadingMore: Boolean,
     val isSaving: Boolean,
-)
+) {
+
+    val hasMore: Boolean
+        get() = nextCursor != null
+}
 
 enum class ClientCardTab { Now, Metrics, History }
 
@@ -194,6 +200,8 @@ sealed interface ClientCardEvent {
     data class OnReviewCommentChanged(val comment: String) : ClientCardEvent
 
     data object OnAssignProgramClicked : ClientCardEvent
+
+    data object OnProgramPickerMoreClicked : ClientCardEvent
 
     data object OnProgramPickerDismissed : ClientCardEvent
 

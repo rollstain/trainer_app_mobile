@@ -21,7 +21,7 @@ import kotlinx.serialization.json.Json
 
 private const val BASE_URL = "https://api.example.test/"
 
-data class Call(val method: String, val path: String, val body: String)
+data class Call(val method: String, val path: String, val query: String, val body: String)
 
 data class Reply(val status: HttpStatusCode, val body: String, val headers: Map<String, String> = emptyMap())
 
@@ -50,13 +50,16 @@ class MockBackend {
     fun bodyOf(method: String, path: String): String =
         calls.first { it.method == method && it.path == path }.body
 
+    fun queriesOf(method: String, path: String): List<String> =
+        calls.filter { it.method == method && it.path == path }.map { it.query }
+
     private fun key(method: String, path: String) = "$method $path"
 
     private val engine = MockEngine { request ->
         val method = request.method.value
         val path = request.url.encodedPath
         val body = (request.body as? TextContent)?.text.orEmpty()
-        calls += Call(method = method, path = path, body = body)
+        calls += Call(method = method, path = path, query = request.url.encodedQuery, body = body)
 
         val queued = replies[key(method, path)]
         val reply = queued?.removeFirstOrNull()

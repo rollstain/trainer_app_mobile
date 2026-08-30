@@ -37,7 +37,7 @@ CREATE INDEX messageEntity_delivery ON messageEntity(deliveryStatus);
 
 selectDialogs:
 SELECT * FROM dialogEntity
-ORDER BY lastMessageAtEpochMs IS NULL, lastMessageAtEpochMs DESC;
+ORDER BY lastMessageAtEpochMs IS NULL, lastMessageAtEpochMs DESC, id DESC;
 
 selectDialogById:
 SELECT * FROM dialogEntity WHERE id = ?;

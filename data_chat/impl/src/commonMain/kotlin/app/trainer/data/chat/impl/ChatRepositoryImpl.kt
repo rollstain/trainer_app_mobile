@@ -10,6 +10,7 @@ import app.trainer.entities.RequestFailure
 import app.trainer.entities.RequestResult
 import app.trainer.network.HttpClientProvider
 import app.trainer.network.PresignedUploader
+import app.trainer.network.safePagedRequest
 import app.trainer.network.safeRequest
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
@@ -22,6 +23,8 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.flow.Flow
 
+private const val DIALOGS_PAGE_SIZE = 30
+
 class ChatRepositoryImpl(
     private val httpClientProvider: HttpClientProvider,
     private val localStore: ChatLocalStore,
@@ -31,6 +34,8 @@ class ChatRepositoryImpl(
 
     private val client get() = httpClientProvider.client
 
+    private var nextDialogsCursor: String? = null
+
     override suspend fun clearLocalData() = localStore.clear()
 
     override fun observeDialogs(): Flow<List<Dialog>> = localStore.observeDialogs()
@@ -39,15 +44,26 @@ class ChatRepositoryImpl(
 
     override fun observeMessages(dialogId: String): Flow<List<Message>> = localStore.observeMessages(dialogId)
 
-    override suspend fun refreshDialogs(): RequestResult<Unit> {
-        val loaded = safeRequest<List<DialogResponse>> {
-            client.get("dialogs")
+    override suspend fun refreshDialogs(): RequestResult<Boolean> = loadDialogs(after = null)
+
+    override suspend fun loadMoreDialogs(): RequestResult<Boolean> {
+        val cursor = nextDialogsCursor ?: return RequestResult.Success(false)
+        return loadDialogs(after = cursor)
+    }
+
+    private suspend fun loadDialogs(after: String?): RequestResult<Boolean> {
+        val loaded = safePagedRequest<List<DialogResponse>> {
+            client.get("dialogs") {
+                parameter("limit", DIALOGS_PAGE_SIZE)
+                if (after != null) parameter("after", after)
+            }
         }
         return when (loaded) {
             is RequestResult.Error -> loaded
             is RequestResult.Success -> {
-                localStore.storeDialogs(loaded.data.mapNotNull(mapper::toDialog))
-                RequestResult.Success(Unit)
+                localStore.storeDialogs(loaded.data.items.mapNotNull(mapper::toDialog))
+                nextDialogsCursor = loaded.data.nextCursor
+                RequestResult.Success(loaded.data.hasMore)
             }
         }
     }
