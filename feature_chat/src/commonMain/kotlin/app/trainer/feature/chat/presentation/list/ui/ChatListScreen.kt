@@ -38,7 +38,7 @@ private suspend fun handleSideEffect(
 ) {
     when (effect) {
         is ChatListSideEffect.OpenDialog -> navigator.push(Screens.Chat(dialogId = effect.dialogId))
-        ChatListSideEffect.OpenPeople -> navigator.replaceAll(Screens.CoachPeople)
+        ChatListSideEffect.OpenPeople -> navigator.selectRoot(Screens.CoachPeople)
         is ChatListSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
     }
 }

@@ -1,5 +1,10 @@
 package app.trainer.feature.traininglog.presentation.editor.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,8 +17,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.IntSize
 import app.trainer.base.failure.AppFailureState
 import app.trainer.data.traininglog.ExerciseKind
 import app.trainer.feature.traininglog.presentation.editor.mvi.PlannedForDay
@@ -73,7 +81,11 @@ fun TrainingLogEditorView(
             title = state.dateLabel,
             subtitle = TopBarSubtitle.Text(state.volumeLabel),
         )
-        if (state.isQueued) {
+        AnimatedVisibility(
+            visible = state.isQueued,
+            enter = expandVertically(animationSpec = barSpec()),
+            exit = shrinkVertically(animationSpec = barSpec()),
+        ) {
             AppOfflineBanner(text = stringResource(Res.string.training_log_editor_queued_banner))
         }
         when (val planned = state.planned) {
@@ -99,16 +111,24 @@ fun TrainingLogEditorView(
                 else -> SetList(state = state, onEvent = onEvent)
             }
         }
-        state.rest?.let { rest ->
-            AppRestBar(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = AppTheme.spacing.dp16, vertical = AppTheme.spacing.dp8),
-                label = rest.label,
-                progress = rest.progress,
-                onExtend = { onEvent(TrainingLogEditorEvent.OnRestExtended) },
-                onSkip = { onEvent(TrainingLogEditorEvent.OnRestSkipped) },
-            )
+        val shownRest = remember { mutableStateOf(state.rest) }
+        state.rest?.let { shownRest.value = it }
+        AnimatedVisibility(
+            visible = state.rest != null,
+            enter = expandVertically(animationSpec = barSpec()),
+            exit = shrinkVertically(animationSpec = barSpec()),
+        ) {
+            shownRest.value?.let { rest ->
+                AppRestBar(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppTheme.spacing.dp16, vertical = AppTheme.spacing.dp8),
+                    label = rest.label,
+                    progress = rest.progress,
+                    onExtend = { onEvent(TrainingLogEditorEvent.OnRestExtended) },
+                    onSkip = { onEvent(TrainingLogEditorEvent.OnRestSkipped) },
+                )
+            }
         }
         AppButton(
             modifier = Modifier.fillMaxWidth().padding(AppTheme.spacing.dp16),
@@ -124,6 +144,12 @@ fun TrainingLogEditorView(
         )
     }
 }
+
+@Composable
+private fun barSpec(): FiniteAnimationSpec<IntSize> = tween(
+    durationMillis = AppTheme.motion.stateChangeMillis,
+    easing = AppTheme.motion.easeOut,
+)
 
 @Composable
 private fun PlannedBanner(planned: PlannedForDay.Workout, onEvent: (TrainingLogEditorEvent) -> Unit) {

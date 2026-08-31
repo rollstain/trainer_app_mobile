@@ -38,6 +38,8 @@ sealed interface SlotRowTrailing {
     data class Client(val displayName: String) : SlotRowTrailing
 
     data class Status(val text: String, val kind: StatusChipKind) : SlotRowTrailing
+
+    data class Seats(val label: String, val state: SeatsState) : SlotRowTrailing
 }
 
 @Composable
@@ -50,6 +52,7 @@ fun AppSlotRow(
     trailing: SlotRowTrailing,
     onClick: () -> Unit,
     note: SlotRowNote = SlotRowNote.None,
+    participants: List<String> = emptyList(),
     hasRequest: Boolean = false,
     isNext: Boolean = false,
 ) {
@@ -115,6 +118,7 @@ fun AppSlotRow(
                         color = colors.accent,
                     )
                 }
+                AppAvatarStack(names = participants)
             }
             when (trailing) {
                 is SlotRowTrailing.Client -> AppAvatar(
@@ -125,6 +129,10 @@ fun AppSlotRow(
                 is SlotRowTrailing.Status -> AppStatusChip(
                     text = trailing.text,
                     kind = trailing.kind,
+                )
+                is SlotRowTrailing.Seats -> AppSeatsChip(
+                    label = trailing.label,
+                    state = trailing.state,
                 )
             }
         }

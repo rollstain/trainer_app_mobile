@@ -2,28 +2,44 @@ package app.trainer.base.date
 
 import kotlinx.datetime.LocalTime
 
-const val TIME_TEXT_LENGTH = 5
+const val TIME_DIGITS_LENGTH = 4
 
-private const val TIME_SEPARATOR = ':'
 private const val HOUR_DIGITS = 2
-private const val MINUTE_DIGITS = 2
-private const val TIME_PARTS = 2
-private const val MINUTES_IN_HOUR = 60
-private const val LAST_HOUR = 23
+private const val TIME_SEPARATOR = ':'
+private const val MAX_HOUR_TENS = '2'
+private const val MAX_HOUR_UNIT_AFTER_TWO = '3'
+private const val MAX_MINUTE_TENS = '5'
+private const val ZERO = '0'
 
-fun normalizeTimeText(raw: String): String {
-    val digits = raw.filter(Char::isDigit).take(HOUR_DIGITS + MINUTE_DIGITS)
-    return when {
-        digits.length <= HOUR_DIGITS -> digits
-        else -> "${digits.take(HOUR_DIGITS)}$TIME_SEPARATOR${digits.drop(HOUR_DIGITS)}"
+fun filterTimeDigits(raw: String): String {
+    val digits = StringBuilder()
+    for (symbol in raw.filter(Char::isDigit)) {
+        when (digits.length) {
+            0 -> if (symbol <= MAX_HOUR_TENS) {
+                digits.append(symbol)
+            } else {
+                digits.append(ZERO).append(symbol)
+            }
+            1 -> if (digits[0] < MAX_HOUR_TENS || symbol <= MAX_HOUR_UNIT_AFTER_TWO) digits.append(symbol)
+            2 -> if (symbol <= MAX_MINUTE_TENS) digits.append(symbol)
+            else -> digits.append(symbol)
+        }
+        if (digits.length == TIME_DIGITS_LENGTH) break
     }
+    return digits.toString()
 }
 
-fun parseTimeText(text: String): LocalTime? {
-    val parts = text.split(TIME_SEPARATOR)
-    if (parts.size != TIME_PARTS) return null
-    val hours = parts[0].toIntOrNull() ?: return null
-    val minutes = parts[1].toIntOrNull() ?: return null
-    if (hours !in 0..LAST_HOUR || minutes !in 0 until MINUTES_IN_HOUR) return null
-    return LocalTime(hour = hours, minute = minutes)
+fun formatTimeDigits(digits: String): String = if (digits.length <= HOUR_DIGITS) {
+    digits
+} else {
+    digits.take(HOUR_DIGITS) + TIME_SEPARATOR + digits.drop(HOUR_DIGITS)
 }
+
+fun parseTimeDigits(digits: String): LocalTime? {
+    if (digits.length != TIME_DIGITS_LENGTH) return null
+    val hours = digits.take(HOUR_DIGITS).toIntOrNull() ?: return null
+    val minutes = digits.drop(HOUR_DIGITS).toIntOrNull() ?: return null
+    return runCatching { LocalTime(hour = hours, minute = minutes) }.getOrNull()
+}
+
+fun timeDigitsOf(time: LocalTime): String = time.toString().filter(Char::isDigit).take(TIME_DIGITS_LENGTH)

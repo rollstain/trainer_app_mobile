@@ -101,7 +101,7 @@ sealed interface PeopleSideEffect {
 
     data class OpenPerson(val userId: String) : PeopleSideEffect
 
-    data class ShowInviteCode(val code: String) : PeopleSideEffect
+    data class InviteCreated(val code: String) : PeopleSideEffect
 
     data class ShowFailure(val failure: RequestResult.Error) : PeopleSideEffect
 }

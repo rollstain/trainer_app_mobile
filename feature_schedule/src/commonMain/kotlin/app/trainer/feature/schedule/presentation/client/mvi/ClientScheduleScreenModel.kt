@@ -247,7 +247,9 @@ class ClientScheduleScreenModel(
                 weekStart = weekStart,
                 weekTitle = weekTitle,
                 workingScheduleLabel = workingScheduleLabel,
-                selectedDate = current.selectedDate.takeIf { date -> days.any { it.date == date } } ?: weekStart,
+                selectedDate = current.selectedDate.takeIf { date -> days.any { it.date == date } }
+                    ?: days.firstOrNull { it.isToday }?.date
+                    ?: weekStart,
                 days = days.toImmutableList(),
                 isLoading = false,
                 failure = null,

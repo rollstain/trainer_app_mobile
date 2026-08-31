@@ -2,6 +2,7 @@ package app.trainer.feature.chat.presentation.list.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,6 +21,7 @@ import app.trainer.strings.chat_list_coach_empty_action
 import app.trainer.strings.chat_list_coach_empty_description
 import app.trainer.strings.chat_list_coach_empty_title
 import app.trainer.strings.chat_list_coach_title
+import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppCellShimmerList
 import app.trainer.uikit.widgets.AppListCell
@@ -77,7 +79,10 @@ fun ChatListView(
 
 @Composable
 private fun DialogList(state: ChatListState, onEvent: (ChatListEvent) -> Unit) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = AppTheme.spacing.dp24),
+    ) {
         items(items = state.dialogs, key = { it.dialogId }) { dialog ->
             AppListCell(
                 modifier = Modifier.animateItem(),

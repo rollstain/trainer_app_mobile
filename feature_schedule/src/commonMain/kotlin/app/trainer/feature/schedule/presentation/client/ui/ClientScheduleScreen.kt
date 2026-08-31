@@ -45,6 +45,6 @@ private suspend fun handleSideEffect(
         ClientScheduleSideEffect.ShowSlotBooked -> toastHost.show(getString(Res.string.client_schedule_booked_message))
         ClientScheduleSideEffect.ShowChangeRequestSent ->
             toastHost.show(getString(Res.string.client_schedule_request_sent_message))
-        ClientScheduleSideEffect.OpenChat -> navigator.replaceAll(Screens.CoachChats)
+        ClientScheduleSideEffect.OpenChat -> navigator.selectRoot(Screens.CoachChats)
     }
 }

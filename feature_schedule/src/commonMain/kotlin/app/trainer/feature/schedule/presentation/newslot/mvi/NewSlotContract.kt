@@ -1,5 +1,6 @@
 package app.trainer.feature.schedule.presentation.newslot.mvi
 
+import app.trainer.base.date.TIME_DIGITS_LENGTH
 import app.trainer.entities.RequestResult
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -29,13 +30,11 @@ data class NewSlotState(
 ) {
 
     val isSubmitEnabled: Boolean
-        get() = timeText.length == TIME_LENGTH &&
+        get() = timeText.length == TIME_DIGITS_LENGTH &&
             !isSubmitting &&
             (mode == SlotMode.Single || weekDays.any { it.isSelected })
 
     companion object {
-
-        const val TIME_LENGTH = 5
 
         fun initial(date: LocalDate): NewSlotState = NewSlotState(
             mode = SlotMode.Single,

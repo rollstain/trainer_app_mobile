@@ -1,12 +1,21 @@
 package app.trainer.app.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.IntSize
 import app.trainer.navigation.LocalNavigator
 import app.trainer.navigation.NavContainer
 import app.trainer.navigation.Navigator
@@ -25,6 +34,7 @@ import app.trainer.strings.tab_next
 import app.trainer.strings.tab_people
 import app.trainer.strings.tab_progress
 import app.trainer.strings.tab_today
+import app.trainer.uikit.AppTheme
 import app.trainer.uikit.backwardScreenTransition
 import app.trainer.uikit.forwardScreenTransition
 import app.trainer.uikit.screenBackground
@@ -82,21 +92,26 @@ private fun AppNavigationScaffold(navigator: Navigator, isCoach: Boolean) {
     val selectedTabId = tabs.firstOrNull { it.id == currentKey }?.id ?: tabs.first().id
     val isRootScreen = tabs.any { it.id == currentKey }
 
-    Column(modifier = Modifier.fillMaxSize().screenBackground()) {
+    Column(modifier = Modifier.fillMaxSize().screenBackground().imePadding()) {
         AppToastHost(modifier = Modifier.weight(1f)) {
             NavContainer(
                 entries = entries,
                 onBack = navigator::pop,
                 forward = forwardScreenTransition(),
                 backward = backwardScreenTransition(),
+                isBackEnabled = !isRootScreen && entries.size > 1,
             )
         }
-        if (isRootScreen) {
+        AnimatedVisibility(
+            visible = isRootScreen,
+            enter = expandVertically(animationSpec = bottomBarSpec()),
+            exit = shrinkVertically(animationSpec = bottomBarSpec()),
+        ) {
             AppBottomNavigation(
                 items = tabs,
                 selectedId = selectedTabId,
                 onSelect = { tabId ->
-                    if (tabId != selectedTabId) navigator.replaceAll(rootKeyOf(tabId))
+                    if (tabId != selectedTabId) navigator.selectRoot(rootKeyOf(tabId))
                 },
             )
         }
@@ -104,8 +119,14 @@ private fun AppNavigationScaffold(navigator: Navigator, isCoach: Boolean) {
 }
 
 @Composable
-private fun navigatorCurrentKey(navigator: Navigator) = androidx.compose.runtime.remember(navigator) {
-    androidx.compose.runtime.derivedStateOf {
+private fun bottomBarSpec(): FiniteAnimationSpec<IntSize> = tween(
+    durationMillis = AppTheme.motion.screenTransitionMillis,
+    easing = AppTheme.motion.easeOut,
+)
+
+@Composable
+private fun navigatorCurrentKey(navigator: Navigator) = remember(navigator) {
+    derivedStateOf {
         navigator.state.currentKey?.let(::tabIdOf)
     }
 }

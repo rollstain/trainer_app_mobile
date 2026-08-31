@@ -3,6 +3,7 @@ package app.trainer.feature.home.presentation.today.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,6 +78,7 @@ import app.trainer.uikit.widgets.ListCellSize
 import app.trainer.uikit.widgets.ListCellTrailing
 import app.trainer.uikit.widgets.PlaceholderAction
 import app.trainer.uikit.widgets.PlaceholderKind
+import app.trainer.uikit.widgets.SeatsState
 import app.trainer.uikit.widgets.SectionCount
 import app.trainer.uikit.widgets.SlotClientView
 import app.trainer.uikit.widgets.SlotRequestView
@@ -84,7 +86,6 @@ import app.trainer.uikit.widgets.SlotRowNote
 import app.trainer.uikit.widgets.SlotRowStatus
 import app.trainer.uikit.widgets.SlotRowTrailing
 import app.trainer.uikit.widgets.SlotStatusView
-import app.trainer.uikit.widgets.StatusChipKind
 import app.trainer.uikit.widgets.TopBarAction
 import app.trainer.uikit.widgets.TopBarSubtitle
 import org.jetbrains.compose.resources.stringResource
@@ -130,7 +131,7 @@ fun TodayView(
 private fun TodayContent(state: TodayState, onEvent: (TodayEvent) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = AppTheme.spacing.dp24),
+        contentPadding = PaddingValues(bottom = AppTheme.spacing.dp24),
     ) {
         if (state.isQuiet) {
             quietBlocks(state = state, onEvent = onEvent)
@@ -205,8 +206,12 @@ private fun LazyListScope.sessionsBlock(
             trailing = if (session.seatsLabel.isEmpty()) {
                 SlotRowTrailing.Client(displayName = session.clientDisplayName)
             } else {
-                SlotRowTrailing.Status(text = session.seatsLabel, kind = StatusChipKind.Booked)
+                SlotRowTrailing.Seats(
+                    label = session.seatsLabel,
+                    state = SeatsState.of(taken = session.takenSeats, capacity = session.capacity),
+                )
             },
+            participants = session.participants,
             onClick = { onEvent(TodayEvent.OnSessionClicked(session.clientUserId)) },
             note = if (session.isNext) SlotRowNote.Text(session.startsInLabel) else SlotRowNote.None,
             isNext = session.isNext,

@@ -2,8 +2,10 @@ package app.trainer.feature.schedule.presentation.newslot.mvi
 
 import app.trainer.base.BaseScreenModel
 import app.trainer.base.date.ScheduleWeeks
-import app.trainer.base.date.normalizeTimeText
-import app.trainer.base.date.parseTimeText
+import app.trainer.base.date.TIME_DIGITS_LENGTH
+import app.trainer.base.date.filterTimeDigits
+import app.trainer.base.date.formatTimeDigits
+import app.trainer.base.date.parseTimeDigits
 import app.trainer.base.date.weekdayShortOf
 import app.trainer.data.clients.ParticipantsRepository
 import app.trainer.data.profile.ProfileRepository
@@ -79,7 +81,7 @@ class NewSlotScreenModel(
             NewSlotEvent.OnSubmitClicked -> submit()
             is NewSlotEvent.OnModeChanged -> updateStateAndSummary { it.copy(mode = event.mode) }
             is NewSlotEvent.OnTimeChanged -> updateStateAndSummary {
-                it.copy(timeText = normalizeTimeText(event.text))
+                it.copy(timeText = filterTimeDigits(event.text))
             }
             is NewSlotEvent.OnDurationChanged -> updateStateAndSummary {
                 it.copy(durationMinutes = event.minutes)
@@ -119,7 +121,7 @@ class NewSlotScreenModel(
 
     private suspend fun outsideScheduleWarning(state: NewSlotState): String? {
         if (workingHours.isEmpty()) return null
-        val time = parseTimeText(state.timeText) ?: return null
+        val time = parseTimeDigits(state.timeText) ?: return null
         val outside = when (state.mode) {
             SlotMode.Single -> isOutsideWorkingHours(
                 dayOfWeek = state.date.dayOfWeek,
@@ -136,7 +138,7 @@ class NewSlotScreenModel(
     }
 
     private suspend fun buildSummary(state: NewSlotState): String {
-        if (state.timeText.length != NewSlotState.TIME_LENGTH) return ""
+        if (state.timeText.length != TIME_DIGITS_LENGTH) return ""
         val base = baseSummary(state)
         if (state.capacity == PERSONAL_CAPACITY) return base
         return base + SUMMARY_SEPARATOR + getString(Res.string.new_slot_summary_seats, state.capacity)
@@ -147,13 +149,13 @@ class NewSlotScreenModel(
             SlotMode.Single -> getString(
                 Res.string.new_slot_summary_single,
                 formatDate(state.date),
-                state.timeText,
+                formatTimeDigits(state.timeText),
                 state.durationMinutes,
             )
             SlotMode.Series -> {
                 val days = state.weekDays.filter { it.isSelected }.joinToString(", ") { it.label }
                 val count = state.weekDays.count { it.isSelected } * state.weeksCount
-                getString(Res.string.new_slot_summary_series, count, days, state.timeText)
+                getString(Res.string.new_slot_summary_series, count, days, formatTimeDigits(state.timeText))
             }
         }
     }
@@ -162,7 +164,7 @@ class NewSlotScreenModel(
         screenModelScope { state ->
             if (!state.isSubmitEnabled) return@screenModelScope
             val zone = coachZone ?: return@screenModelScope
-            val time = parseTimeText(state.timeText) ?: return@screenModelScope
+            val time = parseTimeDigits(state.timeText) ?: return@screenModelScope
 
             updateState { it.copy(isSubmitting = true) }
             when (state.mode) {

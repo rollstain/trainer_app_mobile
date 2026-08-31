@@ -55,6 +55,7 @@ fun AppMessageBubble(
     side: MessageSide,
     delivery: MessageDeliveryState,
     onRetryClick: () -> Unit,
+    onAttachmentClick: (String) -> Unit,
     attachments: List<BubbleAttachment> = emptyList(),
 ) {
     val colors = AppTheme.colors
@@ -102,7 +103,10 @@ fun AppMessageBubble(
             verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4),
         ) {
             attachments.forEach { attachment ->
-                BubblePhoto(attachment = attachment)
+                BubblePhoto(
+                    attachment = attachment,
+                    onClick = { onAttachmentClick(attachment.id) },
+                )
             }
             if (text.isNotEmpty()) {
                 Text(
@@ -130,13 +134,14 @@ fun AppMessageBubble(
 }
 
 @Composable
-private fun BubblePhoto(attachment: BubbleAttachment) {
+private fun BubblePhoto(attachment: BubbleAttachment, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(BUBBLE_PHOTO_HEIGHT)
             .clip(RoundedCornerShape(AppTheme.radius.dp8))
-            .background(AppTheme.colors.bgSurfaceSunken),
+            .background(AppTheme.colors.bgSurfaceSunken)
+            .clickable(onClick = onClick),
     ) {
         if (attachment.url != null) {
             AppRemoteImage(

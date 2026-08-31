@@ -34,6 +34,7 @@ fun AppChoiceChip(
     val shape = RoundedCornerShape(PILL_RADIUS.dp)
     Box(
         modifier = modifier
+            .clickable(onClick = onClick)
             .padding(vertical = CHIP_TOUCH_PADDING_VERTICAL)
             .defaultMinSize(minHeight = CHIP_HEIGHT)
             .background(color = if (isSelected) colors.accent else colors.bgSurface, shape = shape)
@@ -44,7 +45,6 @@ fun AppChoiceChip(
                     Modifier.border(width = AppTheme.borders.hairline, color = colors.borderStrong, shape = shape)
                 }
             )
-            .clickable(onClick = onClick)
             .padding(horizontal = CHIP_PADDING_HORIZONTAL),
         contentAlignment = Alignment.Center,
     ) {

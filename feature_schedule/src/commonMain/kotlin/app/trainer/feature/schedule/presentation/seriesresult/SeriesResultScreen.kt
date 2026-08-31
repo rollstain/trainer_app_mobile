@@ -64,7 +64,8 @@ class SeriesResultScreen(private val batchId: String) : Screen {
         SeriesResultView(
             state = state,
             onBackToCalendar = {
-                navigator.replaceAll(Screens.CoachCalendar(weekStartIso = null))
+                navigator.popUntil { it is Screens.CoachCalendar || it is Screens.CoachToday }
+                navigator.selectRoot(Screens.CoachCalendar(weekStartIso = null))
             },
         )
 

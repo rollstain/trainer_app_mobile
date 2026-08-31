@@ -51,6 +51,7 @@ import app.trainer.uikit.widgets.TextFieldAction
 import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
 import app.trainer.uikit.widgets.TextFieldMessage
+import app.trainer.uikit.widgets.TextFieldSubmit
 import kotlinx.collections.immutable.persistentListOf
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
@@ -97,6 +98,7 @@ fun SignUpView(
             onValueChange = { onEvent(SignUpEvent.OnNameChanged(it)) },
             label = TextFieldLabel.Text(stringResource(Res.string.sign_up_name_label)),
             placeholder = stringResource(Res.string.sign_up_name_placeholder),
+            submit = TextFieldSubmit.Next,
         )
         AppTextField(
             modifier = Modifier.fillMaxWidth(),
@@ -105,6 +107,7 @@ fun SignUpView(
             kind = TextFieldKind.Email,
             label = TextFieldLabel.Text(stringResource(Res.string.sign_up_email_label)),
             message = state.emailError?.let(TextFieldMessage::Error) ?: TextFieldMessage.None,
+            submit = TextFieldSubmit.Next,
         )
         LoginRow(state = state, onEvent = onEvent)
         AppTextField(
@@ -118,6 +121,7 @@ fun SignUpView(
                 isRevealed = state.isPasswordRevealed,
                 onToggle = { onEvent(SignUpEvent.OnRevealToggled) },
             ),
+            submit = TextFieldSubmit.Done(onSubmit = { onEvent(SignUpEvent.OnSubmitClicked) }),
         )
         AppButton(
             modifier = Modifier.fillMaxWidth(),
@@ -181,6 +185,7 @@ private fun LoginRow(state: SignUpState, onEvent: (SignUpEvent) -> Unit) {
             message = login.error?.let(TextFieldMessage::Error)
                 ?: TextFieldMessage.Neutral(stringResource(Res.string.sign_up_login_hint)),
             action = TextFieldAction.Clear(onClear = { onEvent(SignUpEvent.OnLoginCleared) }),
+            submit = TextFieldSubmit.Next,
         )
     }
 }

@@ -33,6 +33,7 @@ import app.trainer.strings.today_free_slots_summary
 import app.trainer.strings.today_tomorrow_summary
 import kotlin.time.Clock
 import kotlin.time.Instant
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.flow.first
@@ -305,6 +306,13 @@ class TodayScreenModel(
             getString(Res.string.slot_seats_taken, slot.takenSeats, slot.capacity)
         } else {
             ""
+        },
+        takenSeats = slot.takenSeats,
+        capacity = slot.capacity,
+        participants = if (slot.isGroup) {
+            slot.participants.mapNotNull { it.displayName }.toImmutableList()
+        } else {
+            persistentListOf()
         },
     )
 

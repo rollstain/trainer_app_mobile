@@ -39,8 +39,8 @@ private suspend fun handleSideEffect(
 ) {
     when (effect) {
         TodaySideEffect.OpenProfile -> navigator.push(Screens.Profile)
-        TodaySideEffect.OpenCalendar -> navigator.replaceAll(Screens.CoachCalendar(weekStartIso = null))
-        TodaySideEffect.OpenChats -> navigator.replaceAll(Screens.CoachChats)
+        TodaySideEffect.OpenCalendar -> navigator.selectRoot(Screens.CoachCalendar(weekStartIso = null))
+        TodaySideEffect.OpenChats -> navigator.selectRoot(Screens.CoachChats)
         TodaySideEffect.OpenSlotCreation -> navigator.push(Screens.NewSlot(dateIso = null))
         is TodaySideEffect.OpenClientCard -> navigator.push(Screens.ClientCard(effect.clientUserId))
         TodaySideEffect.OpenFormChecks -> navigator.push(Screens.CoachFormChecks)

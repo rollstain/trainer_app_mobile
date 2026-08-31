@@ -35,7 +35,7 @@ class ExerciseLibraryScreenModel(
 
     override fun onFetchData() {
         onFetchDataScope {
-            updateState { it.copy(isLoading = true, failure = null) }
+            updateState { it.copy(isLoading = it.exercises.isEmpty(), failure = null) }
             when (val loaded = load(after = null, search = state.search, filter = state.filter)) {
                 is RequestResult.Error -> {
                     updateState { it.copy(isLoading = false, failure = loaded) }

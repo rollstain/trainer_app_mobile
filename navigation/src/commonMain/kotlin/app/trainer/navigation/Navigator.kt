@@ -72,6 +72,13 @@ class Navigator(
         }
     }
 
+    fun selectRoot(key: NavKey) {
+        mutateStack(action = "selectRoot", key = key) {
+            stack.remove(key)
+            stack.add(key)
+        }
+    }
+
     fun replaceAll(key: NavKey) {
         mutateStack(action = "replaceAll", key = key) {
             val root = parent

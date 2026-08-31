@@ -31,14 +31,17 @@ import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCard
+import app.trainer.uikit.widgets.AppSegmented
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTextField
 import app.trainer.uikit.widgets.AppTopBar
+import app.trainer.uikit.widgets.AppWeekdayPicker
 import app.trainer.uikit.widgets.ButtonSize
 import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
+import app.trainer.uikit.widgets.TimeDigitsVisualTransformation
 import app.trainer.uikit.widgets.TopBarLeading
 import org.jetbrains.compose.resources.stringResource
 
@@ -67,26 +70,17 @@ fun NewSlotView(
                 .padding(AppTheme.spacing.dp16),
             verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp16),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8)) {
-                AppButton(
-                    text = stringResource(Res.string.new_slot_single_mode),
-                    onClick = { onEvent(NewSlotEvent.OnModeChanged(SlotMode.Single)) },
-                    tone = if (state.mode == SlotMode.Single) {
-                        ButtonTone.Primary
-                    } else {
-                        ButtonTone.Secondary
-                    },
-                )
-                AppButton(
-                    text = stringResource(Res.string.new_slot_series_mode),
-                    onClick = { onEvent(NewSlotEvent.OnModeChanged(SlotMode.Series)) },
-                    tone = if (state.mode == SlotMode.Series) {
-                        ButtonTone.Primary
-                    } else {
-                        ButtonTone.Secondary
-                    },
-                )
-            }
+            AppSegmented(
+                options = listOf(SlotMode.Single, SlotMode.Series),
+                selected = state.mode,
+                labelOf = { mode ->
+                    when (mode) {
+                        SlotMode.Single -> stringResource(Res.string.new_slot_single_mode)
+                        SlotMode.Series -> stringResource(Res.string.new_slot_series_mode)
+                    }
+                },
+                onSelect = { onEvent(NewSlotEvent.OnModeChanged(it)) },
+            )
             AppText(
                 text = state.dateLabel,
                 style = AppTheme.typography.headline,
@@ -98,6 +92,7 @@ fun NewSlotView(
                 kind = TextFieldKind.Numeric,
                 label = TextFieldLabel.Text(stringResource(Res.string.new_slot_time_label)),
                 placeholder = TIME_PLACEHOLDER,
+                valueTransformation = TimeDigitsVisualTransformation,
             )
             DurationRow(state = state, onEvent = onEvent)
             CapacityRow(state = state, onEvent = onEvent)
@@ -190,16 +185,12 @@ private fun SeriesFields(state: NewSlotState, onEvent: (NewSlotEvent) -> Unit) {
             style = AppTheme.typography.label,
             color = AppTheme.colors.textSecondary,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp4)) {
-            state.weekDays.forEach { day ->
-                AppButton(
-                    text = day.label,
-                    onClick = { onEvent(NewSlotEvent.OnWeekDayToggled(day.dayOfWeek)) },
-                    tone = if (day.isSelected) ButtonTone.Primary else ButtonTone.Secondary,
-                    size = ButtonSize.Small,
-                )
-            }
-        }
+        AppWeekdayPicker(
+            days = state.weekDays,
+            labelOf = { it.label },
+            isSelected = { it.isSelected },
+            onToggle = { onEvent(NewSlotEvent.OnWeekDayToggled(it.dayOfWeek)) },
+        )
         AppTextField(
             value = state.weeksCount.toString(),
             onValueChange = { text ->

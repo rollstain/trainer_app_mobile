@@ -41,6 +41,7 @@ class DialogScreenModel(
 
     private var currentUserId: String? = null
     private val uploadedSizes = mutableMapOf<String, Long>()
+    private val pendingUploads = mutableMapOf<String, PendingUpload>()
     private val attachmentUrls = MutableStateFlow<Map<String, String>>(emptyMap())
     private val requestedAttachmentIds = mutableSetOf<String>()
 
@@ -65,6 +66,7 @@ class DialogScreenModel(
             is DialogEvent.OnDraftChanged -> updateState { it.copy(draft = event.draft) }
             is DialogEvent.OnFileAttached -> attachFile(event)
             is DialogEvent.OnPendingAttachmentRemoved -> removePendingAttachment(event.attachmentId)
+            is DialogEvent.OnPendingAttachmentRetried -> retryUpload(event.attachmentId)
             is DialogEvent.OnAttachmentOpened -> openAttachment(event.attachmentId)
         }
     }
@@ -163,35 +165,68 @@ class DialogScreenModel(
                 return@screenModelScope
             }
             val upload = (prepared as RequestResult.Success).data
-            val uploaded = chatRepository.uploadFile(
+            val pending = PendingUpload(
                 uploadUrl = upload.uploadUrl,
                 contentType = event.contentType,
                 bytes = event.bytes,
             )
-            updateState { it.copy(isUploading = false) }
+            pendingUploads[upload.attachmentId] = pending
             uploadedSizes[upload.attachmentId] = event.bytes.size.toLong()
             val sizeLabel = formatSize(event.bytes.size.toLong())
-            when (uploaded) {
-                is RequestResult.Error -> postSideEffect(DialogSideEffect.ShowFailure(uploaded))
-                is RequestResult.Success -> updateState { current ->
-                    current.copy(
-                        pendingAttachments = (
-                            current.pendingAttachments + PendingAttachment(
-                                attachmentId = upload.attachmentId,
-                                originalName = event.fileName,
-                                contentType = event.contentType,
-                                sizeLabel = sizeLabel,
-                                isImage = event.contentType.startsWith(IMAGE_CONTENT_TYPE_PREFIX),
-                                state = PendingAttachmentState.Ready,
-                            )
-                            ).toImmutableList()
-                    )
-                }
+            updateState { current ->
+                current.copy(
+                    pendingAttachments = (
+                        current.pendingAttachments + PendingAttachment(
+                            attachmentId = upload.attachmentId,
+                            originalName = event.fileName,
+                            contentType = event.contentType,
+                            sizeLabel = sizeLabel,
+                            isImage = event.contentType.startsWith(IMAGE_CONTENT_TYPE_PREFIX),
+                            state = PendingAttachmentState.Uploading,
+                        )
+                        ).toImmutableList()
+                )
             }
+            sendToStorage(attachmentId = upload.attachmentId, upload = pending)
         }
     }
 
+    private fun retryUpload(attachmentId: String) {
+        val pending = pendingUploads[attachmentId] ?: return
+        screenModelScope {
+            updateState { current ->
+                current.copy(
+                    isUploading = true,
+                    pendingAttachments = current.pendingAttachments
+                        .withState(attachmentId = attachmentId, state = PendingAttachmentState.Uploading),
+                )
+            }
+            sendToStorage(attachmentId = attachmentId, upload = pending)
+        }
+    }
+
+    private suspend fun sendToStorage(attachmentId: String, upload: PendingUpload) {
+        val uploaded = chatRepository.uploadFile(
+            uploadUrl = upload.uploadUrl,
+            contentType = upload.contentType,
+            bytes = upload.bytes,
+        )
+        val state = when (uploaded) {
+            is RequestResult.Error -> PendingAttachmentState.Failed
+            is RequestResult.Success -> PendingAttachmentState.Ready
+        }
+        updateState { current ->
+            current.copy(
+                isUploading = false,
+                pendingAttachments = current.pendingAttachments
+                    .withState(attachmentId = attachmentId, state = state),
+            )
+        }
+        if (uploaded is RequestResult.Error) postSideEffect(DialogSideEffect.ShowFailure(uploaded))
+    }
+
     private fun removePendingAttachment(attachmentId: String) {
+        pendingUploads.remove(attachmentId)
         updateState { current ->
             current.copy(
                 pendingAttachments = current.pendingAttachments
@@ -216,9 +251,10 @@ class DialogScreenModel(
             val body = state.draft.trim()
             val senderUserId = currentUserId
             if (senderUserId == null) return@screenModelScope
-            if (body.isEmpty() && state.pendingAttachments.isEmpty()) return@screenModelScope
+            val uploaded = state.pendingAttachments.filter { it.state == PendingAttachmentState.Ready }
+            if (body.isEmpty() && uploaded.isEmpty()) return@screenModelScope
 
-            val attachments = state.pendingAttachments.map { pending ->
+            val attachments = uploaded.map { pending ->
                 MessageAttachment(
                     id = pending.attachmentId,
                     contentType = pending.contentType,
@@ -226,6 +262,7 @@ class DialogScreenModel(
                     originalName = pending.originalName,
                 )
             }
+            pendingUploads.clear()
             updateState { it.copy(draft = "", pendingAttachments = persistentListOf(), isSending = true) }
             val sent = chatRepository.sendMessage(
                 dialogId = dialogId,
@@ -353,3 +390,14 @@ class DialogScreenModel(
         url = url,
     )
 }
+
+private class PendingUpload(
+    val uploadUrl: String,
+    val contentType: String,
+    val bytes: ByteArray,
+)
+
+private fun List<PendingAttachment>.withState(
+    attachmentId: String,
+    state: PendingAttachmentState,
+) = map { if (it.attachmentId == attachmentId) it.copy(state = state) else it }.toImmutableList()

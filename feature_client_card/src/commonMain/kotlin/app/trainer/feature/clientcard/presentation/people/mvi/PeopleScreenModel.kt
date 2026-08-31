@@ -97,7 +97,7 @@ class PeopleScreenModel(
     }
 
     private suspend fun loadPeople() {
-        updateState { it.copy(isLoading = true, failure = null) }
+        updateState { it.copy(isLoading = it.isEmpty, failure = null) }
         val query = state.search.trim().takeIf { it.isNotEmpty() }
         val sessions = nextSessionsByClient()
         val bookedClients = if (query == null) bookedClientsOf(sessions) else emptyList()
@@ -175,7 +175,7 @@ class PeopleScreenModel(
             when (created) {
                 is RequestResult.Error -> postSideEffect(PeopleSideEffect.ShowFailure(created))
                 is RequestResult.Success -> postSideEffect(
-                    PeopleSideEffect.ShowInviteCode(code = created.data.code)
+                    PeopleSideEffect.InviteCreated(code = created.data.code)
                 )
             }
         }

@@ -19,11 +19,12 @@ fun NavContainer(
     onBack: () -> Unit,
     forward: ContentTransform,
     backward: ContentTransform,
+    isBackEnabled: Boolean = entries.size > 1,
 ) {
     val backState = rememberNavigationEventState(currentInfo = NavigationEventInfo.None)
     NavigationBackHandler(
         state = backState,
-        isBackEnabled = entries.size > 1,
+        isBackEnabled = isBackEnabled,
         onBackCompleted = onBack,
     )
     val topEntry = entries.lastOrNull() ?: return

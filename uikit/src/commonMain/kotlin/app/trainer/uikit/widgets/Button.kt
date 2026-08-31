@@ -22,16 +22,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.trainer.uikit.AppTheme
 
 private const val LOADING_ALPHA = 0.8f
+private const val LABEL_MAX_LINES = 2
 private val SPINNER_SIZE = 14.dp
 private val SPINNER_STROKE = 2.dp
 private val CONTENT_GAP = 8.dp
-private val LOADING_GAP = 10.dp
 
 enum class ButtonTone { Primary, Secondary, Text, Danger }
 
@@ -76,7 +77,7 @@ fun AppButton(
             .padding(horizontal = horizontalPaddingOf(size))
             .alpha(if (state == ButtonState.Loading) LOADING_ALPHA else 1f),
         horizontalArrangement = Arrangement.spacedBy(
-            space = if (state == ButtonState.Loading) LOADING_GAP else CONTENT_GAP,
+            space = CONTENT_GAP,
             alignment = Alignment.CenterHorizontally,
         ),
         verticalAlignment = Alignment.CenterVertically,
@@ -96,8 +97,9 @@ fun AppButton(
             text = text,
             style = AppTheme.typography.label,
             color = palette.content,
-            maxLines = 1,
+            maxLines = LABEL_MAX_LINES,
             overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
     }
 }

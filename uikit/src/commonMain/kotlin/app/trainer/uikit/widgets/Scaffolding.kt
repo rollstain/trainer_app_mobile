@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -142,14 +143,16 @@ private fun ActionSlot(action: TopBarAction) {
             contentDescription = action.contentDescription,
             onClick = action.onClick,
         )
-        is TopBarAction.Avatar -> AppAvatar(
+        is TopBarAction.Avatar -> Box(
             modifier = Modifier
+                .size(AppTheme.sizing.minTouchTarget)
                 .clip(CircleShape)
                 .clickable(onClick = action.onClick)
                 .semantics { contentDescription = action.contentDescription },
-            displayName = action.displayName,
-            size = AvatarSize.Medium,
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            AppAvatar(displayName = action.displayName, size = AvatarSize.Medium)
+        }
     }
 }
 
@@ -250,11 +253,20 @@ fun AppToast(modifier: Modifier = Modifier, text: String, actionText: String, on
             maxLines = TOAST_MAX_LINES,
             overflow = TextOverflow.Ellipsis,
         )
-        Text(
-            modifier = Modifier.clickable(onClick = onAction),
-            text = actionText,
-            style = AppTheme.typography.label,
-            color = AppTheme.colors.accent,
-        )
+        Box(
+            modifier = Modifier
+                .defaultMinSize(
+                    minWidth = AppTheme.sizing.minTouchTarget,
+                    minHeight = AppTheme.sizing.minTouchTarget,
+                )
+                .clickable(onClick = onAction),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = actionText,
+                style = AppTheme.typography.label,
+                color = AppTheme.colors.accent,
+            )
+        }
     }
 }

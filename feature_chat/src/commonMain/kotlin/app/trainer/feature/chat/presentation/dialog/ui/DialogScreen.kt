@@ -1,7 +1,9 @@
 package app.trainer.feature.chat.presentation.dialog.ui
 
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalUriHandler
 import app.trainer.base.failure.toastMessage
 import app.trainer.feature.chat.presentation.dialog.mvi.DialogScreenModel
 import app.trainer.feature.chat.presentation.dialog.mvi.DialogSideEffect
@@ -11,15 +13,18 @@ import app.trainer.navigation.Screen
 import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
 import app.trainer.uikit.widgets.LocalToastHost
-import app.trainer.uikit.widgets.ToastHostState
 import org.koin.core.parameter.parametersOf
+
+private const val LATEST_MESSAGE_INDEX = 0
 
 class DialogScreen(private val dialogId: String) : Screen {
 
     @Composable
     override fun Content() {
         val navigator: Navigator = LocalNavigator.currentOrThrow
-        val toastHost: ToastHostState = LocalToastHost.current
+        val toastHost = LocalToastHost.current
+        val uriHandler = LocalUriHandler.current
+        val listState = rememberLazyListState()
         val screenModel: DialogScreenModel = koinScreenModel(
             parameters = { parametersOf(dialogId) },
         )
@@ -27,20 +32,17 @@ class DialogScreen(private val dialogId: String) : Screen {
 
         DialogView(
             state = state,
+            listState = listState,
             onEvent = { screenModel.dispatch(event = it) },
             onBackClick = navigator::pop,
         )
 
         screenModel.collectSideEffect { effect ->
-            handleSideEffect(effect = effect, toastHost = toastHost)
+            when (effect) {
+                is DialogSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
+                is DialogSideEffect.OpenAttachment -> uriHandler.openUri(effect.downloadUrl)
+                DialogSideEffect.ScrollToLatest -> listState.animateScrollToItem(LATEST_MESSAGE_INDEX)
+            }
         }
-    }
-}
-
-private suspend fun handleSideEffect(effect: DialogSideEffect, toastHost: ToastHostState) {
-    when (effect) {
-        is DialogSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
-        is DialogSideEffect.OpenAttachment -> Unit
-        DialogSideEffect.ScrollToLatest -> Unit
     }
 }

@@ -56,7 +56,9 @@ data class DialogState(
 ) {
 
     val isSendEnabled: Boolean
-        get() = (draft.isNotBlank() || pendingAttachments.isNotEmpty()) && !isSending && !isUploading
+        get() = !isSending &&
+            !isUploading &&
+            (draft.isNotBlank() || pendingAttachments.any { it.state == PendingAttachmentState.Ready })
 
     companion object {
 
@@ -95,6 +97,8 @@ sealed interface DialogEvent {
     ) : DialogEvent
 
     data class OnPendingAttachmentRemoved(val attachmentId: String) : DialogEvent
+
+    data class OnPendingAttachmentRetried(val attachmentId: String) : DialogEvent
 
     data class OnAttachmentOpened(val attachmentId: String) : DialogEvent
 }

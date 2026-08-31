@@ -44,6 +44,7 @@ import app.trainer.uikit.widgets.TextFieldAction
 import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
 import app.trainer.uikit.widgets.TextFieldMessage
+import app.trainer.uikit.widgets.TextFieldSubmit
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -103,6 +104,7 @@ fun NewPasswordView(
             value = state.password,
             onValueChange = { onEvent(NewPasswordEvent.OnPasswordChanged(it)) },
             kind = TextFieldKind.NewPassword,
+            submit = TextFieldSubmit.Done(onSubmit = { onEvent(NewPasswordEvent.OnSubmitClicked) }),
             label = TextFieldLabel.Text(stringResource(Res.string.new_password_label)),
             message = passwordHint(state),
             action = TextFieldAction.Reveal(
