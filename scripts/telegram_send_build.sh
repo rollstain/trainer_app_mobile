@@ -53,7 +53,7 @@ fi
 if [ "$notes_sent_with_file" = false ] && [ -n "$notes" ]; then
     message="$notes"
     if [ "$(printf '%s' "$notes" | wc -m)" -gt "$message_char_limit" ]; then
-        trimmed=$(printf '%s' "$notes" | head -c "$message_char_limit" | iconv -c -f utf-8 -t utf-8)
+        trimmed=$(head -c "$message_char_limit" <<< "$notes" | iconv -c -f utf-8 -t utf-8)
         message=$(printf '%s\n\n…список обрезан, целиком — в прогоне: %s' "$trimmed" "$run_url")
     fi
     curl --silent --show-error --fail-with-body \

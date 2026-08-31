@@ -82,7 +82,7 @@ jobs:
       - name: Имя файла сборки
         id: apk
         run: |
-          source_apk=$(find "androidApp/build/outputs/apk/$BUILD_TYPE" -name '*.apk' | head -1)
+          source_apk=$(find "androidApp/build/outputs/apk/$BUILD_TYPE" -name '*.apk' -print -quit)
           cp "$source_apk" "${{ steps.meta.outputs.apk_name }}"
           echo "path=${{ steps.meta.outputs.apk_name }}" >> "$GITHUB_OUTPUT"
 
