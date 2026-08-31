@@ -51,6 +51,7 @@ import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.CardDecoration
 import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
+import app.trainer.uikit.widgets.TextFieldSubmit
 import org.jetbrains.compose.resources.stringResource
 
 private const val SECONDS_IN_MINUTE = 60L
@@ -112,6 +113,7 @@ fun RecoveryView(
             value = state.email,
             onValueChange = { onEvent(RecoveryEvent.OnEmailChanged(it)) },
             kind = TextFieldKind.Email,
+            submit = TextFieldSubmit.Done(onSubmit = { onEvent(RecoveryEvent.OnSendClicked) }),
             label = TextFieldLabel.Text(stringResource(Res.string.recovery_email_label)),
         )
         AppButton(

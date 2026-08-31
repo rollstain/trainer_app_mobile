@@ -62,6 +62,7 @@ import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.PlaceholderAction
 import app.trainer.uikit.widgets.PlaceholderKind
 import app.trainer.uikit.widgets.SectionCount
+import app.trainer.uikit.widgets.highlightedMatch
 import org.jetbrains.compose.resources.stringResource
 
 private const val SHIMMER_ROWS = 5
@@ -90,7 +91,10 @@ fun PeopleView(
         }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
             when {
-                state.isLoading -> AppCellShimmerList(count = SHIMMER_ROWS)
+                state.isLoading -> AppCellShimmerList(
+                    count = SHIMMER_ROWS,
+                    rowHeight = AppTheme.sizing.personRowMinHeight,
+                )
                 state.failure != null -> AppFailureState(
                     failure = state.failure,
                     onRetry = { onEvent(PeopleEvent.OnRetryClicked) },
@@ -116,7 +120,7 @@ fun PeopleView(
                 else -> PeopleList(state = state, onEvent = onEvent)
             }
         }
-        if (!state.isEmpty && !state.isSearching) {
+        if (state.isSearching || !state.isEmpty) {
             AppButton(
                 modifier = Modifier.fillMaxWidth().padding(AppTheme.spacing.dp16),
                 text = stringResource(Res.string.people_invite_action),
@@ -150,6 +154,7 @@ private fun PeopleList(state: PeopleState, onEvent: (PeopleEvent) -> Unit) {
                 PersonCell(
                     modifier = Modifier.animateItem(),
                     person = person,
+                    query = state.search,
                     onClick = { onEvent(PeopleEvent.OnPersonClicked(person.userId)) },
                 )
             }
@@ -170,6 +175,7 @@ private fun PeopleList(state: PeopleState, onEvent: (PeopleEvent) -> Unit) {
                 PersonCell(
                     modifier = Modifier.animateItem(),
                     person = person,
+                    query = state.search,
                     onClick = { onEvent(PeopleEvent.OnPersonClicked(person.userId)) },
                 )
             }
@@ -177,14 +183,22 @@ private fun PeopleList(state: PeopleState, onEvent: (PeopleEvent) -> Unit) {
         if (state.hasMore) {
             item(key = "load-more") {
                 LaunchedEffect(state.nextCursor) { onEvent(PeopleEvent.OnEndReached) }
-                AppCellShimmerList(count = LOAD_MORE_ROWS)
+                AppCellShimmerList(
+                    count = LOAD_MORE_ROWS,
+                    rowHeight = AppTheme.sizing.personRowMinHeight,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun PersonCell(modifier: Modifier = Modifier, person: PersonRow, onClick: () -> Unit) {
+private fun PersonCell(
+    modifier: Modifier = Modifier,
+    person: PersonRow,
+    query: String,
+    onClick: () -> Unit,
+) {
     Column(modifier = modifier.background(AppTheme.colors.bgSurface)) {
         Row(
             modifier = Modifier
@@ -216,7 +230,7 @@ private fun PersonCell(modifier: Modifier = Modifier, person: PersonRow, onClick
                 ) {
                     AppText(
                         modifier = Modifier.weight(1f, fill = false),
-                        text = person.displayName,
+                        text = highlightedMatch(text = person.displayName, query = query),
                         style = AppTheme.typography.bodyStrong,
                         color = AppTheme.colors.textPrimary,
                         maxLines = 1,

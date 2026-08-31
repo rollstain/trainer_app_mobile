@@ -1,5 +1,6 @@
 package app.trainer.feature.account.workinghours.ui
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,8 +53,8 @@ import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppButton
 import app.trainer.uikit.widgets.AppCard
-import app.trainer.uikit.widgets.AppCardShimmerList
 import app.trainer.uikit.widgets.AppConfirmDialog
+import app.trainer.uikit.widgets.AppSettingShimmerList
 import app.trainer.uikit.widgets.AppSwitch
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTextField
@@ -67,12 +68,12 @@ import app.trainer.uikit.widgets.ConfirmDialogTone
 import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
 import app.trainer.uikit.widgets.TextFieldValueTone
+import app.trainer.uikit.widgets.TimeDigitsVisualTransformation
 import app.trainer.uikit.widgets.TopBarLeading
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-private const val SHIMMER_CARDS = 3
-private const val SHIMMER_CARD_LINES = 2
+private const val SHIMMER_ROWS = 7
 private val DAY_LABEL_WIDTH = 44.dp
 private val ISSUE_MARK_SIZE = 18.dp
 private const val TIME_PLACEHOLDER = "09:00"
@@ -94,7 +95,7 @@ fun WorkingHoursView(
                     failure = state.failure,
                     onRetry = { onEvent(WorkingHoursEvent.OnReloadRequested) },
                 )
-                state.isLoading -> AppCardShimmerList(count = SHIMMER_CARDS, lines = SHIMMER_CARD_LINES)
+                state.isLoading -> AppSettingShimmerList(count = SHIMMER_ROWS)
                 else -> ScheduleContent(state = state, onEvent = onEvent)
             }
         }
@@ -118,12 +119,14 @@ fun WorkingHoursView(
 
 @Composable
 private fun ScheduleContent(state: WorkingHoursState, onEvent: (WorkingHoursEvent) -> Unit) {
-    val isUntouchedEmpty = state.isScheduleAbsent && state.allDaysOff && !state.isDirty
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(top = AppTheme.spacing.dp12),
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
     ) {
-        if (isUntouchedEmpty) {
+        if (state.isScheduleAbsent) {
             WarningCard(
                 title = stringResource(Res.string.working_hours_not_set_title),
                 description = stringResource(Res.string.working_hours_not_set_description),
@@ -137,7 +140,7 @@ private fun ScheduleContent(state: WorkingHoursState, onEvent: (WorkingHoursEven
             )
         }
         DayList(state = state, onEvent = onEvent)
-        if (state.allDaysOff && state.isDirty) {
+        if (state.allDaysOff && state.isDirty && !state.isScheduleAbsent) {
             WarningCard(
                 title = stringResource(Res.string.working_hours_none_left_title),
                 description = stringResource(Res.string.working_hours_none_left_description),
@@ -152,7 +155,7 @@ private fun ScheduleContent(state: WorkingHoursState, onEvent: (WorkingHoursEven
                 size = ButtonSize.Medium,
             )
         }
-        if (isUntouchedEmpty) {
+        if (state.isScheduleAbsent) {
             AppText(
                 modifier = Modifier.padding(horizontal = AppTheme.spacing.dp16),
                 text = stringResource(Res.string.working_hours_first_hint),
@@ -214,6 +217,7 @@ private fun DayRow(row: WorkingHourRow, showFieldLabels: Boolean, onEvent: (Work
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .animateContentSize()
             .background(if (row.isChanged) AppTheme.colors.accentSoft else Color.Transparent)
             .padding(horizontal = AppTheme.spacing.dp16, vertical = AppTheme.spacing.dp12),
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
@@ -242,6 +246,7 @@ private fun DayRow(row: WorkingHourRow, showFieldLabels: Boolean, onEvent: (Work
                         label = fieldLabel(showFieldLabels, Res.string.working_hours_from),
                         placeholder = TIME_PLACEHOLDER,
                         valueTone = if (row.isPrefilled) TextFieldValueTone.Muted else TextFieldValueTone.Regular,
+                        valueTransformation = TimeDigitsVisualTransformation,
                     )
                     AppTextField(
                         modifier = Modifier.weight(1f),
@@ -251,6 +256,7 @@ private fun DayRow(row: WorkingHourRow, showFieldLabels: Boolean, onEvent: (Work
                         label = fieldLabel(showFieldLabels, Res.string.working_hours_to),
                         placeholder = TIME_PLACEHOLDER,
                         valueTone = if (row.isPrefilled) TextFieldValueTone.Muted else TextFieldValueTone.Regular,
+                        valueTransformation = TimeDigitsVisualTransformation,
                     )
                 }
             } else {

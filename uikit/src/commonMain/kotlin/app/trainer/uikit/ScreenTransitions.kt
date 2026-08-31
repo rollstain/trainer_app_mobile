@@ -1,12 +1,13 @@
 package app.trainer.uikit
 
 import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.IntOffset
 
@@ -33,10 +34,17 @@ private fun screenTransition(
     val easing = AppTheme.motion.easeOut
     val fadeSpec = tween<Float>(durationMillis = durationMillis, easing = easing)
     val slideSpec = tween<IntOffset>(durationMillis = durationMillis, easing = easing)
-    return slideInHorizontally(animationSpec = slideSpec, initialOffsetX = incomingOffset) +
-        fadeIn(animationSpec = fadeSpec) togetherWith
-        slideOutHorizontally(animationSpec = slideSpec, targetOffsetX = outgoingOffset) +
-        fadeOut(animationSpec = fadeSpec)
+    return ContentTransform(
+        targetContentEnter = slideInHorizontally(
+            animationSpec = slideSpec,
+            initialOffsetX = incomingOffset,
+        ) + fadeIn(animationSpec = fadeSpec),
+        initialContentExit = slideOutHorizontally(
+            animationSpec = slideSpec,
+            targetOffsetX = outgoingOffset,
+        ) + fadeOut(animationSpec = fadeSpec),
+        sizeTransform = SizeTransform(clip = false) { _, _ -> snap() },
+    )
 }
 
 private fun partialShiftOf(fullWidth: Int): Int =

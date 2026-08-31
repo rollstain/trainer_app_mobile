@@ -14,14 +14,13 @@ import app.trainer.navigation.Screens
 import app.trainer.navigation.currentOrThrow
 import app.trainer.navigation.koinScreenModel
 import app.trainer.uikit.widgets.LocalToastHost
-import app.trainer.uikit.widgets.ToastHostState
 
 class CoachScheduleScreen : Screen {
 
     @Composable
     override fun Content() {
         val navigator: Navigator = LocalNavigator.currentOrThrow
-        val toastHost: ToastHostState = LocalToastHost.current
+        val toastHost = LocalToastHost.current
         val screenModel: CoachScheduleScreenModel = koinScreenModel()
         val state by screenModel.collectAsState()
 
@@ -32,22 +31,13 @@ class CoachScheduleScreen : Screen {
         CoachScheduleView(state = state, onEvent = { screenModel.dispatch(event = it) })
 
         screenModel.collectSideEffect { effect ->
-            handleSideEffect(effect = effect, navigator = navigator, toastHost = toastHost)
+            when (effect) {
+                is CoachScheduleSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
+                is CoachScheduleSideEffect.OpenGroupSession ->
+                    navigator.push(Screens.GroupSession(slotId = effect.slotId))
+                is CoachScheduleSideEffect.OpenSlotCreation ->
+                    navigator.push(Screens.NewSlot(dateIso = effect.dateIso))
+            }
         }
-    }
-}
-
-private suspend fun handleSideEffect(
-    effect: CoachScheduleSideEffect,
-    navigator: Navigator,
-    toastHost: ToastHostState,
-) {
-    when (effect) {
-        is CoachScheduleSideEffect.ShowFailure -> toastHost.show(effect.failure.toastMessage())
-        is CoachScheduleSideEffect.OpenGroupSession ->
-            navigator.push(Screens.GroupSession(slotId = effect.slotId))
-        is CoachScheduleSideEffect.OpenSlotCreation -> navigator.push(
-            Screens.NewSlot(dateIso = effect.dateIso)
-        )
     }
 }

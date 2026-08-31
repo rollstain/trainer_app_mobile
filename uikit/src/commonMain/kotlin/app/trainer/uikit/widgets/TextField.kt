@@ -13,24 +13,32 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentType
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -46,14 +54,21 @@ import org.jetbrains.compose.resources.stringResource
 private val FIELD_PADDING = 14.dp
 private val ACTION_PADDING_END = 8.dp
 private val ACTION_FIELD_HEIGHT = 56.dp
-private val ACTION_HEIGHT = 40.dp
 private val ACTION_TEXT_PADDING = 8.dp
-private val ACTION_TEXT_PADDING_VERTICAL = 10.dp
 private val MULTILINE_PADDING_VERTICAL = 12.dp
 private val LABEL_GAP = 6.dp
 private val UNIT_GAP = 6.dp
 
 enum class TextFieldKind { Text, Multiline, Numeric, InviteCode, Email, Password, NewPassword }
+
+sealed interface TextFieldSubmit {
+
+    data object None : TextFieldSubmit
+
+    data object Next : TextFieldSubmit
+
+    data class Done(val onSubmit: () -> Unit) : TextFieldSubmit
+}
 
 sealed interface TextFieldLabel {
 
@@ -105,9 +120,13 @@ fun AppTextField(
     placeholder: String = "",
     isEnabled: Boolean = true,
     valueTone: TextFieldValueTone = TextFieldValueTone.Regular,
+    valueTransformation: VisualTransformation = VisualTransformation.None,
+    submit: TextFieldSubmit = TextFieldSubmit.None,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
+    val focusManager = LocalFocusManager.current
+    val lastEdit = remember { mutableStateOf(TextFieldValue(text = value, selection = TextRange(value.length))) }
     val hasError = message is TextFieldMessage.Error
     val colors = AppTheme.colors
 
@@ -171,8 +190,11 @@ fun AppTextField(
                     )
                 }
                 BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
+                    value = shownValueOf(lastEdit = lastEdit.value, value = value),
+                    onValueChange = { edited ->
+                        lastEdit.value = edited
+                        if (edited.text != value) onValueChange(edited.text)
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .autofillOf(kind),
@@ -186,13 +208,21 @@ fun AppTextField(
                         textAlign = textAlignOf(kind),
                     ),
                     keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.None,
+                        capitalization = capitalizationOf(kind),
                         keyboardType = keyboardTypeOf(kind),
+                        imeAction = imeActionOf(kind = kind, submit = submit),
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Next) },
+                        onDone = {
+                            focusManager.clearFocus()
+                            (submit as? TextFieldSubmit.Done)?.onSubmit?.invoke()
+                        },
                     ),
                     visualTransformation = if (isMasked(kind = kind, action = action)) {
                         PasswordVisualTransformation()
                     } else {
-                        VisualTransformation.None
+                        valueTransformation
                     },
                     singleLine = kind != TextFieldKind.Multiline,
                     cursorBrush = SolidColor(colors.accent),
@@ -216,30 +246,63 @@ fun AppTextField(
 private fun FieldAction(action: TextFieldAction, isEnabled: Boolean) {
     when (action) {
         TextFieldAction.None -> Unit
-        is TextFieldAction.Reveal -> Text(
+        is TextFieldAction.Reveal -> Box(
             modifier = Modifier
-                .heightIn(min = ACTION_HEIGHT)
+                .defaultMinSize(
+                    minWidth = AppTheme.sizing.minTouchTarget,
+                    minHeight = AppTheme.sizing.minTouchTarget,
+                )
                 .clickable(enabled = isEnabled, onClick = action.onToggle)
-                .padding(horizontal = ACTION_TEXT_PADDING, vertical = ACTION_TEXT_PADDING_VERTICAL),
-            text = if (action.isRevealed) {
-                stringResource(Res.string.field_hide)
-            } else {
-                stringResource(Res.string.field_show)
-            },
-            style = AppTheme.typography.label,
-            color = AppTheme.colors.accent,
-        )
-        is TextFieldAction.Clear -> AppIcon(
-            modifier = Modifier
-                .heightIn(min = ACTION_HEIGHT)
-                .clickable(enabled = isEnabled, onClick = action.onClear)
                 .padding(horizontal = ACTION_TEXT_PADDING),
-            painter = painterResource(Res.drawable.ic_close),
-            contentDescription = stringResource(Res.string.field_clear),
-            size = IconSize.Medium,
-            tint = AppTheme.colors.textMuted,
-        )
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = if (action.isRevealed) {
+                    stringResource(Res.string.field_hide)
+                } else {
+                    stringResource(Res.string.field_show)
+                },
+                style = AppTheme.typography.label,
+                color = AppTheme.colors.accent,
+            )
+        }
+        is TextFieldAction.Clear -> Box(
+            modifier = Modifier
+                .size(AppTheme.sizing.minTouchTarget)
+                .clickable(enabled = isEnabled, onClick = action.onClear),
+            contentAlignment = Alignment.Center,
+        ) {
+            AppIcon(
+                painter = painterResource(Res.drawable.ic_close),
+                contentDescription = stringResource(Res.string.field_clear),
+                size = IconSize.Medium,
+                tint = AppTheme.colors.textMuted,
+            )
+        }
     }
+}
+
+internal fun shownValueOf(lastEdit: TextFieldValue, value: String): TextFieldValue {
+    if (lastEdit.text == value) return lastEdit
+    val cursor = (lastEdit.selection.start - (lastEdit.text.length - value.length))
+        .coerceIn(0, value.length)
+    return TextFieldValue(text = value, selection = TextRange(cursor))
+}
+
+private fun imeActionOf(kind: TextFieldKind, submit: TextFieldSubmit): ImeAction = when (submit) {
+    TextFieldSubmit.Next -> ImeAction.Next
+    is TextFieldSubmit.Done -> ImeAction.Done
+    TextFieldSubmit.None -> if (kind == TextFieldKind.Multiline) ImeAction.Default else ImeAction.Done
+}
+
+private fun capitalizationOf(kind: TextFieldKind): KeyboardCapitalization = when (kind) {
+    TextFieldKind.Text, TextFieldKind.Multiline -> KeyboardCapitalization.Sentences
+    TextFieldKind.Numeric,
+    TextFieldKind.InviteCode,
+    TextFieldKind.Email,
+    TextFieldKind.Password,
+    TextFieldKind.NewPassword,
+    -> KeyboardCapitalization.None
 }
 
 private fun isMasked(kind: TextFieldKind, action: TextFieldAction): Boolean {

@@ -116,8 +116,10 @@ import app.trainer.feature.traininglog.presentation.programs.mvi.ProgramsState
 import app.trainer.feature.traininglog.presentation.programs.ui.ProgramsView
 import app.trainer.uikit.AppTheme
 import app.trainer.uikit.widgets.HabitWeekDay
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.LocalDate
 import org.junit.Rule
 import org.junit.Test
@@ -128,6 +130,8 @@ import org.robolectric.annotation.Config
 private const val MINUTES_IN_HOUR = 60
 private const val SLOT_DURATION_MINUTES = 60
 private val MONDAY = LocalDate(2026, 8, 24)
+private const val SELECTED_DAY_HEADER = "ПН 24"
+private const val NEXT_DAY_HEADER = "ВТ 25"
 private const val CANCELLATION_WINDOW_HOURS = 12
 private const val REMINDER_HOUR = 10
 private const val REMINDERS_TITLE = "Client reminders"
@@ -173,7 +177,8 @@ private const val ATTENTION_REASON = "no diary entries for 12 days"
 private const val GROUP_SEATS_LABEL = "3 of 8"
 private const val GROUP_CAPACITY = 8
 private const val PERSONAL_SEATS = 1
-private const val GROUP_PARTICIPANTS = "Анна, Мария, Пётр"
+private val GROUP_PARTICIPANTS = listOf("Анна Иванова", "Мария Петрова", "Пётр Сидоров")
+private const val GROUP_PARTICIPANT_INITIALS = "АИ"
 private const val GROUP_FREE_SEATS = "5 of 8 seats free"
 private const val CLIENT_WEIGHT_LATEST = "82,4 kg"
 private const val CLIENT_WEIGHT_DELTA = "−1,6 kg"
@@ -203,13 +208,19 @@ class ScreenRenderTest {
     val compose = createComposeRule()
 
     @Test
-    fun `coach calendar renders a week full of slots`() {
+    fun `coach calendar shows the selected day only`() {
         compose.setContent {
             TestTheme {
-                CoachScheduleView(state = coachScheduleWithSlots(), onEvent = {})
+                CoachScheduleView(
+                    state = coachScheduleWithSlots(),
+                    onEvent = {},
+                )
             }
         }
         compose.waitForIdle()
+
+        compose.onNodeWithText(SELECTED_DAY_HEADER).assertIsDisplayed()
+        compose.onNodeWithText(NEXT_DAY_HEADER).assertDoesNotExist()
     }
 
     @Test
@@ -228,13 +239,16 @@ class ScreenRenderTest {
     fun `a group session shows who is coming and how full it is`() {
         compose.setContent {
             TestTheme {
-                CoachScheduleView(state = coachScheduleWithGroupSession(), onEvent = {})
+                CoachScheduleView(
+                    state = coachScheduleWithGroupSession(),
+                    onEvent = {},
+                )
             }
         }
         compose.waitForIdle()
 
         compose.onNodeWithText(GROUP_SEATS_LABEL).assertIsDisplayed()
-        compose.onNodeWithText(GROUP_PARTICIPANTS).assertIsDisplayed()
+        compose.onNodeWithText(GROUP_PARTICIPANT_INITIALS).assertIsDisplayed()
     }
 
     @Test
@@ -250,7 +264,7 @@ class ScreenRenderTest {
     }
 
     @Test
-    fun `coach calendar renders an empty week`() {
+    fun `coach calendar renders a day without slots`() {
         compose.setContent {
             TestTheme {
                 CoachScheduleView(
@@ -1078,6 +1092,7 @@ private fun peopleWithAttention(): PeopleState = PeopleState.initial().withFirst
 
 private fun coachScheduleWithGroupSession(): CoachScheduleState = CoachScheduleState.initial().copy(
     weekStart = MONDAY,
+    selectedDate = MONDAY,
     weekTitle = "24—30 августа",
     days = persistentListOf(
         ScheduleDay(
@@ -1149,6 +1164,7 @@ private fun coachScheduleWithSlots(): CoachScheduleState {
     }
     return CoachScheduleState.initial().copy(
         weekStart = MONDAY,
+        selectedDate = MONDAY,
         weekTitle = "24—30 августа",
         days = persistentListOf(*days.toTypedArray()),
         isLoading = false,
@@ -1175,18 +1191,33 @@ private fun slotAt(
         hasParticipants = client != null || seats is SlotSeats.Group,
         capacity = (seats as? SlotSeats.Group)?.capacity ?: PERSONAL_SEATS,
         takenSeats = if (client == null && seats is SlotSeats.Personal) 0 else 1,
-        participants = client
-            ?.let { persistentListOf(SlotParticipantRow(clientUserId = "client-1", displayName = it)) }
-            ?: persistentListOf(),
+        participants = participantsOf(seats = seats, client = client),
         seatsLabel = (seats as? SlotSeats.Group)?.label.orEmpty(),
-        participantNames = (seats as? SlotSeats.Group)?.names.orEmpty(),
     )
+
+private fun participantsOf(
+    seats: SlotSeats,
+    client: String?,
+): ImmutableList<SlotParticipantRow> {
+    val names = when {
+        seats is SlotSeats.Group -> seats.names
+        client != null -> listOf(client)
+        else -> emptyList()
+    }
+    return names
+        .map { SlotParticipantRow(clientUserId = it, displayName = it) }
+        .toImmutableList()
+}
 
 private sealed interface SlotSeats {
 
     data object Personal : SlotSeats
 
-    data class Group(val label: String, val names: String, val capacity: Int = GROUP_CAPACITY) : SlotSeats
+    data class Group(
+        val label: String,
+        val names: List<String>,
+        val capacity: Int = GROUP_CAPACITY,
+    ) : SlotSeats
 }
 
 private fun clientCardWithDynamics(): ClientCardState = ClientCardState.initial(clientUserId = "client-1").copy(
@@ -1283,6 +1314,9 @@ private fun todayWithBlocks(): TodayState = TodayState.initial().copy(
             isNext = true,
             startsInLabel = "через 40 мин",
             seatsLabel = "",
+            takenSeats = 1,
+            capacity = 1,
+            participants = persistentListOf(),
         ),
     ),
     unread = persistentListOf(

@@ -38,10 +38,10 @@ private suspend fun handleSideEffect(
 ) {
     when (effect) {
         NextSideEffect.OpenProfile -> navigator.push(Screens.Profile)
-        NextSideEffect.OpenBooking -> navigator.replaceAll(
+        NextSideEffect.OpenBooking -> navigator.selectRoot(
             Screens.ClientBooking(coachId = null, weekStartIso = null)
         )
-        NextSideEffect.OpenChat -> navigator.replaceAll(Screens.CoachChats)
+        NextSideEffect.OpenChat -> navigator.selectRoot(Screens.CoachChats)
         NextSideEffect.OpenInvite -> navigator.push(Screens.Invite(afterSessionExpiry = false))
         is NextSideEffect.OpenDiary -> navigator.push(Screens.ClientDiaryDay(dateIso = effect.dateIso))
         is NextSideEffect.OpenCheckIn -> navigator.push(Screens.CheckIn(dateIso = effect.dateIso))

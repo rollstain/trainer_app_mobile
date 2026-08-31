@@ -46,6 +46,7 @@ import app.trainer.uikit.widgets.TextFieldAction
 import app.trainer.uikit.widgets.TextFieldKind
 import app.trainer.uikit.widgets.TextFieldLabel
 import app.trainer.uikit.widgets.TextFieldMessage
+import app.trainer.uikit.widgets.TextFieldSubmit
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -98,6 +99,7 @@ fun SignInView(
             label = TextFieldLabel.Text(stringResource(Res.string.sign_in_identifier_label)),
             message = fieldTone(state.failure),
             isEnabled = !state.isLocked,
+            submit = TextFieldSubmit.Next,
         )
         AppTextField(
             modifier = Modifier.fillMaxWidth(),
@@ -111,6 +113,7 @@ fun SignInView(
                 onToggle = { onEvent(SignInEvent.OnRevealToggled) },
             ),
             isEnabled = !state.isLocked,
+            submit = TextFieldSubmit.Done(onSubmit = { onEvent(SignInEvent.OnSubmitClicked) }),
         )
         FailureLine(failure = state.failure)
         SubmitButton(state = state, onEvent = onEvent)

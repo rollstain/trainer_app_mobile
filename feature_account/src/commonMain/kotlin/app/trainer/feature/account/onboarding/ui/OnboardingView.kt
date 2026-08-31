@@ -30,6 +30,7 @@ import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.TextFieldLabel
 import app.trainer.uikit.widgets.TextFieldMessage
+import app.trainer.uikit.widgets.TextFieldSubmit
 import org.jetbrains.compose.resources.stringResource
 
 private const val COUNTER_SHOWN_FROM = 35
@@ -71,6 +72,7 @@ fun OnboardingView(
             label = TextFieldLabel.Text(stringResource(Res.string.onboarding_name_label)),
             message = state.nameError?.let(TextFieldMessage::Error) ?: TextFieldMessage.None,
             isEnabled = !state.isSaving,
+            submit = TextFieldSubmit.Done(onSubmit = { onEvent(OnboardingEvent.OnContinueClicked) }),
         )
         if (state.displayName.length >= COUNTER_SHOWN_FROM) {
             AppText(

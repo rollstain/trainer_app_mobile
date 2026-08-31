@@ -30,7 +30,6 @@ import org.jetbrains.compose.resources.getString
 private const val MINUTES_IN_HOUR = 60
 private const val GROUP_SESSION_SCREEN_FROM_SEATS = 5
 private const val SLOT_TITLE_SEPARATOR = " · "
-private const val NAME_SEPARATOR = ", "
 
 class CoachScheduleScreenModel(
     private val scheduleRepository: CoachScheduleRepository,
@@ -60,6 +59,7 @@ class CoachScheduleScreenModel(
     override fun dispatch(event: CoachScheduleEvent) {
         when (event) {
             CoachScheduleEvent.OnRetryClicked -> onFetchData()
+            is CoachScheduleEvent.OnDaySelected -> updateState { it.copy(selectedDate = event.date) }
             CoachScheduleEvent.OnPreviousWeekClicked -> shiftWeek(offset = -1)
             CoachScheduleEvent.OnNextWeekClicked -> shiftWeek(offset = 1)
             is CoachScheduleEvent.OnCreateSlotClicked -> openSlotCreation(event.date)
@@ -252,7 +252,10 @@ class CoachScheduleScreenModel(
     }
 
     private suspend fun loadWeek(weekStart: LocalDate, zone: TimeZone) {
-        updateState { it.copy(isLoading = true, failure = null) }
+        val weekTitle = formatWeekTitle(weekStart = weekStart)
+        updateState {
+            it.copy(weekStart = weekStart, weekTitle = weekTitle, isLoading = true, failure = null)
+        }
 
         val schedule = scheduleRepository.coachSchedule(
             from = weeks.startInstant(weekStart = weekStart, zone = zone),
@@ -318,13 +321,14 @@ class CoachScheduleScreenModel(
             )
         }
 
-        val weekTitle = formatWeekTitle(weekStart = weekStart)
         val nextSlotId = nextSlotIdOf(days = days, today = today, zone = zone)
         updateState { current ->
             current.copy(
                 weekStart = weekStart,
-                weekTitle = weekTitle,
                 days = days.toImmutableList(),
+                selectedDate = current.selectedDate.takeIf { date -> days.any { it.date == date } }
+                    ?: days.firstOrNull { it.isToday }?.date
+                    ?: weekStart,
                 pendingRequests = requestRows.toImmutableList(),
                 nextSlotId = nextSlotId,
                 isLoading = false,
@@ -364,7 +368,6 @@ class CoachScheduleScreenModel(
             isGroup = slot.isGroup,
             hasParticipants = slot.takenSeats > 0,
             seatsLabel = getString(Res.string.slot_seats_taken, slot.takenSeats, slot.capacity),
-            participantNames = slot.participants.mapNotNull { it.displayName }.joinToString(NAME_SEPARATOR),
             capacity = slot.capacity,
             takenSeats = slot.takenSeats,
             participants = slot.participants

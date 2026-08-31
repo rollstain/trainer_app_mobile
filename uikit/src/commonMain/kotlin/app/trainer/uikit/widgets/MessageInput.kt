@@ -62,10 +62,10 @@ fun AppMessageInput(
     onSendClick: () -> Unit,
     onAttachmentRemove: (String) -> Unit,
     onAttachmentRetry: (String) -> Unit,
+    isSendEnabled: Boolean,
     placeholder: String = stringResource(Res.string.message_input_placeholder),
 ) {
     val colors = AppTheme.colors
-    val isSendEnabled = value.isNotBlank() || attachments.any { it.state == AttachmentState.Ready }
 
     Column(modifier = modifier.fillMaxWidth().background(colors.bgSurface)) {
         Box(
@@ -97,20 +97,26 @@ fun AppMessageInput(
         ) {
             Box(
                 modifier = Modifier
-                    .size(ACTION_BUTTON_SIZE)
-                    .background(
-                        color = colors.bgSurfaceSunken,
-                        shape = RoundedCornerShape(AppTheme.radius.dp8),
-                    )
+                    .size(AppTheme.sizing.minTouchTarget)
                     .clickable(onClick = onAttachClick),
                 contentAlignment = Alignment.Center,
             ) {
-                AppIcon(
-                    painter = AppIcons.attach,
-                    contentDescription = stringResource(Res.string.message_input_attach),
-                    size = IconSize.Medium,
-                    tint = colors.textSecondary,
-                )
+                Box(
+                    modifier = Modifier
+                        .size(ACTION_BUTTON_SIZE)
+                        .background(
+                            color = colors.bgSurfaceSunken,
+                            shape = RoundedCornerShape(AppTheme.radius.dp8),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AppIcon(
+                        painter = AppIcons.attach,
+                        contentDescription = stringResource(Res.string.message_input_attach),
+                        size = IconSize.Medium,
+                        tint = colors.textSecondary,
+                    )
+                }
             }
             Box(
                 modifier = Modifier
@@ -143,20 +149,26 @@ fun AppMessageInput(
             }
             Box(
                 modifier = Modifier
-                    .size(ACTION_BUTTON_SIZE)
-                    .background(
-                        color = if (isSendEnabled) colors.accent else colors.bgSurfaceSunken,
-                        shape = RoundedCornerShape(AppTheme.radius.dp8),
-                    )
+                    .size(AppTheme.sizing.minTouchTarget)
                     .clickable(enabled = isSendEnabled, onClick = onSendClick),
                 contentAlignment = Alignment.Center,
             ) {
-                AppIcon(
-                    painter = AppIcons.send,
-                    contentDescription = stringResource(Res.string.message_input_send),
-                    size = IconSize.Medium,
-                    tint = if (isSendEnabled) colors.accentOn else colors.textMuted,
-                )
+                Box(
+                    modifier = Modifier
+                        .size(ACTION_BUTTON_SIZE)
+                        .background(
+                            color = if (isSendEnabled) colors.accent else colors.bgSurfaceSunken,
+                            shape = RoundedCornerShape(AppTheme.radius.dp8),
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    AppIcon(
+                        painter = AppIcons.send,
+                        contentDescription = stringResource(Res.string.message_input_send),
+                        size = IconSize.Medium,
+                        tint = if (isSendEnabled) colors.accentOn else colors.textMuted,
+                    )
+                }
             }
         }
     }
@@ -220,7 +232,9 @@ private fun AttachmentChip(
             AttachmentState.Ready -> Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
+                    .size(ACTION_BUTTON_SIZE)
                     .clickable(onClick = onRemove),
+                contentAlignment = Alignment.TopEnd,
             ) {
                 AppIcon(
                     painter = AppIcons.close,

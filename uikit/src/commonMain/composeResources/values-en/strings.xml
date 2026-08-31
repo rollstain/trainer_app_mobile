@@ -44,4 +44,7 @@
     <string name="slot_stop_waiting">Leave waitlist</string>
     <string name="slot_approve">Approve</string>
     <string name="slot_reject">Decline</string>
+    <string name="field_show">Show</string>
+    <string name="field_hide">Hide</string>
+    <string name="field_clear">Clear</string>
 </resources>

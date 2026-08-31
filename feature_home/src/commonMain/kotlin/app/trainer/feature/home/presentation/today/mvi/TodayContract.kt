@@ -24,6 +24,9 @@ data class TodaySessionRow(
     val isNext: Boolean,
     val startsInLabel: String,
     val seatsLabel: String,
+    val takenSeats: Int,
+    val capacity: Int,
+    val participants: ImmutableList<String>,
 )
 
 data class TodayDialogRow(

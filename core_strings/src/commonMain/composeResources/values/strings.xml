@@ -340,7 +340,7 @@
     <string name="people_empty_description">Отправьте приглашение — человек появится в списке сразу после входа.</string>
     <string name="people_empty_title">Подопечных пока нет</string>
     <string name="people_invite_action">Создать приглашение</string>
-    <string name="people_invite_code_message">Код приглашения: %1$s</string>
+    <string name="people_invite_share_text">Код приглашения в приложение: %1$s</string>
     <string name="people_attention_missed">пропустил подряд %1$d тренировки</string>
     <string name="people_attention_diary">не заполняет дневник %1$d дней</string>
     <string name="people_attention_never">ни одной записи в дневнике</string>
@@ -830,4 +830,5 @@
         <item quantity="many">%1$d подопечных</item>
         <item quantity="other">%1$d подопечного</item>
     </plurals>
+    <string name="coach_schedule_day_off_description">В этот день вы не принимаете. Слот всё равно можно поставить.</string>
 </resources>

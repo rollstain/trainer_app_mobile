@@ -25,7 +25,7 @@ import app.trainer.uikit.resources.rest_skip
 import app.trainer.uikit.resources.rest_title
 import org.jetbrains.compose.resources.stringResource
 
-private val PROGRESS_HEIGHT = 4.dp
+private val PROGRESS_HEIGHT = 3.dp
 
 @Composable
 fun AppRestBar(

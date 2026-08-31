@@ -58,7 +58,7 @@ class DiariesScreenModel(
     }
 
     private suspend fun load() {
-        updateState { it.copy(isLoading = true, failure = null) }
+        updateState { it.copy(isLoading = it.isEmpty, failure = null) }
         val profile = profileRepository.me()
         if (profile is RequestResult.Error) return showFailure(profile)
         val zone = (profile as RequestResult.Success).data.zoneId?.let(weeks::parseZone)

@@ -1,8 +1,9 @@
 package app.trainer.feature.account.workinghours.mvi
 
 import app.trainer.base.BaseScreenModel
-import app.trainer.base.date.normalizeTimeText
-import app.trainer.base.date.parseTimeText
+import app.trainer.base.date.filterTimeDigits
+import app.trainer.base.date.parseTimeDigits
+import app.trainer.base.date.timeDigitsOf
 import app.trainer.base.date.weekdayShortOf
 import app.trainer.data.clients.CoachPolicy
 import app.trainer.data.clients.ParticipantsRepository
@@ -11,8 +12,8 @@ import app.trainer.entities.WorkingDay
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.datetime.DayOfWeek
 
-private const val DEFAULT_OPENS_TEXT = "09:00"
-private const val DEFAULT_CLOSES_TEXT = "21:00"
+private const val DEFAULT_OPENS_DIGITS = "0900"
+private const val DEFAULT_CLOSES_DIGITS = "2100"
 
 class WorkingHoursScreenModel(
     private val participantsRepository: ParticipantsRepository,
@@ -42,10 +43,10 @@ class WorkingHoursScreenModel(
             WorkingHoursEvent.OnReloadRequested -> onFetchData()
             is WorkingHoursEvent.OnDayToggled -> changeRow(event.dayOfWeek) { toggled(it) }
             is WorkingHoursEvent.OnOpensChanged -> changeRow(event.dayOfWeek) {
-                it.copy(opensText = normalizeTimeText(event.text), isPrefilled = false)
+                it.copy(opensText = filterTimeDigits(event.text), isPrefilled = false)
             }
             is WorkingHoursEvent.OnClosesChanged -> changeRow(event.dayOfWeek) {
-                it.copy(closesText = normalizeTimeText(event.text), isPrefilled = false)
+                it.copy(closesText = filterTimeDigits(event.text), isPrefilled = false)
             }
             WorkingHoursEvent.OnApplyToAllClicked -> applyFirstHoursToAll()
             WorkingHoursEvent.OnSaveClicked -> save()
@@ -66,8 +67,8 @@ class WorkingHoursScreenModel(
                 dayOfWeek = dayOfWeek,
                 label = weekdayShortOf(dayOfWeek.ordinal),
                 isWorking = saved != null,
-                opensText = saved?.opensAt?.toString().orEmpty(),
-                closesText = saved?.closesAt?.toString().orEmpty(),
+                opensText = saved?.opensAt?.let(::timeDigitsOf).orEmpty(),
+                closesText = saved?.closesAt?.let(::timeDigitsOf).orEmpty(),
                 isPrefilled = false,
                 isChanged = false,
                 issue = null,
@@ -91,8 +92,8 @@ class WorkingHoursScreenModel(
         val donor = hoursDonorFor(row.dayOfWeek)
         return row.copy(
             isWorking = true,
-            opensText = donor?.opensText ?: DEFAULT_OPENS_TEXT,
-            closesText = donor?.closesText ?: DEFAULT_CLOSES_TEXT,
+            opensText = donor?.opensText ?: DEFAULT_OPENS_DIGITS,
+            closesText = donor?.closesText ?: DEFAULT_CLOSES_DIGITS,
             isPrefilled = true,
         )
     }
@@ -128,8 +129,8 @@ class WorkingHoursScreenModel(
 
     private fun issueOf(row: WorkingHourRow): WorkingHourIssue? {
         if (!row.isWorking) return null
-        val opensAt = parseTimeText(row.opensText)
-        val closesAt = parseTimeText(row.closesText)
+        val opensAt = parseTimeDigits(row.opensText)
+        val closesAt = parseTimeDigits(row.closesText)
         if (opensAt == null || closesAt == null) return WorkingHourIssue.Incomplete
         if (closesAt <= opensAt) return WorkingHourIssue.EndBeforeStart
         return null
@@ -166,8 +167,8 @@ class WorkingHoursScreenModel(
             val policy = savedPolicy ?: return@screenModelScope
             if (!current.isDirty || current.hasIssues || current.isSaving) return@screenModelScope
             val workingHours = current.rows.filter { it.isWorking }.mapNotNull { row ->
-                val opensAt = parseTimeText(row.opensText) ?: return@mapNotNull null
-                val closesAt = parseTimeText(row.closesText) ?: return@mapNotNull null
+                val opensAt = parseTimeDigits(row.opensText) ?: return@mapNotNull null
+                val closesAt = parseTimeDigits(row.closesText) ?: return@mapNotNull null
                 WorkingDay(dayOfWeek = row.dayOfWeek, opensAt = opensAt, closesAt = closesAt)
             }
             updateState { it.copy(isSaving = true, isLeaveDialogVisible = false, isSaveFailed = false) }

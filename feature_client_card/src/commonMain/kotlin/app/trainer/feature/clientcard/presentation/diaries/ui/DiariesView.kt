@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
@@ -55,6 +56,7 @@ import app.trainer.uikit.widgets.PlaceholderAction
 import app.trainer.uikit.widgets.PlaceholderKind
 import app.trainer.uikit.widgets.SectionCount
 import app.trainer.uikit.widgets.SectionSummary
+import app.trainer.uikit.widgets.highlightedMatch
 import org.jetbrains.compose.resources.stringResource
 
 private const val SHIMMER_ROWS = 5
@@ -109,7 +111,10 @@ fun DiariesView(
 
 @Composable
 private fun DiariesContent(state: DiariesState, onEvent: (DiariesEvent) -> Unit) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = AppTheme.spacing.dp24),
+    ) {
         item(key = "window") {
             AppText(
                 modifier = Modifier
@@ -136,7 +141,11 @@ private fun DiariesContent(state: DiariesState, onEvent: (DiariesEvent) -> Unit)
                 )
             }
             items(items = state.lapsed, key = { "lapsed-${it.userId}" }) { row ->
-                DiaryCell(row = row, onClick = { onEvent(DiariesEvent.OnPersonClicked(row.userId)) })
+                DiaryCell(
+                    row = row,
+                    query = state.search,
+                    onClick = { onEvent(DiariesEvent.OnPersonClicked(row.userId)) },
+                )
             }
         }
         if (state.isEveryoneLapsed) {
@@ -159,14 +168,18 @@ private fun DiariesContent(state: DiariesState, onEvent: (DiariesEvent) -> Unit)
                 )
             }
             items(items = state.others, key = { "other-${it.userId}" }) { row ->
-                DiaryCell(row = row, onClick = { onEvent(DiariesEvent.OnPersonClicked(row.userId)) })
+                DiaryCell(
+                    row = row,
+                    query = state.search,
+                    onClick = { onEvent(DiariesEvent.OnPersonClicked(row.userId)) },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun DiaryCell(row: DiaryRow, onClick: () -> Unit) {
+private fun DiaryCell(row: DiaryRow, query: String, onClick: () -> Unit) {
     Column(modifier = Modifier.background(AppTheme.colors.bgSurface)) {
         Row(
             modifier = Modifier
@@ -189,7 +202,7 @@ private fun DiaryCell(row: DiaryRow, onClick: () -> Unit) {
                 ) {
                     AppText(
                         modifier = Modifier.weight(1f),
-                        text = row.displayName,
+                        text = highlightedMatch(text = row.displayName, query = query),
                         style = AppTheme.typography.bodyStrong,
                         color = AppTheme.colors.textPrimary,
                         maxLines = 1,

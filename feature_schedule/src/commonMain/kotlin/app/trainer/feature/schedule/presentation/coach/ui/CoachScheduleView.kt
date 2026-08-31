@@ -1,6 +1,5 @@
 package app.trainer.feature.schedule.presentation.coach.ui
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,15 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +36,7 @@ import app.trainer.strings.coach_schedule_cancel_session_action
 import app.trainer.strings.coach_schedule_cancel_slot_action
 import app.trainer.strings.coach_schedule_complete_action
 import app.trainer.strings.coach_schedule_day_empty
+import app.trainer.strings.coach_schedule_day_off_description
 import app.trainer.strings.coach_schedule_day_summary_both
 import app.trainer.strings.coach_schedule_day_summary_busy
 import app.trainer.strings.coach_schedule_day_summary_free
@@ -53,6 +47,7 @@ import app.trainer.strings.coach_schedule_remove_participant
 import app.trainer.strings.coach_schedule_requests_title
 import app.trainer.strings.coach_schedule_slot_actions_dismiss
 import app.trainer.strings.coach_schedule_today_mark
+import app.trainer.strings.group_session_title
 import app.trainer.strings.slot_cancelled_chip
 import app.trainer.strings.slot_completed_chip
 import app.trainer.strings.slot_free_chip
@@ -73,6 +68,7 @@ import app.trainer.uikit.widgets.ButtonSize
 import app.trainer.uikit.widgets.ButtonState
 import app.trainer.uikit.widgets.ButtonTone
 import app.trainer.uikit.widgets.DaySectionSummary
+import app.trainer.uikit.widgets.SeatsState
 import app.trainer.uikit.widgets.SlotClientView
 import app.trainer.uikit.widgets.SlotRequestView
 import app.trainer.uikit.widgets.SlotRowStatus
@@ -83,27 +79,18 @@ import app.trainer.uikit.widgets.TopBarAction
 import app.trainer.uikit.widgets.WeekDay
 import app.trainer.uikit.widgets.WeekDayState
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 
 private const val SHIMMER_SLOTS = 4
 private const val REQUESTS_ITEM_KEY = "requests"
-private const val WEEK_FOOTER_ITEM_KEY = "week-footer"
+private const val DAY_FOOTER_ITEM_KEY = "day-footer"
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CoachScheduleView(
     modifier: Modifier = Modifier,
     state: CoachScheduleState,
     onEvent: (CoachScheduleEvent) -> Unit,
 ) {
-    val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
-    val visibleDate = visibleDateOf(listState = listState, state = state)
-
-    ScrollToTodayOnOpen(listState = listState, state = state)
-
     Column(modifier = modifier.fillMaxSize().screenBackground()) {
         AppTopBar(
             title = state.weekTitle,
@@ -119,12 +106,10 @@ fun CoachScheduleView(
             ),
         )
         AppWeekStrip(
-            days = state.days.map { toWeekDay(day = it, isSelected = it.date == visibleDate) },
+            days = state.days.map { toWeekDay(day = it, isSelected = it.date == state.selectedDate) },
             onSelect = { dayId ->
                 state.days.firstOrNull { it.date.toString() == dayId }?.let { day ->
-                    scope.launch {
-                        listState.animateScrollToItem(dayHeaderIndexOf(state = state, date = day.date))
-                    }
+                    onEvent(CoachScheduleEvent.OnDaySelected(day.date))
                 }
             },
         )
@@ -135,12 +120,7 @@ fun CoachScheduleView(
                     onRetry = { onEvent(CoachScheduleEvent.OnRetryClicked) },
                 )
                 state.isLoading -> AppSlotShimmerList(count = SHIMMER_SLOTS)
-                else -> WeekList(
-                    listState = listState,
-                    state = state,
-                    visibleDate = visibleDate,
-                    onEvent = onEvent,
-                )
+                else -> DayList(state = state, onEvent = onEvent)
             }
         }
         state.slotActions?.let { actions ->
@@ -245,24 +225,17 @@ private fun SlotActionsSheet(actions: SlotActions, onEvent: (CoachScheduleEvent)
 }
 
 @Composable
-private fun WeekList(
-    listState: LazyListState,
-    state: CoachScheduleState,
-    visibleDate: LocalDate?,
-    onEvent: (CoachScheduleEvent) -> Unit,
-) {
+private fun DayList(state: CoachScheduleState, onEvent: (CoachScheduleEvent) -> Unit) {
+    val day = state.selectedDay ?: return
     val todayMark = stringResource(Res.string.coach_schedule_today_mark)
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        state = listState,
-    ) {
-        if (state.pendingRequests.isNotEmpty()) {
-            item(key = REQUESTS_ITEM_KEY) {
-                RequestsBlock(requests = state.pendingRequests, onEvent = onEvent)
+    key(day.date) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            if (state.pendingRequests.isNotEmpty()) {
+                item(key = REQUESTS_ITEM_KEY) {
+                    RequestsBlock(requests = state.pendingRequests, onEvent = onEvent)
+                }
             }
-        }
-        state.days.forEach { day ->
-            stickyHeader(key = "day-${day.date}") {
+            item(key = "day-${day.date}") {
                 AppDaySectionHeader(
                     dayLabel = "${day.weekdayLabel} ${day.dayNumberLabel}",
                     isToday = day.isToday,
@@ -277,31 +250,37 @@ private fun WeekList(
                     title = slotTitleOf(slot),
                     status = toRowStatus(slot.status),
                     trailing = slotTrailingOf(slot),
+                    participants = if (slot.isGroup) slot.participants.map { it.displayName } else emptyList(),
                     onClick = { onEvent(CoachScheduleEvent.OnSlotClicked(slot.slotId)) },
                     hasRequest = slot.hasPendingChangeRequest,
                     isNext = slot.slotId == state.nextSlotId,
                 )
             }
-        }
-        item(key = WEEK_FOOTER_ITEM_KEY) {
-            WeekFooter(
-                isWeekEmpty = state.days.all { it.slots.isEmpty() },
-                onAddSlot = { onEvent(CoachScheduleEvent.OnCreateSlotClicked(visibleDate)) },
-            )
+            item(key = DAY_FOOTER_ITEM_KEY) {
+                DayFooter(
+                    isDayEmpty = day.slots.isEmpty(),
+                    isDayOff = day.isDayOff,
+                    onAddSlot = { onEvent(CoachScheduleEvent.OnCreateSlotClicked(day.date)) },
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun WeekFooter(isWeekEmpty: Boolean, onAddSlot: () -> Unit) {
+private fun DayFooter(isDayEmpty: Boolean, isDayOff: Boolean, onAddSlot: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(AppTheme.spacing.dp16),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp12),
     ) {
-        if (isWeekEmpty) {
+        if (isDayEmpty) {
             AppText(
-                text = stringResource(Res.string.coach_schedule_empty_description),
+                text = if (isDayOff) {
+                    stringResource(Res.string.coach_schedule_day_off_description)
+                } else {
+                    stringResource(Res.string.coach_schedule_empty_description)
+                },
                 style = AppTheme.typography.body,
                 color = AppTheme.colors.textSecondary,
                 textAlign = TextAlign.Center,
@@ -311,7 +290,7 @@ private fun WeekFooter(isWeekEmpty: Boolean, onAddSlot: () -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(Res.string.coach_schedule_add_slot_action),
             onClick = onAddSlot,
-            tone = if (isWeekEmpty) ButtonTone.Primary else ButtonTone.Secondary,
+            tone = if (isDayEmpty) ButtonTone.Primary else ButtonTone.Secondary,
             size = ButtonSize.Large,
         )
     }
@@ -333,16 +312,16 @@ private fun daySummaryOf(day: ScheduleDay): String {
 @Composable
 private fun slotTitleOf(slot: CoachSlotRow): String = when {
     !slot.isGroup -> slot.clientDisplayName.orEmpty()
-    slot.participantNames.isNotEmpty() -> slot.participantNames
+    slot.participants.isNotEmpty() -> stringResource(Res.string.group_session_title)
     else -> stringResource(Res.string.slot_group_empty)
 }
 
 @Composable
 private fun slotTrailingOf(slot: CoachSlotRow): SlotRowTrailing {
     if (slot.isGroup && slot.status != SlotStatus.CANCELLED) {
-        return SlotRowTrailing.Status(
-            text = slot.seatsLabel,
-            kind = if (slot.status == SlotStatus.FREE) StatusChipKind.Free else StatusChipKind.Booked,
+        return SlotRowTrailing.Seats(
+            label = slot.seatsLabel,
+            state = SeatsState.of(taken = slot.takenSeats, capacity = slot.capacity),
         )
     }
     return personalTrailingOf(slot)
@@ -376,15 +355,6 @@ private fun toRowStatus(status: SlotStatus): SlotRowStatus = when (status) {
     SlotStatus.BOOKED -> SlotRowStatus.Booked
     SlotStatus.CANCELLED -> SlotRowStatus.Cancelled
     SlotStatus.COMPLETED -> SlotRowStatus.Completed
-}
-
-private fun dayHeaderIndexOf(state: CoachScheduleState, date: LocalDate): Int {
-    var index = if (state.pendingRequests.isEmpty()) 0 else 1
-    state.days.forEach { day ->
-        if (day.date == date) return index
-        index += 1 + day.slots.size
-    }
-    return index
 }
 
 @Composable
@@ -462,24 +432,3 @@ private fun toWeekDay(day: ScheduleDay, isSelected: Boolean): WeekDay = WeekDay(
     },
     hasSlots = day.slots.isNotEmpty(),
 )
-
-@Composable
-private fun ScrollToTodayOnOpen(listState: LazyListState, state: CoachScheduleState) {
-    val todayDate = state.days.firstOrNull { it.isToday }?.date
-    LaunchedEffect(state.weekStart, todayDate, state.days.size) {
-        if (todayDate == null) return@LaunchedEffect
-        listState.scrollToItem(dayHeaderIndexOf(state = state, date = todayDate))
-    }
-}
-
-@Composable
-private fun visibleDateOf(listState: LazyListState, state: CoachScheduleState): LocalDate? {
-    val firstVisible by remember(listState) {
-        derivedStateOf { listState.firstVisibleItemIndex }
-    }
-    return remember(firstVisible, state.days, state.pendingRequests.size) {
-        state.days.lastOrNull { dayHeaderIndexOf(state = state, date = it.date) <= firstVisible }
-            ?.date
-            ?: state.days.firstOrNull()?.date
-    }
-}

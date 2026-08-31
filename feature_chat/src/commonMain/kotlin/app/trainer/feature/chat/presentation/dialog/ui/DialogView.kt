@@ -7,8 +7,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -33,6 +36,7 @@ import app.trainer.uikit.AppTheme
 import app.trainer.uikit.screenBackground
 import app.trainer.uikit.widgets.AppMessageBubble
 import app.trainer.uikit.widgets.AppMessageInput
+import app.trainer.uikit.widgets.AppMessageShimmerList
 import app.trainer.uikit.widgets.AppStatePlaceholder
 import app.trainer.uikit.widgets.AppText
 import app.trainer.uikit.widgets.AppTopBar
@@ -46,14 +50,23 @@ import app.trainer.uikit.widgets.TopBarLeading
 import app.trainer.uikit.widgets.TopBarSubtitle
 import org.jetbrains.compose.resources.stringResource
 
+private const val SHIMMER_MESSAGES = 5
+
 @Composable
 fun DialogView(
     modifier: Modifier = Modifier,
     state: DialogState,
+    listState: LazyListState,
     onEvent: (DialogEvent) -> Unit,
     onBackClick: () -> Unit,
 ) {
-    Column(modifier = modifier.fillMaxSize().screenBackground()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .screenBackground()
+            .navigationBarsPadding()
+            .imePadding(),
+    ) {
         AppTopBar(
             title = state.peerDisplayName,
             leading = TopBarLeading.Back(onClick = onBackClick),
@@ -70,12 +83,13 @@ fun DialogView(
                     failure = state.failure,
                     onRetry = { onEvent(DialogEvent.OnRetryClicked) },
                 )
-                state.items.isEmpty() && !state.isLoading -> AppStatePlaceholder(
+                state.isLoading && state.items.isEmpty() -> AppMessageShimmerList(count = SHIMMER_MESSAGES)
+                state.items.isEmpty() -> AppStatePlaceholder(
                     kind = PlaceholderKind.Empty,
                     title = stringResource(Res.string.dialog_empty_title),
                     description = stringResource(Res.string.dialog_empty_description),
                 )
-                else -> MessageFeed(state = state, onEvent = onEvent)
+                else -> MessageFeed(state = state, listState = listState, onEvent = onEvent)
             }
         }
         val picker = rememberImagePicker { image ->
@@ -94,28 +108,35 @@ fun DialogView(
             onAttachClick = picker::pick,
             onSendClick = { onEvent(DialogEvent.OnSendClicked) },
             onAttachmentRemove = { onEvent(DialogEvent.OnPendingAttachmentRemoved(it)) },
-            onAttachmentRetry = { onEvent(DialogEvent.OnFailedMessagesRetried) },
+            onAttachmentRetry = { onEvent(DialogEvent.OnPendingAttachmentRetried(it)) },
+            isSendEnabled = state.isSendEnabled,
         )
     }
 }
 
 @Composable
-private fun MessageFeed(state: DialogState, onEvent: (DialogEvent) -> Unit) {
+private fun MessageFeed(
+    state: DialogState,
+    listState: LazyListState,
+    onEvent: (DialogEvent) -> Unit,
+) {
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = AppTheme.spacing.dp16, vertical = AppTheme.spacing.dp12),
         verticalArrangement = Arrangement.spacedBy(AppTheme.spacing.dp8),
+        reverseLayout = true,
     ) {
-        if (state.hasMoreHistory) {
-            item(key = "load-older") {
-                LoadOlderIndicator(onAppear = { onEvent(DialogEvent.OnOlderMessagesRequested) })
-            }
-        }
-        items(items = state.items, key = ::itemKey) { item ->
+        items(items = state.items.asReversed(), key = ::itemKey) { item ->
             when (item) {
                 is ChatItem.DayDivider -> DayDivider(label = item.label)
                 is ChatItem.Message -> MessageItem(row = item.row, onEvent = onEvent)
+            }
+        }
+        if (state.hasMoreHistory) {
+            item(key = "load-older") {
+                LoadOlderIndicator(onAppear = { onEvent(DialogEvent.OnOlderMessagesRequested) })
             }
         }
     }
@@ -132,6 +153,7 @@ private fun MessageItem(row: MessageRow, onEvent: (DialogEvent) -> Unit) {
         attachments = row.attachments.map { attachment ->
             BubbleAttachment(id = attachment.attachmentId, url = attachment.url)
         },
+        onAttachmentClick = { onEvent(DialogEvent.OnAttachmentOpened(it)) },
     )
 }
 

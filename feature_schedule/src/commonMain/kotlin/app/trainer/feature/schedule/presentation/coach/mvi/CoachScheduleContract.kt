@@ -19,7 +19,6 @@ data class CoachSlotRow(
     val isGroup: Boolean,
     val hasParticipants: Boolean,
     val seatsLabel: String,
-    val participantNames: String,
     val capacity: Int,
     val takenSeats: Int,
     val participants: ImmutableList<SlotParticipantRow>,
@@ -76,9 +75,13 @@ data class CoachScheduleState(
     val pendingRequests: ImmutableList<ChangeRequestRow>,
     val nextSlotId: String?,
     val slotActions: SlotActions?,
+    val selectedDate: LocalDate?,
     val isLoading: Boolean,
     val failure: RequestResult.Error?,
 ) {
+
+    val selectedDay: ScheduleDay?
+        get() = days.firstOrNull { it.date == selectedDate }
 
     companion object {
 
@@ -89,6 +92,7 @@ data class CoachScheduleState(
             pendingRequests = persistentListOf(),
             nextSlotId = null,
             slotActions = null,
+            selectedDate = null,
             isLoading = true,
             failure = null,
         )
@@ -102,6 +106,8 @@ sealed interface CoachScheduleEvent {
     data object OnPreviousWeekClicked : CoachScheduleEvent
 
     data object OnNextWeekClicked : CoachScheduleEvent
+
+    data class OnDaySelected(val date: LocalDate) : CoachScheduleEvent
 
     data class OnCreateSlotClicked(val date: LocalDate?) : CoachScheduleEvent
 
