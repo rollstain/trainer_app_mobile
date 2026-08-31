@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsCompose)
@@ -14,6 +16,20 @@ val debugBaseUrl = providers.gradleProperty("trainer.debugBaseUrl").getOrElse(li
 val debugChatWebSocketUrl = providers.gradleProperty("trainer.debugChatWebSocketUrl")
     .getOrElse(liveChatWebSocketUrl)
 
+val appVersionName = providers.gradleProperty("trainer.versionName").getOrElse("0.1.0")
+val appVersionCode = providers.gradleProperty("trainer.versionCode").getOrElse("1").toInt()
+
+val keystoreProperties = Properties().apply {
+    val propertiesFile = rootProject.file("keystore.properties")
+    if (propertiesFile.exists()) {
+        propertiesFile.inputStream().use(::load)
+    }
+}
+
+fun signingSetting(property: String, environmentVariable: String): String? =
+    keystoreProperties.getProperty(property)
+        ?: providers.environmentVariable(environmentVariable).orNull
+
 android {
     namespace = "app.trainer.android"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -22,12 +38,24 @@ android {
         applicationId = "app.trainer.android"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
 
     buildFeatures {
         buildConfig = true
+    }
+
+    signingConfigs {
+        create("release") {
+            val keystorePath = signingSetting("storeFile", "TRAINER_KEYSTORE_PATH")
+            if (keystorePath != null) {
+                storeFile = file(keystorePath)
+                storePassword = signingSetting("storePassword", "TRAINER_KEYSTORE_PASSWORD")
+                keyAlias = signingSetting("keyAlias", "TRAINER_KEY_ALIAS")
+                keyPassword = signingSetting("keyPassword", "TRAINER_KEY_PASSWORD")
+            }
+        }
     }
 
     testOptions {
@@ -40,6 +68,7 @@ android {
             buildConfigField("String", "CHAT_WEB_SOCKET_URL", "\"$debugChatWebSocketUrl\"")
         }
         getByName("release") {
+            signingConfig = signingConfigs.getByName("release").takeIf { it.storeFile != null }
             buildConfigField("String", "BASE_URL", "\"$liveBaseUrl\"")
             buildConfigField("String", "CHAT_WEB_SOCKET_URL", "\"$liveChatWebSocketUrl\"")
         }
