@@ -23,7 +23,7 @@ sqldelight = "2.0.0"
 multiplatform-settings = "1.1.0"
 androidx-security-crypto = "1.1.0-alpha06"
 androidx-media3 = "1.4.1"
-firebase-messaging = "24.1.1"
+firebase-messaging = "24.1.2"
 firebase-crashlytics = "19.4.4"
 firebase-crashlytics-plugin = "3.0.6"
 
