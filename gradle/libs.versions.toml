@@ -19,7 +19,7 @@ kotlinx-collections-immutable = "0.3.8"
 
 koin = "4.2.1"
 ktor = "3.5.2"
-sqldelight = "2.0.0"
+sqldelight = "2.3.2"
 multiplatform-settings = "1.1.0"
 androidx-security-crypto = "1.1.0-alpha06"
 androidx-media3 = "1.4.1"
